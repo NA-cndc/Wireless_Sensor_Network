@@ -1,0 +1,11 @@
+{
+  "area_width_m": 3000,
+  "area_height_m": 3000,
+  "num_sensors": 450,
+  "num_sinks": 7,
+  "initial_energy_j": 5.0,
+  "packet_size_bytes": 128,
+  "packet_interval_s": 10,
+  "communication_ranges_m": [250, 300, 350],
+  "seed": 42
+}
