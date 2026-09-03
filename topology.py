@@ -77,3 +77,25 @@ def visualize_network(G):
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.show()
+    
+def check_network_connectivity(G):
+    """Kiểm tra các node bị cô lập và tính liên thông của mạng"""
+    # 1. Tìm các node không có bất kỳ liên kết nào
+    isolated_nodes = list(nx.isolates(G))
+    if isolated_nodes:
+        print(f"[CẢNH BÁO] Phát hiện {len(isolated_nodes)} node bị cô lập hoàn toàn: {isolated_nodes}")
+    else:
+        print("[OK] Không có node nào bị cô lập hoàn toàn.")
+        
+    # 2. Bỏ qua Virtual Sink (ID: 0) để đánh giá mạng lưới vật lý thực tế
+    G_physical = G.copy()
+    if G_physical.has_node(0):
+        G_physical.remove_node(0)
+    
+    # 3. Phân tích các cụm liên thông (Connected Components)
+    components = list(nx.connected_components(G_physical))
+    if len(components) == 1:
+        print("[OK] Mạng lưới liên thông hoàn hảo. Mọi sensor đều có đường truyền hợp lệ tới Sinks.")
+    else:
+        print(f"[CẢNH BÁO] Sóng vô tuyến không phủ kín! Mạng bị đứt gãy thành {len(components)} mảnh riêng biệt.")
+        print(f" -> Mảnh lớn nhất chứa {len(max(components, key=len))} thiết bị.")
