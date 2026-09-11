@@ -1,4 +1,4 @@
-"""Packet state and lifecycle model."""
+"""Mô hình trạng thái và vòng đời của gói tin (Packet) trong mạng WSN."""
 
 from __future__ import annotations
 
@@ -8,32 +8,47 @@ from typing import Sequence
 
 
 class PacketStatus(str, Enum):
-    """Supported lifecycle states for a packet."""
+    """Các trạng thái trong vòng đời của một gói tin."""
 
-    CREATED = "CREATED"
-    IN_TRANSIT = "IN_TRANSIT"
-    DELIVERED = "DELIVERED"
-    DROPPED = "DROPPED"
-    NO_ROUTE = "NO_ROUTE"
+    CREATED = "CREATED"  # Gói tin vừa được khởi tạo tại sensor nguồn
+    IN_TRANSIT = "IN_TRANSIT"  # Gói tin đang được chuyển tiếp qua các nút trung gian
+    DELIVERED = "DELIVERED"  # Gói tin đã đến được một trạm Sink an toàn
+    DROPPED = "DROPPED"  # Gói tin bị hủy (do node cạn pin, mất gói kênh truyền hoặc tấn công)
+    NO_ROUTE = "NO_ROUTE"  # Không tìm thấy đường đi khả thi tới bất kỳ trạm Sink nào
 
 
 @dataclass(slots=True)
 class Packet:
-    """Represent a packet and the minimal state needed to track its lifecycle."""
+    """Đại diện cho một gói dữ liệu cảm biến và trạng thái theo dõi đường truyền.
 
-    packet_id: str
-    source_id: str
-    created_at: float
-    size_bytes: int
-    sequence_number: int = 0
-    sink_id: str | None = None
-    route: list[str] = field(default_factory=list)
-    current_hop_index: int = 0
-    status: PacketStatus = PacketStatus.CREATED
-    delivered_at: float | None = None
-    drop_reason: str | None = None
+    Tuân thủ bảng cấu trúc gói tin (Mục 3.7.3) trong đề cương nghiên cứu:
+    - packet_id: Định danh duy nhất toàn cục của gói.
+    - sequence_number: Số thứ tự gói của mỗi sensor (giúp Sink phát hiện gói bị mất).
+    - source_id: ID của sensor tạo ra dữ liệu.
+    - sink_id: ID của Sink đích được thuật toán định tuyến lựa chọn.
+    - created_at: Mốc thời gian gói được sinh ra (giây).
+    - size_bytes: Kích thước gói tin (mặc định 128 byte).
+    - route: Tuyến đường chuyển tiếp [source, relay_1, relay_2, ..., sink].
+    - current_hop_index: Vị trí chặng nhảy hiện tại của gói trên tuyến đường.
+    - status: Trạng thái hiện thời của gói.
+    - delivered_at: Mốc thời gian nhận gói tại trạm Sink.
+    - drop_reason: Lý do cụ thể nếu gói bị hủy (natural_link_loss, selective_forwarding, energy_depletion, v.v.).
+    """
+
+    packet_id: str  # Định danh duy nhất của gói tin (ví dụ: 'pkt_sensor_001_1')
+    source_id: str  # ID của sensor nguồn phát dữ liệu
+    created_at: float  # Thời điểm sinh gói (giây)
+    size_bytes: int  # Kích thước payload tính bằng byte (mặc định 128 byte)
+    sequence_number: int = 0  # Số thứ tự tuần tự để sink theo dõi gói mất
+    sink_id: str | None = None  # Trạm sink đích được chọn
+    route: list[str] = field(default_factory=list)  # Danh sách ID các node trên đường đi
+    current_hop_index: int = 0  # Chỉ số chặng đang đứng trên đường truyền
+    status: PacketStatus = PacketStatus.CREATED  # Trạng thái vòng đời ban đầu
+    delivered_at: float | None = None  # Thời điểm nhận thành công tại Sink
+    drop_reason: str | None = None  # Ghi nhận nguyên nhân nếu bị mất gói
 
     def __post_init__(self) -> None:
+        """Xác thực tính toàn vẹn của gói tin ngay sau khi tạo đối tượng."""
         if not self.packet_id:
             raise ValueError("packet_id must not be empty")
         if not self.source_id:
@@ -54,9 +69,12 @@ class Packet:
             self.mark_delivered(self.delivered_at)
 
     def assign_route(self, route: Sequence[str]) -> None:
-        """Assign a non-empty route whose first node is the packet source.
+        """Gán tuyến đường chuyển tiếp multi-hop cho gói tin.
 
-        A valid assignment moves the packet from ``CREATED`` to ``IN_TRANSIT``.
+        Quy tắc bắt buộc:
+        - Tuyến đường không được rỗng.
+        - Nút đầu tiên trong tuyến đường phải trùng với source_id của gói.
+        - Gán tuyến thành công sẽ đưa trạng thái gói từ CREATED sang IN_TRANSIT.
         """
         route_nodes = list(route)
         if not route_nodes:
@@ -71,18 +89,22 @@ class Packet:
 
     @property
     def hop_count(self) -> int:
-        """Return the number of edges in the assigned route."""
+        """Tính số chặng nhảy (số cạnh truyền dẫn) trên đường đi: số cạnh = len(route) - 1."""
         return max(0, len(self.route) - 1)
 
     @property
     def latency_s(self) -> float | None:
-        """Return end-to-end latency when delivered, otherwise ``None``."""
+        """Tính độ trễ truyền gói đầu cuối (End-to-End Latency) = delivered_at - created_at."""
         if self.delivered_at is None:
             return None
         return self.delivered_at - self.created_at
 
     def mark_delivered(self, delivered_at: float) -> None:
-        """Mark delivery at a timestamp no earlier than packet creation."""
+        """Đánh dấu gói tin đã được giao tới Sink đích thành công.
+
+        Args:
+            delivered_at: Mốc thời gian nhận gói (không được nhỏ hơn thời gian tạo created_at).
+        """
         if delivered_at < self.created_at:
             raise ValueError("delivered_at must not be earlier than created_at")
         self.delivered_at = delivered_at
@@ -92,7 +114,12 @@ class Packet:
             self.current_hop_index = len(self.route) - 1
 
     def mark_dropped(self, reason: str, no_route: bool = False) -> None:
-        """Mark the packet as dropped or explicitly lacking a route."""
+        """Đánh dấu gói tin bị hủy trên đường truyền hoặc không tìm thấy đường đi.
+
+        Args:
+            reason: Chuỗi mô tả nguyên nhân hủy (ví dụ: 'energy_depletion', 'selective_forwarding').
+            no_route: Đặt True nếu lý do là đồ thị không có đường nối tới Sink.
+        """
         if not reason:
             raise ValueError("drop reason must not be empty")
         self.status = PacketStatus.NO_ROUTE if no_route else PacketStatus.DROPPED

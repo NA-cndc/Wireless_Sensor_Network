@@ -56,7 +56,7 @@ python -m pip install -e ".[dev]"
 
 Kiểm tra các thư viện cốt lõi đã sẵn sàng:
 ```bash
-python -c "import networkx, simpy, numpy, pandas, matplotlib, scipy, streamlit; print('Imports = OK')"
+python -c "import networkx, simpy, numpy, pandas, matplotlib, scipy; print('Imports = OK')"
 ```
 
 ---
@@ -69,7 +69,7 @@ Chạy bộ kiểm thử khởi tạo và kiểm tra môi trường:
 # 1. Chạy bài test môi trường và tính tái lập (độc lập)
 python test_env.py
 
-# 2. Chạy toàn bộ pytest suite (43 bài test)
+# 2. Chạy toàn bộ pytest suite (40 bài test)
 python -m pytest -q
 
 # 3. Kiểm tra chất lượng mã nguồn bằng Ruff
@@ -78,20 +78,16 @@ python -m ruff check .
 
 ---
 
-## 5. Chạy Demo Mô phỏng và Dashboard
+## 5. Chạy Demo Mô phỏng Toàn diện Hệ thống
 
-### A. Chạy Demo sinh số liệu và đồ thị:
+Chạy script demo để sinh dữ liệu mô phỏng và trực quan hóa:
+
 ```bash
 python scripts/run_demo.py
 ```
+
 Các đầu ra sinh tự động:
 - `results/csv/topology_summary.csv`: Bảng tổng hợp topology ở 3 bán kính $R \in \{250, 300, 350\}$ m.
 - `results/figures/topology_R*.png`: Biểu đồ trực quan hóa đồ thị mạng ở từng bán kính.
 - `results/logs/simulation.log`: Nhật ký ghi log quá trình mô phỏng.
 - `results/run_manifest.json`: Siêu dữ liệu tái lập (random seed, git commit, phiên bản thư viện).
-
-### B. Mở Bảng điều khiển Web tương tác (Streamlit):
-```bash
-python -m streamlit run src/wsn_sim/app.py
-```
-Giao diện cho phép tùy biến thông số $R$, trực quan hóa liên kết, chạy mô phỏng SimPy và trích xuất file sang các simulator mạng chuyên dụng (ns-3, OMNeT++, Contiki-NG).

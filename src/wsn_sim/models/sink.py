@@ -1,4 +1,4 @@
-"""Sink node domain model."""
+"""Mô hình dữ liệu cho trạm thu thập (Sink Node) trong mạng WSN."""
 
 from __future__ import annotations
 
@@ -9,34 +9,50 @@ from wsn_sim.models.packet import Packet
 
 @dataclass(slots=True)
 class Sink:
-    """Represent an energy-unconstrained sink that deduplicates packets by ID."""
+    """Đại diện cho trạm thu thập dữ liệu gốc (Sink Node) trong mô hình đa sink (7 sinks).
 
-    node_id: str
-    x: float
-    y: float
+    Đặc điểm thiết kế theo đề cương:
+    1. Không bị giới hạn về năng lượng (được cấp nguồn điện ngoài liên tục).
+    2. Có cơ chế lọc và khử trùng lặp gói tin (Packet Deduplication) dựa trên ID duy nhất.
+    """
+
+    node_id: str  # Định danh duy nhất của sink (ví dụ: 'sink_00' đến 'sink_06')
+    x: float  # Tọa độ X trong không gian Descartes 2D (mét)
+    y: float  # Tọa độ Y trong không gian Descartes 2D (mét)
+
+    # Tập hợp (set) lưu trữ toàn bộ ID các gói đã nhận để tra cứu O(1) và loại bỏ gói trùng
     received_packet_ids: set[str] = field(default_factory=set)
 
     def __post_init__(self) -> None:
+        """Xác thực định danh nút không được rỗng."""
         if not self.node_id:
             raise ValueError("node_id must not be empty")
 
     def receive(self, packet: Packet, received_at: float) -> bool:
-        """Receive and deliver a packet unless its ID was already recorded.
+        """Tiếp nhận một gói tin khi nó di chuyển đến trạm Sink đích.
+
+        Quy trình xử lý:
+        1. Kiểm tra ID gói tin đã từng được ghi nhận tại sink này hay chưa.
+        2. Nếu đã tồn tại -> Bỏ qua (tránh đếm lặp gói trùng bản sao).
+        3. Nếu là gói mới -> Chuyển trạng thái gói sang DELIVERED, ghi nhận thời điểm đến,
+           và thêm ID vào danh sách đã nhận.
 
         Args:
-            packet: Packet arriving at this sink.
-            received_at: Simulation timestamp of reception.
+            packet: Gói tin đến trạm sink.
+            received_at: Mốc thời gian mô phỏng (giây) tại thời điểm nhận.
 
         Returns:
-            ``True`` for a newly recorded packet and ``False`` for a duplicate.
+            True nếu gói tin được nhận mới thành công; False nếu là gói trùng lặp.
         """
         if packet.packet_id in self.received_packet_ids:
-            return False
+            return False  # Bỏ qua gói tin trùng lặp
+
+        # Đánh dấu gói tin đã giao thành công và lưu thời gian trễ end-to-end
         packet.mark_delivered(received_at)
         self.received_packet_ids.add(packet.packet_id)
         return True
 
     @property
     def received_packet_count(self) -> int:
-        """Return the number of unique packet IDs received by this sink."""
+        """Trả về tổng số lượng gói tin độc nhất (không trùng lặp) đã đến sink thành công."""
         return len(self.received_packet_ids)
