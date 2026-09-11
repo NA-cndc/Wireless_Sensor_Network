@@ -10,11 +10,11 @@ from typing import Sequence
 class PacketStatus(str, Enum):
     """Các trạng thái trong vòng đời của một gói tin."""
 
-    CREATED = "CREATED"  # Gói tin vừa được khởi tạo tại sensor nguồn
-    IN_TRANSIT = "IN_TRANSIT"  # Gói tin đang được chuyển tiếp qua các nút trung gian
-    DELIVERED = "DELIVERED"  # Gói tin đã đến được một trạm Sink an toàn
-    DROPPED = "DROPPED"  # Gói tin bị hủy (do node cạn pin, mất gói kênh truyền hoặc tấn công)
-    NO_ROUTE = "NO_ROUTE"  # Không tìm thấy đường đi khả thi tới bất kỳ trạm Sink nào
+    CREATED = "CREATED"
+    IN_TRANSIT = "IN_TRANSIT"
+    DELIVERED = "DELIVERED"
+    DROPPED = "DROPPED"
+    NO_ROUTE = "NO_ROUTE"
 
 
 @dataclass(slots=True)
@@ -35,17 +35,17 @@ class Packet:
     - drop_reason: Lý do cụ thể nếu gói bị hủy (natural_link_loss, selective_forwarding, energy_depletion, v.v.).
     """
 
-    packet_id: str  # Định danh duy nhất của gói tin (ví dụ: 'pkt_sensor_001_1')
-    source_id: str  # ID của sensor nguồn phát dữ liệu
-    created_at: float  # Thời điểm sinh gói (giây)
-    size_bytes: int  # Kích thước payload tính bằng byte (mặc định 128 byte)
-    sequence_number: int = 0  # Số thứ tự tuần tự để sink theo dõi gói mất
-    sink_id: str | None = None  # Trạm sink đích được chọn
-    route: list[str] = field(default_factory=list)  # Danh sách ID các node trên đường đi
-    current_hop_index: int = 0  # Chỉ số chặng đang đứng trên đường truyền
-    status: PacketStatus = PacketStatus.CREATED  # Trạng thái vòng đời ban đầu
-    delivered_at: float | None = None  # Thời điểm nhận thành công tại Sink
-    drop_reason: str | None = None  # Ghi nhận nguyên nhân nếu bị mất gói
+    packet_id: str
+    source_id: str
+    created_at: float
+    size_bytes: int
+    sequence_number: int = 0
+    sink_id: str | None = None
+    route: list[str] = field(default_factory=list)
+    current_hop_index: int = 0
+    status: PacketStatus = PacketStatus.CREATED
+    delivered_at: float | None = None
+    drop_reason: str | None = None
 
     def __post_init__(self) -> None:
         """Xác thực tính toàn vẹn của gói tin ngay sau khi tạo đối tượng."""

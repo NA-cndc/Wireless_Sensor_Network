@@ -16,11 +16,10 @@ class Sink:
     2. Có cơ chế lọc và khử trùng lặp gói tin (Packet Deduplication) dựa trên ID duy nhất.
     """
 
-    node_id: str  # Định danh duy nhất của sink (ví dụ: 'sink_00' đến 'sink_06')
-    x: float  # Tọa độ X trong không gian Descartes 2D (mét)
-    y: float  # Tọa độ Y trong không gian Descartes 2D (mét)
+    node_id: str
+    x: float
+    y: float
 
-    # Tập hợp (set) lưu trữ toàn bộ ID các gói đã nhận để tra cứu O(1) và loại bỏ gói trùng
     received_packet_ids: set[str] = field(default_factory=set)
 
     def __post_init__(self) -> None:
@@ -45,9 +44,8 @@ class Sink:
             True nếu gói tin được nhận mới thành công; False nếu là gói trùng lặp.
         """
         if packet.packet_id in self.received_packet_ids:
-            return False  # Bỏ qua gói tin trùng lặp
+            return False
 
-        # Đánh dấu gói tin đã giao thành công và lưu thời gian trễ end-to-end
         packet.mark_delivered(received_at)
         self.received_packet_ids.add(packet.packet_id)
         return True

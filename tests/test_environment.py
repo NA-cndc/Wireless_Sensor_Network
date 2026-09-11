@@ -31,12 +31,10 @@ def test_random_seed_reproducibility(config: SimulationConfig) -> None:
     net1 = Network(config, communication_range_m=300.0)
     net2 = Network(config, communication_range_m=300.0)
 
-    # Assert exact coordinate equivalence for all 457 nodes
     coords1 = net1.coordinates()
     coords2 = net2.coordinates()
     assert coords1 == coords2
 
-    # Assert identical edges
     assert set(net1.graph.edges()) == set(net2.graph.edges())
 
 
@@ -46,12 +44,10 @@ def test_virtual_super_sink_and_connectivity(config: SimulationConfig) -> None:
     v_graph = net.build_virtual_super_sink_graph("virtual_super_sink")
 
     assert "virtual_super_sink" in v_graph
-    # Verify virtual super sink connects to all 7 sinks with distance 0
     for sink_id in net.sinks:
         assert v_graph.has_edge("virtual_super_sink", sink_id)
         assert v_graph.edges["virtual_super_sink", sink_id]["distance_m"] == 0.0
 
-    # Connectivity check
     conn = net.check_network_connectivity()
     assert conn["total_sensors"] == 450
     assert conn["total_sinks"] == 7

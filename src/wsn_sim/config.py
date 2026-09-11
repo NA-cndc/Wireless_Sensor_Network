@@ -7,13 +7,11 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
-# Tập hợp các bán kính truyền sóng vô tuyến (mét) bắt buộc phải có theo đề cương
 REQUIRED_COMMUNICATION_RANGES_M = {250.0, 300.0, 350.0}
 
 
 def _require_positive_number(name: str, value: object) -> None:
     """Kiểm tra một giá trị bắt buộc phải là số dương (int hoặc float > 0)."""
-    # Trong Python, bool là lớp con của int (True == 1), nên cần loại trừ bool rõ ràng
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise TypeError(f"{name} must be a number")
     if value <= 0:
@@ -36,19 +34,18 @@ class SimulationConfig:
     trong quá trình đang chạy mô phỏng.
     """
 
-    area_width_m: float  # Chiều rộng vùng khảo sát theo trục X (mét), mặc định 3000m
-    area_height_m: float  # Chiều dài vùng khảo sát theo trục Y (mét), mặc định 3000m
-    num_sensors: int  # Số lượng nút cảm biến Sensor, mặc định 450 nút
-    num_sinks: int  # Số lượng trạm thu thập Sink, mặc định 7 trạm
-    initial_energy_j: float  # Mức pin ban đầu E_0 của mỗi sensor (Joule), mặc định 5.0 J
-    packet_size_bytes: int  # Kích thước payload một gói tin L (byte), mặc định 128 byte
-    packet_interval_s: float  # Chu kỳ sinh gói tin T_gen (giây), mặc định 10 giây
-    communication_ranges_m: tuple[float, ...]  # Danh sách bán kính truyền sóng (250m, 300m, 350m)
-    seed: int  # Hạt giống ngẫu nhiên phục vụ tái lập thí nghiệm, mặc định 42
+    area_width_m: float
+    area_height_m: float
+    num_sensors: int
+    num_sinks: int
+    initial_energy_j: float
+    packet_size_bytes: int
+    packet_interval_s: float
+    communication_ranges_m: tuple[float, ...]
+    seed: int
 
     def __post_init__(self) -> None:
         """Thực hiện kiểm tra nghiêm ngặt kiểu dữ liệu và miền giá trị logic."""
-        # 1. Kiểm tra các đại lượng hình học và vật lý phải là số dương
         _require_positive_number("area_width_m", self.area_width_m)
         _require_positive_number("area_height_m", self.area_height_m)
         _require_positive_integer("num_sensors", self.num_sensors)
@@ -57,11 +54,9 @@ class SimulationConfig:
         _require_positive_integer("packet_size_bytes", self.packet_size_bytes)
         _require_positive_number("packet_interval_s", self.packet_interval_s)
 
-        # 2. Kiểm tra tính hợp lệ của random seed
         if isinstance(self.seed, bool) or not isinstance(self.seed, int):
             raise TypeError("seed must be an integer")
 
-        # 3. Kiểm tra danh sách bán kính truyền thông R
         if not isinstance(self.communication_ranges_m, tuple):
             raise TypeError("communication_ranges_m must be a tuple")
         if not self.communication_ranges_m:
@@ -69,7 +64,6 @@ class SimulationConfig:
         for radius in self.communication_ranges_m:
             _require_positive_number("communication range", radius)
 
-        # Bắt buộc phải có đủ 3 bán kính cốt lõi: 250m, 300m và 350m để so sánh độ nhạy
         if not REQUIRED_COMMUNICATION_RANGES_M.issubset(set(self.communication_ranges_m)):
             raise ValueError("communication_ranges_m must contain 250, 300, and 350")
 

@@ -15,10 +15,10 @@ from wsn_sim.network import Network
 class SimulationResult:
     """Đóng gói kết quả đầu ra của phiên mô phỏng sự kiện rời rạc."""
 
-    simulated_time_s: float  # Mốc thời gian mô phỏng kết thúc (giây)
-    nodes: int  # Tổng số node trong mạng (457 nodes)
-    sensors: int  # Tổng số nút cảm biến Sensor (450)
-    sinks: int  # Tổng số trạm thu thập Sink (7)
+    simulated_time_s: float
+    nodes: int
+    sensors: int
+    sinks: int
 
     def to_dict(self) -> dict[str, Any]:
         """Chuyển đổi đối tượng kết quả thành dictionary để hiển thị JSON hoặc lưu file."""
@@ -60,7 +60,6 @@ class Simulation:
             env: Môi trường SimPy có sẵn hoặc khởi tạo môi trường simpy.Environment() mới.
         """
         self.network = network
-        # Khởi tạo động cơ mô phỏng sự kiện rời rạc (Discrete-Event Simulator) của SimPy
         self.env = env if env is not None else simpy.Environment()
 
     def smoke_process(self, timeout_s: float) -> Generator[simpy.Event, None, None]:
@@ -82,8 +81,6 @@ class Simulation:
         Returns:
             Mốc thời gian hiện tại tuyệt đối của môi trường SimPy (env.now).
         """
-        # Đăng ký tiến trình vào hàng đợi sự kiện của SimPy
         process = self.env.process(self.smoke_process(duration_s))
-        # Kích hoạt vòng lặp xử lý sự kiện cho đến khi tiến trình kết thúc
         self.env.run(until=process)
         return float(self.env.now)

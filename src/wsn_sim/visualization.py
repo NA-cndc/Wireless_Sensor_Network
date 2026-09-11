@@ -5,13 +5,12 @@ from __future__ import annotations
 from pathlib import Path
 
 import matplotlib
+import matplotlib.pyplot as plt
+import networkx as nx
+
+from wsn_sim.network import Network
 
 matplotlib.use("Agg")
-
-import matplotlib.pyplot as plt  # noqa: E402
-import networkx as nx  # noqa: E402
-
-from wsn_sim.network import Network  # noqa: E402
 
 
 def save_topology_plot(network: Network, path: str | Path) -> Path:

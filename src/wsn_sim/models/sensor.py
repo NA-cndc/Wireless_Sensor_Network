@@ -22,18 +22,17 @@ class Sensor:
     khi mô phỏng quy mô lớn (450 sensor nodes).
     """
 
-    node_id: str  # Định danh duy nhất của sensor (ví dụ: 'sensor_001')
-    x: float  # Tọa độ X trong không gian 2D [0, 3000] mét
-    y: float  # Tọa độ Y trong không gian 2D [0, 3000] mét
-    initial_energy_j: float  # Mức năng lượng ban đầu E_0 (Joule), mặc định 5.0 J
-    energy_j: float | None = None  # Năng lượng còn lại E_i (Joule), cập nhật sau mỗi lần TX/RX
-    is_alive: bool = True  # Trạng thái sống/chết (True: còn pin > 0, False: cạn pin)
+    node_id: str
+    x: float
+    y: float
+    initial_energy_j: float
+    energy_j: float | None = None
+    is_alive: bool = True
 
-    # Các biến đếm thống kê lưu lượng gói tin đi qua sensor
-    generated_packets: int = 0  # Số gói tin do chính sensor này tự sinh ra
-    received_packets: int = 0  # Số gói tin nhận được từ các nút láng giềng
-    forwarded_packets: int = 0  # Số gói tin đã chuyển tiếp thành công cho nút kế tiếp
-    dropped_packets: int = 0  # Số gói tin bị hủy (do cạn pin, không có tuyến hoặc tấn công)
+    generated_packets: int = 0
+    received_packets: int = 0
+    forwarded_packets: int = 0
+    dropped_packets: int = 0
 
     def __post_init__(self) -> None:
         """Kiểm tra tính hợp lệ của dữ liệu ngay sau khi khởi tạo đối tượng."""
@@ -41,13 +40,11 @@ class Sensor:
             raise ValueError("node_id must not be empty")
         if self.initial_energy_j <= 0:
             raise ValueError("initial_energy_j must be greater than zero")
-        # Nếu chưa cung cấp năng lượng hiện tại, mặc định gán bằng năng lượng ban đầu E_0
         if self.energy_j is None:
             self.energy_j = float(self.initial_energy_j)
         if self.energy_j < 0:
             raise ValueError("energy_j must not be negative")
         self.energy_j = float(self.energy_j)
-        # Nút chỉ còn sống khi năng lượng > 0
         self.is_alive = self.energy_j > 0
 
     def distance_to(self, other: PositionedNode) -> float:

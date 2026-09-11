@@ -33,15 +33,13 @@ class Network:
                 sẽ dùng bán kính đầu tiên trong cấu hình (mặc định 250m).
         """
         self.config = config
-        self.sensors: dict[str, Sensor] = {}  # Từ điển lưu danh sách Sensor node: {node_id: Sensor}
-        self.sinks: dict[str, Sink] = {}  # Từ điển lưu danh sách Sink node: {node_id: Sink}
-        self.graph = nx.Graph()  # Đồ thị vô hướng biểu diễn liên kết mạng của NetworkX
-        self.communication_range_m = 0.0  # Bán kính truyền sóng vô tuyến hiện tại
+        self.sensors: dict[str, Sensor] = {}
+        self.sinks: dict[str, Sink] = {}
+        self.graph = nx.Graph()
+        self.communication_range_m = 0.0
 
-        # Bước 1: Sinh tọa độ địa lý duy nhất cho toàn bộ các nút mạng
         self._generate_nodes()
 
-        # Bước 2: Chọn bán kính ban đầu và dựng đồ thị kết nối
         initial_range = (
             config.communication_ranges_m[0]
             if communication_range_m is None
@@ -55,28 +53,24 @@ class Network:
         Đảm bảo tính tái lập (Reproducibility): Cùng một random seed (ví dụ: seed=42)
         sẽ luôn sinh ra đúng một bộ tọa độ giống hệt nhau trên mọi máy tính.
         """
-        # Khởi tạo bộ sinh số ngẫu nhiên NumPy với seed cố định từ cấu hình
         rng = np.random.default_rng(self.config.seed)
         node_count = self.config.num_sensors + self.config.num_sinks
 
-        # Sinh ma trận tọa độ (node_count x 2) phân bố đều trong khoảng [0, area_size]
         coordinates = rng.uniform(
             low=(0.0, 0.0),
             high=(self.config.area_width_m, self.config.area_height_m),
             size=(node_count, 2),
         )
 
-        # Gán 450 tọa độ đầu tiên cho các Sensor node (định danh: sensor_000 đến sensor_449)
         for index, (x, y) in enumerate(coordinates[: self.config.num_sensors]):
             node_id = f"sensor_{index:03d}"
             self.sensors[node_id] = Sensor(
                 node_id=node_id,
                 x=float(x),
                 y=float(y),
-                initial_energy_j=self.config.initial_energy_j,  # Năng lượng ban đầu E_0 (mặc định 5.0 J)
+                initial_energy_j=self.config.initial_energy_j,
             )
 
-        # Gán 7 tọa độ tiếp theo cho các Sink node (định danh: sink_00 đến sink_06)
         for index, (x, y) in enumerate(coordinates[self.config.num_sensors :]):
             node_id = f"sink_{index:02d}"
             self.sinks[node_id] = Sink(node_id=node_id, x=float(x), y=float(y))
@@ -100,7 +94,6 @@ class Network:
 
         graph = nx.Graph()
 
-        # Thêm các đỉnh Sensor vào đồ thị kèm thuộc tính (loại node, tọa độ, năng lượng)
         for sensor in self.sensors.values():
             graph.add_node(
                 sensor.node_id,
@@ -110,7 +103,6 @@ class Network:
                 energy_j=sensor.energy_j,
             )
 
-        # Thêm các đỉnh Sink vào đồ thị
         for sink in self.sinks.values():
             graph.add_node(
                 sink.node_id,
@@ -122,12 +114,10 @@ class Network:
         sensor_nodes = list(self.sensors.values())
         sink_nodes = list(self.sinks.values())
 
-        # 1. Tạo liên kết giữa các cặp Sensor với nhau (nếu nằm trong bán kính R)
         for left_index, left in enumerate(sensor_nodes):
             for right in sensor_nodes[left_index + 1 :]:
                 self._add_edge_if_in_range(graph, left, right, communication_range_m)
 
-            # 2. Tạo liên kết giữa Sensor với Sink (nếu nằm trong bán kính R)
             for sink in sink_nodes:
                 self._add_edge_if_in_range(graph, left, sink, communication_range_m)
 
@@ -143,13 +133,12 @@ class Network:
         communication_range_m: float,
     ) -> None:
         """Kiểm tra khoảng cách Euclid và tạo cạnh liên kết nếu khoảng cách <= R."""
-        # Công thức khoảng cách Euclid: d = sqrt((x1 - x2)^2 + (y1 - y2)^2)
         distance_m = hypot(left.x - right.x, left.y - right.y)
         if distance_m <= communication_range_m:
             graph.add_edge(
                 left.node_id,
                 right.node_id,
-                distance_m=distance_m,  # Lưu độ dài cạnh để phục vụ tính chi phí định tuyến
+                distance_m=distance_m,
             )
 
     def neighbors(self, node_id: str) -> list[str]:
@@ -172,7 +161,7 @@ class Network:
         routable: set[str] = set()
         sink_ids = set(self.sinks)
         for component in nx.connected_components(self.graph):
-            if component & sink_ids:  # Giao giữa cụm liên thông và tập hợp Sink khác rỗng
+            if component & sink_ids:
                 routable.update(component & self.sensors.keys())
         return sorted(routable)
 
@@ -212,7 +201,6 @@ class Network:
             Đồ thị NetworkX mới chứa nút ảo K_0 và các cạnh ảo nối tới 7 sink.
         """
         v_graph = self.graph.copy()
-        # Đặt tọa độ nút ảo ở chính giữa bản đồ (1500m, 1500m)
         center_x = self.config.area_width_m / 2.0
         center_y = self.config.area_height_m / 2.0
         v_graph.add_node(
@@ -221,7 +209,6 @@ class Network:
             x=center_x,
             y=center_y,
         )
-        # Nối nút ảo tới toàn bộ 7 Sink thật với trọng số cạnh = 0
         for sink_id in self.sinks:
             v_graph.add_edge(virtual_sink_id, sink_id, distance_m=0.0, weight=0.0)
         return v_graph
@@ -241,7 +228,6 @@ class Network:
         total_sensors = len(self.sensors)
         routable_ratio = (len(routable) / total_sensors) if total_sensors > 0 else 0.0
 
-        # Phân tích các mảnh mạng bị đứt gãy (Connected Components)
         components = list(nx.connected_components(self.graph))
         largest_comp_size = max((len(c) for c in components), default=0)
 

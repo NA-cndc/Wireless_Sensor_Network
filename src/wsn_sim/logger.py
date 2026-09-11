@@ -7,7 +7,6 @@ import logging
 from pathlib import Path
 from typing import Sequence
 
-# Định dạng chuẩn của dòng log: [Thời gian] - [Mức độ log] - [Nội dung thông điệp]
 DEFAULT_LOG_FORMAT = "%(asctime)s - [%(levelname)s] - %(message)s"
 
 
@@ -33,21 +32,16 @@ def setup_logger(
     logger = logging.getLogger(name)
     logger.setLevel(level)
 
-    # Kiểm tra tránh đăng ký lặp lại handler nếu hàm được gọi nhiều lần
     if not logger.handlers:
         formatter = logging.Formatter(DEFAULT_LOG_FORMAT)
 
-        # Kênh 1: Handler xuất log ra màn hình console
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(formatter)
         logger.addHandler(stream_handler)
 
-        # Kênh 2: Handler ghi log ra tệp tin với bộ mã hóa UTF-8
         if log_file:
             log_path = Path(log_file)
-            log_path.parent.mkdir(
-                parents=True, exist_ok=True
-            )  # Tự động tạo thư mục cha nếu chưa có
+            log_path.parent.mkdir(parents=True, exist_ok=True)
             file_handler = logging.FileHandler(log_path, encoding="utf-8")
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
@@ -83,13 +77,13 @@ def save_to_csv(
         Đối tượng Path trỏ tới file CSV đã lưu.
     """
     path = Path(filename)
-    path.parent.mkdir(parents=True, exist_ok=True)  # Đảm bảo thư mục đích tồn tại
+    path.parent.mkdir(parents=True, exist_ok=True)
     file_exists = path.is_file() and path.stat().st_size > 0
 
     with path.open(mode="a", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
         if not file_exists:
-            writer.writerow(headers)  # Ghi tiêu đề nếu là file mới
-        writer.writerow(data_row)  # Ghi dòng dữ liệu
+            writer.writerow(headers)
+            writer.writerow(data_row)
 
     return path
