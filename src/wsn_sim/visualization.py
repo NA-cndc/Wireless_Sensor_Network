@@ -27,12 +27,9 @@ def save_topology_plot(network: Network, path: str | Path) -> Path:
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     positions = {
-        node_id: (data["x"], data["y"])
-        for node_id, data in network.graph.nodes(data=True)
+        node_id: (data["x"], data["y"]) for node_id, data in network.graph.nodes(data=True)
     }
-    sensor_positions = [
-        positions[node_id] for node_id in network.sensors
-    ]
+    sensor_positions = [positions[node_id] for node_id in network.sensors]
     sink_positions = [positions[node_id] for node_id in network.sinks]
 
     figure, axis = plt.subplots(figsize=(9, 9))
@@ -69,8 +66,7 @@ def save_topology_plot(network: Network, path: str | Path) -> Path:
         axis.set_xlabel("X coordinate (m)")
         axis.set_ylabel("Y coordinate (m)")
         axis.set_title(
-            "WSN topology "
-            f"(R={network.communication_range_m:g} m, seed={network.config.seed})"
+            f"WSN topology (R={network.communication_range_m:g} m, seed={network.config.seed})"
         )
         axis.legend()
         axis.grid(alpha=0.2)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from math import hypot
+from typing import Any
 
 import networkx as nx
 import numpy as np
@@ -98,13 +99,9 @@ class Network:
 
         for left_index, left in enumerate(sensor_nodes):
             for right in sensor_nodes[left_index + 1 :]:
-                self._add_edge_if_in_range(
-                    graph, left, right, communication_range_m
-                )
+                self._add_edge_if_in_range(graph, left, right, communication_range_m)
             for sink in sink_nodes:
-                self._add_edge_if_in_range(
-                    graph, left, sink, communication_range_m
-                )
+                self._add_edge_if_in_range(graph, left, sink, communication_range_m)
 
         self.graph = graph
         self.communication_range_m = float(communication_range_m)
@@ -133,11 +130,7 @@ class Network:
 
     def isolated_sensor_ids(self) -> list[str]:
         """Return sensor IDs with graph degree zero."""
-        return sorted(
-            node_id
-            for node_id in self.sensors
-            if self.graph.degree[node_id] == 0
-        )
+        return sorted(node_id for node_id in self.sensors if self.graph.degree[node_id] == 0)
 
     def routable_sensor_ids(self) -> list[str]:
         """Return sensors in connected components containing at least one sink."""
@@ -166,4 +159,55 @@ class Network:
         return {
             node_id: (float(data["x"]), float(data["y"]))
             for node_id, data in self.graph.nodes(data=True)
+        }
+
+    def build_virtual_super_sink_graph(self, virtual_sink_id: str = "virtual_sink") -> nx.Graph:
+        """Create a graph copy with a virtual super-sink connected to all physical sinks.
+
+        As specified in section 3.3, a virtual super-sink connects to all 7 sinks
+        with zero-weight / zero-distance edges to allow multi-sink path finding.
+
+        Args:
+            virtual_sink_id: Identifier for the virtual super-sink node.
+
+        Returns:
+            A new :class:`networkx.Graph` containing all nodes, edges, and virtual links.
+        """
+        v_graph = self.graph.copy()
+        center_x = self.config.area_width_m / 2.0
+        center_y = self.config.area_height_m / 2.0
+        v_graph.add_node(
+            virtual_sink_id,
+            node_type="virtual_sink",
+            x=center_x,
+            y=center_y,
+        )
+        for sink_id in self.sinks:
+            v_graph.add_edge(virtual_sink_id, sink_id, distance_m=0.0, weight=0.0)
+        return v_graph
+
+    def check_network_connectivity(self) -> dict[str, Any]:
+        """Perform connectivity analysis and return validation metrics.
+
+        Returns:
+            Dictionary containing isolated nodes, routable ratio, and components.
+        """
+        isolated = self.isolated_sensor_ids()
+        routable = self.routable_sensor_ids()
+        total_sensors = len(self.sensors)
+        routable_ratio = (len(routable) / total_sensors) if total_sensors > 0 else 0.0
+
+        components = list(nx.connected_components(self.graph))
+        largest_comp_size = max((len(c) for c in components), default=0)
+
+        return {
+            "total_sensors": total_sensors,
+            "total_sinks": len(self.sinks),
+            "isolated_sensors_count": len(isolated),
+            "isolated_sensor_ids": isolated,
+            "routable_sensors_count": len(routable),
+            "routable_ratio": routable_ratio,
+            "meets_95_percent_threshold": routable_ratio >= 0.95,
+            "connected_components_count": len(components),
+            "largest_component_size": largest_comp_size,
         }

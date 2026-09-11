@@ -25,6 +25,8 @@ class Packet:
     source_id: str
     created_at: float
     size_bytes: int
+    sequence_number: int = 0
+    sink_id: str | None = None
     route: list[str] = field(default_factory=list)
     current_hop_index: int = 0
     status: PacketStatus = PacketStatus.CREATED
@@ -42,6 +44,8 @@ class Packet:
             raise TypeError("size_bytes must be an integer")
         if self.size_bytes <= 0:
             raise ValueError("size_bytes must be greater than zero")
+        if self.sequence_number < 0:
+            raise ValueError("sequence_number must not be negative")
         if self.route:
             route = list(self.route)
             self.route = []

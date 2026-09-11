@@ -3,10 +3,38 @@
 from __future__ import annotations
 
 from collections.abc import Generator
+from dataclasses import asdict, dataclass
+from typing import Any
 
 import simpy
 
 from wsn_sim.network import Network
+
+
+@dataclass(slots=True)
+class SimulationResult:
+    """Encapsulates the output of a smoke simulation."""
+
+    simulated_time_s: float
+    nodes: int
+    sensors: int
+    sinks: int
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert result to a dictionary."""
+        return asdict(self)
+
+
+def run_smoke_simulation(network: Network, duration_s: float) -> SimulationResult:
+    """Convenience function to run a smoke simulation on a network."""
+    sim = Simulation(network)
+    sim_time = sim.run_for(duration_s)
+    return SimulationResult(
+        simulated_time_s=sim_time,
+        nodes=network.graph.number_of_nodes(),
+        sensors=len(network.sensors),
+        sinks=len(network.sinks),
+    )
 
 
 class Simulation:

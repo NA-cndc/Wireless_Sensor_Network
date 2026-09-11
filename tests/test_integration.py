@@ -1,9 +1,9 @@
 """End-to-end demo integration test."""
 
 import json
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 import pandas as pd
 

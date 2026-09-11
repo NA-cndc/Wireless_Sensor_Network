@@ -1,70 +1,97 @@
-# Cài đặt và kiểm tra trên Ubuntu
+# Hướng dẫn Cài đặt và Chạy Dự án trên Ubuntu và Windows
 
-## Điều kiện ban đầu
+Tài liệu hướng dẫn thiết lập môi trường để đảm bảo **cả hai máy** (Ubuntu và Windows) đều chạy được mã nguồn và tái lập chính xác kết quả mô phỏng WSN.
 
-- Đang ở repository `Wireless_Sensor_Network` và branch `XB`.
-- Python 3.10 trở lên và `pip` đã được cài.
-- Không dùng `sudo pip install` và không nâng cấp Python hệ thống.
+---
 
-Kiểm tra trạng thái trước khi thao tác:
+## 1. Yêu cầu hệ thống ban đầu
+- Python 3.10 trở lên và `pip` đã được cài đặt.
+- Git đã được cài đặt.
+- Khuyến nghị sử dụng môi trường ảo (`venv`) để cách ly thư viện.
 
+Kiểm tra phiên bản Python:
 ```bash
-pwd
-git remote -v
-git branch --show-current
-git status --short --branch
-python3 --version
+python --version   # hoặc python3 --version trên Linux
 ```
 
-## Tạo môi trường ảo
+---
 
-Chỉ chạy lệnh tạo nếu `.venv` chưa tồn tại:
+## 2. Thiết lập Môi trường Ảo (Virtual Environment)
 
+### Trên Ubuntu / Linux:
 ```bash
+# Tạo môi trường ảo
 python3 -m venv .venv
+
+# Kích hoạt môi trường
 source .venv/bin/activate
 ```
 
-Mỗi terminal mới cần chạy lại lệnh `source`. Có thể xác nhận interpreter đang
-được dùng bằng:
+### Trên Windows (PowerShell / Command Prompt):
+```powershell
+# Tạo môi trường ảo
+python -m venv .venv
 
-```bash
-python -c "import sys; print(sys.executable)"
+# Kích hoạt môi trường (PowerShell)
+.venv\Scripts\Activate.ps1
+
+# Hoặc kích hoạt môi trường (Command Prompt)
+.venv\Scripts\activate.bat
 ```
 
-Đường dẫn in ra phải trỏ vào `.venv/bin/python` của repository.
+> **Mẹo xác nhận:** Kiểm tra đường dẫn Python đang sử dụng trỏ đúng vào thư mục `.venv`:
+> ```bash
+> python -c "import sys; print(sys.executable)"
+> ```
 
-## Cài package và dependency
+---
 
-`pyproject.toml` là nguồn khai báo package chính. Cài package editable cùng bộ
-test bằng:
+## 3. Cài đặt Package và Thư viện Phụ thuộc
+
+Dự án quản lý thư viện qua chuẩn `pyproject.toml`. Cài đặt gói ở chế độ editable kèm toàn bộ công cụ dev:
 
 ```bash
 python -m pip install -e ".[dev]"
-python -m pip check
-python -c "import networkx, simpy, numpy, pandas, matplotlib; print('imports=OK')"
 ```
 
-Hai file requirements chỉ là entry point tương đương:
-
+Kiểm tra các thư viện cốt lõi đã sẵn sàng:
 ```bash
-python -m pip install -r requirements.txt
-python -m pip install -r requirements-dev.txt
+python -c "import networkx, simpy, numpy, pandas, matplotlib, scipy, streamlit; print('Imports = OK')"
 ```
 
-Không cần chạy cả hai cách nếu đã cài `.[dev]`.
+---
 
-## Xác nhận dự án
+## 4. Chạy Kiểm thử và Xác nhận Môi trường
+
+Chạy bộ kiểm thử khởi tạo và kiểm tra môi trường:
 
 ```bash
+# 1. Chạy bài test môi trường và tính tái lập (độc lập)
+python test_env.py
+
+# 2. Chạy toàn bộ pytest suite (43 bài test)
 python -m pytest -q
-python scripts/run_demo.py
-ls -lh results/csv
-ls -lh results/figures
-ls -lh results/run_manifest.json
+
+# 3. Kiểm tra chất lượng mã nguồn bằng Ruff
+python -m ruff check .
 ```
 
-Matplotlib được ép dùng backend `Agg`, vì vậy demo chạy được trên Ubuntu server
-không có display. Nếu import thất bại, kiểm tra lại terminal đã kích hoạt đúng
-`.venv` và chạy `python -m pip check`; không cài package vào Python hệ thống để
-né lỗi.
+---
+
+## 5. Chạy Demo Mô phỏng và Dashboard
+
+### A. Chạy Demo sinh số liệu và đồ thị:
+```bash
+python scripts/run_demo.py
+```
+Các đầu ra sinh tự động:
+- `results/csv/topology_summary.csv`: Bảng tổng hợp topology ở 3 bán kính $R \in \{250, 300, 350\}$ m.
+- `results/figures/topology_R*.png`: Biểu đồ trực quan hóa đồ thị mạng ở từng bán kính.
+- `results/logs/simulation.log`: Nhật ký ghi log quá trình mô phỏng.
+- `results/run_manifest.json`: Siêu dữ liệu tái lập (random seed, git commit, phiên bản thư viện).
+
+### B. Mở Bảng điều khiển Web tương tác (Streamlit):
+```bash
+python -m streamlit run src/wsn_sim/app.py
+```
+Giao diện cho phép tùy biến thông số $R$, trực quan hóa liên kết, chạy mô phỏng SimPy và trích xuất file sang các simulator mạng chuyên dụng (ns-3, OMNeT++, Contiki-NG).

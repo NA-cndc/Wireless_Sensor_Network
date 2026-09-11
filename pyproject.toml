@@ -14,10 +14,16 @@ dependencies = [
     "numpy",
     "pandas",
     "matplotlib",
+    "scipy",
+    "streamlit",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = [
+    "pytest",
+    "ruff",
+    "pre-commit",
+]
 
 [project.scripts]
 wsn-demo = "wsn_sim.demo:main"
@@ -29,3 +35,11 @@ include = ["wsn_sim*"]
 [tool.pytest.ini_options]
 addopts = "-ra"
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]

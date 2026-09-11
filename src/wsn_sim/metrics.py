@@ -6,7 +6,6 @@ from collections.abc import Iterable, Mapping
 
 import pandas as pd
 
-
 TOPOLOGY_SUMMARY_COLUMNS = [
     "seed",
     "communication_range_m",

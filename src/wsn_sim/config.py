@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
 import json
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Mapping
-
 
 REQUIRED_COMMUNICATION_RANGES_M = {250.0, 300.0, 350.0}
 
@@ -57,12 +56,8 @@ class SimulationConfig:
             raise ValueError("communication_ranges_m must not be empty")
         for radius in self.communication_ranges_m:
             _require_positive_number("communication range", radius)
-        if not REQUIRED_COMMUNICATION_RANGES_M.issubset(
-            set(self.communication_ranges_m)
-        ):
-            raise ValueError(
-                "communication_ranges_m must contain 250, 300, and 350"
-            )
+        if not REQUIRED_COMMUNICATION_RANGES_M.issubset(set(self.communication_ranges_m)):
+            raise ValueError("communication_ranges_m must contain 250, 300, and 350")
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "SimulationConfig":
