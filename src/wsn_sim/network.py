@@ -18,6 +18,8 @@ class Network:
         self,
         config: SimulationConfig,
         communication_range_m: float | None = None,
+        *,
+        range_m: float | None = None,
     ) -> None:
         """Generate nodes from ``config.seed`` and build the first topology.
 
@@ -25,6 +27,7 @@ class Network:
             config: Validated simulation parameters.
             communication_range_m: Optional initial radio range. The first range
                 in the configuration is used when omitted.
+            range_m: Optional alias for ``communication_range_m``.
         """
         self.config = config
         self.sensors: dict[str, Sensor] = {}
@@ -32,10 +35,13 @@ class Network:
         self.graph = nx.Graph()
         self.communication_range_m = 0.0
         self._generate_nodes()
+        effective_range = (
+            range_m if communication_range_m is None else communication_range_m
+        )
         initial_range = (
             config.communication_ranges_m[0]
-            if communication_range_m is None
-            else communication_range_m
+            if effective_range is None
+            else effective_range
         )
         self.build_graph(initial_range)
 
@@ -61,20 +67,36 @@ class Network:
             node_id = f"sink_{index:02d}"
             self.sinks[node_id] = Sink(node_id=node_id, x=float(x), y=float(y))
 
-    def build_graph(self, communication_range_m: float) -> nx.Graph:
+    def build_graph(
+        self,
+        communication_range_m: float | None = None,
+        *,
+        range_m: float | None = None,
+    ) -> nx.Graph:
         """Build a fresh graph without modifying generated node coordinates.
 
         Args:
             communication_range_m: Positive Euclidean link threshold in metres.
+            range_m: Optional alias for ``communication_range_m``.
 
         Returns:
             The newly built undirected :class:`networkx.Graph`.
 
         Raises:
             ValueError: If the communication range is not positive.
+            TypeError: If neither communication_range_m nor range_m is provided.
         """
-        if communication_range_m <= 0:
+        effective_range = (
+            range_m if communication_range_m is None else communication_range_m
+        )
+        if effective_range is None:
+            raise TypeError(
+                "build_graph() missing required argument: 'communication_range_m' or 'range_m'"
+            )
+        if effective_range <= 0:
             raise ValueError("communication_range_m must be greater than zero")
+
+        communication_range_m = effective_range
 
         graph = nx.Graph()
         for sensor in self.sensors.values():

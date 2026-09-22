@@ -69,3 +69,16 @@ def test_neighbors_isolated_routable_and_summary(network: Network) -> None:
     assert summary["sensors"] == 450
     assert summary["sinks"] == 7
     assert summary["nodes"] == 457
+
+
+def test_build_graph_supports_range_m_keyword(config: SimulationConfig, network: Network) -> None:
+    graph = network.build_graph(range_m=200.0)
+    assert network.communication_range_m == 200.0
+    assert graph is network.graph
+
+    net2 = Network(config, range_m=200.0)
+    assert net2.communication_range_m == 200.0
+
+    with pytest.raises(TypeError, match="missing required argument"):
+        network.build_graph()
+

@@ -1,11 +1,18 @@
 """Shared pytest fixtures for the WSN simulation tests."""
 
+import os
 from pathlib import Path
+import shutil
 
 import pytest
 
 from wsn_sim.config import SimulationConfig
 from wsn_sim.network import Network
+
+for _git_dir in [Path(r"D:\ProgramFiles\Git\cmd"), Path(r"C:\Program Files\Git\cmd")]:
+    if _git_dir.exists() and not shutil.which("git"):
+        os.environ["PATH"] = str(_git_dir) + os.pathsep + os.environ.get("PATH", "")
+
 
 
 @pytest.fixture(scope="session")
