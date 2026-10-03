@@ -23,3 +23,7 @@ data/topologies/*
 !results/csv/.gitkeep
 !results/figures/.gitkeep
 !results/logs/.gitkeep
+
+# IDE and local files
+.agents/
+*.docx

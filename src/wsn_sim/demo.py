@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from wsn_sim.config import SimulationConfig
+from wsn_sim.logger import setup_logger
 from wsn_sim.metrics import topology_summary_frame
 from wsn_sim.network import Network
 from wsn_sim.simulation import Simulation
@@ -22,8 +23,15 @@ def run_demo(project_root: str | Path) -> dict[str, object]:
         A mapping containing summaries, simulated time, and generated paths.
     """
     root = Path(project_root).resolve()
+    logger = setup_logger("WSN_Demo", root / "results" / "logs" / "simulation.log")
     config = SimulationConfig.from_json(root / "configs" / "default.json")
     network = Network(config)
+    logger.info(
+        "Initialized WSN network with %d sensors, %d sinks, seed=%d",
+        len(network.sensors),
+        len(network.sinks),
+        config.seed,
+    )
 
     summaries: list[dict[str, int | float]] = []
     figure_paths: list[Path] = []
@@ -42,9 +50,7 @@ def run_demo(project_root: str | Path) -> dict[str, object]:
         )
 
     frame = topology_summary_frame(summaries)
-    csv_path = save_topology_summary(
-        frame, root / "results" / "csv" / "topology_summary.csv"
-    )
+    csv_path = save_topology_summary(frame, root / "results" / "csv" / "topology_summary.csv")
 
     simulation = Simulation(network)
     simpy_time_s = simulation.run_for(config.packet_interval_s)

@@ -1,125 +1,216 @@
-"""Module điều phối chính của mô phỏng WSN bằng SimPy (Đã hợp nhất)."""
+"""Module điều phối chính của mô phỏng WSN bằng SimPy (Hợp nhất hoàn chỉnh)."""
 
 from __future__ import annotations
+
+import csv
+import os
+from collections.abc import Generator
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Any
+
 import simpy
 
 from wsn_sim.config import SimulationConfig
+from wsn_sim.energy import RadioModel
 from wsn_sim.network import Network
 from wsn_sim.routing import RoutingEngine
 from wsn_sim.traffic import TrafficGenerator
-from wsn_sim.energy import RadioModel
-import os
-import csv
+
+
+@dataclass(slots=True)
+class SimulationResult:
+    """Đóng gói kết quả đầu ra của phiên mô phỏng sự kiện rời rạc."""
+
+    simulated_time_s: float
+    nodes: int
+    sensors: int
+    sinks: int
+    metrics: dict[str, Any] | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        """Chuyển đổi đối tượng kết quả thành dictionary để hiển thị JSON hoặc lưu file."""
+        return asdict(self)
+
+
+def run_smoke_simulation(network: Network, duration_s: float) -> SimulationResult:
+    """Hàm tiện ích nhanh khởi tạo và thực thi mô phỏng SimPy trong duration_s giây.
+
+    Args:
+        network: Đối tượng mạng Network chứa topology các sensor và sink.
+        duration_s: Thời lượng mô phỏng cần chạy (giây).
+
+    Returns:
+        Đối tượng SimulationResult chứa các chỉ số kết quả.
+    """
+    sim = Simulation(network, enable_traffic=False)
+    sim_time = sim.run_for(duration_s)
+    return SimulationResult(
+        simulated_time_s=sim_time,
+        nodes=network.graph.number_of_nodes(),
+        sensors=len(network.sensors),
+        sinks=len(network.sinks),
+    )
+
 
 class Simulation:
-    """Quản lý toàn bộ vòng đời và tiến trình mô phỏng mạng cảm biến."""
+    """Quản lý toàn bộ vòng đời và tiến trình mô phỏng mạng cảm biến.
+
+    Tương thích đồng thời hai kiểu gọi:
+    1. Simulation(network, env=...) (từ demo, test_simulation)
+    2. Simulation(config, current_range_m=..., env=...) (từ main đa tiến trình)
+    """
 
     def __init__(
-        self, 
-        config: SimulationConfig,
-        current_range_m: float,  # Thêm tham số này
-        env: simpy.Environment | None = None
+        self,
+        target: Network | SimulationConfig,
+        env: simpy.Environment | None = None,
+        *,
+        current_range_m: float | None = None,
+        range_m: float | None = None,
+        config: SimulationConfig | None = None,
+        routing_algorithm: str = "EMHR",
+        alpha_energy: float = 0.20,
+        attacker_ratio: float = 0.0,
+        drop_prob: float = 0.0,
+        channel_loss_prob: float = 0.0,
+        enable_traffic: bool = True,
+        csv_log_path: str | Path | None = None,
+        quiet: bool = False,
     ) -> None:
-        self.config = config
         self.env = env if env is not None else simpy.Environment()
-        
-        self.network = Network(self.config)
-        self.network.build_graph(range_m=current_range_m) 
-        
-        self.router = RoutingEngine(self.network)
-        self.radio = RadioModel()
-        
-        self.traffic_gen = TrafficGenerator(
-            env=self.env, 
-            network=self.network, 
-            router=self.router,
-            radio=self.radio,
-            config=self.config
+        self.quiet = quiet
+        self.csv_log_path = Path(csv_log_path) if csv_log_path else None
+
+        effective_range = range_m if current_range_m is None else current_range_m
+
+        if isinstance(target, Network):
+            self.network = target
+            self.config = config if config is not None else target.config
+            if effective_range is not None and effective_range != self.network.communication_range_m:
+                self.network.build_graph(effective_range)
+        elif isinstance(target, SimulationConfig):
+            self.config = target
+            r = effective_range if effective_range is not None else target.communication_ranges_m[0]
+            self.network = Network(self.config, communication_range_m=r)
+        else:
+            raise TypeError(f"target must be Network or SimulationConfig, got {type(target)}")
+
+        self.routing_algorithm = routing_algorithm
+        self.alpha_energy = alpha_energy
+        self.attacker_ratio = attacker_ratio
+        self.drop_prob = drop_prob
+        self.channel_loss_prob = channel_loss_prob
+
+        # Khởi tạo các thành phần mô phỏng
+        self.router = RoutingEngine(
+            self.network,
+            algorithm=self.routing_algorithm,
+            alpha_energy=self.alpha_energy,
         )
+        self.radio = RadioModel()
 
+        self.enable_traffic = enable_traffic
+        if self.enable_traffic:
+            self.traffic_gen = TrafficGenerator(
+                env=self.env,
+                network=self.network,
+                router=self.router,
+                radio=self.radio,
+                config=self.config,
+                attacker_ratio=self.attacker_ratio,
+                drop_prob=self.drop_prob,
+                channel_loss_prob=self.channel_loss_prob,
+            )
+            self.traffic_gen.start()
+            if self.csv_log_path is not None:
+                self.env.process(self._monitor_network())
+        else:
+            self.traffic_gen = None
 
-        # Nạp sẵn các tiến trình chạy ngầm vào đồng hồ SimPy
-        self.traffic_gen.start()
-        self.env.process(self._monitor_network())
+    def smoke_process(self, timeout_s: float) -> Generator[simpy.Event, None, None]:
+        """Tiến trình mẫu sinh sự kiện chờ timeout trong hàng đợi của SimPy."""
+        if timeout_s <= 0:
+            raise ValueError("timeout_s must be greater than zero")
+        yield self.env.timeout(timeout_s)
 
     def run_for(self, duration_s: float) -> float:
-        """
-        Tua nhanh mô phỏng thêm một khoảng thời gian.
-        
+        """Tua nhanh mô phỏng thêm một khoảng thời gian duration_s.
+
         Args:
             duration_s: Số giây muốn chạy mô phỏng.
-            
+
         Returns:
-            Thời gian tuyệt đối của hệ thống sau khi chạy xong.
+            Thời gian tuyệt đối của hệ thống sau khi chạy xong (env.now).
         """
         if duration_s <= 0:
-            raise ValueError("Thời gian mô phỏng (duration_s) phải lớn hơn 0")
-            
-        print(f"\n[MÔ PHỎNG] Tua nhanh hệ thống thêm {duration_s} giây...")
-        
-        # Chạy đồng hồ hệ thống đến mốc thời gian (hiện tại + thời gian chạy thêm)
-        self.env.run(until=self.env.now + duration_s)
-        
-        self._print_summary()
+            raise ValueError("duration_s must be greater than zero")
+
+        target_time = self.env.now + duration_s
+        # Đảm bảo có ít nhất một sự kiện tại target_time nếu không có tiến trình
+        self.env.process(self.smoke_process(duration_s))
+        self.env.run(until=target_time)
+
+        if not self.quiet and self.enable_traffic:
+            self._print_summary()
+
         return float(self.env.now)
 
-    def _monitor_network(self):
-        """Tiến trình giám sát: Ghi log TẤT CẢ chỉ số ra file CSV."""
-        import os, csv
-        
-        os.makedirs("results", exist_ok=True)
-        csv_filename = f"results/simulation_log_range_{int(self.network.communication_range_m)}m.csv"
-        
-        with open(csv_filename, mode='w', newline='') as file:
+    def _monitor_network(self) -> Generator[simpy.Event, None, None]:
+        """Tiến trình giám sát: Ghi log chỉ số định kỳ ra file CSV."""
+        if self.csv_log_path is None:
+            return
+
+        self.csv_log_path.parent.mkdir(parents=True, exist_ok=True)
+        with self.csv_log_path.open(mode="w", newline="", encoding="utf-8") as file:
             writer = csv.writer(file)
-            
-            # [MỚI] Thêm cột số gói Đã sinh, Đến đích, Bị rớt, và Độ trễ trung bình
             writer.writerow([
-                "Time_s", "Alive_Nodes", "Total_Energy_J", 
+                "Time_s", "Alive_Nodes", "Total_Energy_J",
                 "Generated_Packets", "Delivered_Packets", "Dropped_Packets", "Avg_Latency_s"
             ])
-            
+
             while True:
-                # Đếm số node và pin
                 alive_nodes = len([s for s in self.network.sensors.values() if s.is_alive])
                 total_energy = sum(s.energy_j for s in self.network.sensors.values())
-                
-                # Đếm số liệu gói tin
-                gen_count = len(self.traffic_gen.generated_packets)
-                deliv_count = len(self.traffic_gen.delivered_packets)
-                drop_count = len(self.traffic_gen.dropped_packets)
-                
-                # Tính độ trễ trung bình của các gói ĐÃ ĐẾN ĐÍCH
-                if deliv_count > 0:
+
+                gen_count = len(self.traffic_gen.generated_packets) if self.traffic_gen else 0
+                deliv_count = len(self.traffic_gen.delivered_packets) if self.traffic_gen else 0
+                drop_count = len(self.traffic_gen.dropped_packets) if self.traffic_gen else 0
+
+                if deliv_count > 0 and self.traffic_gen and self.traffic_gen.delivered_latencies:
                     avg_latency = sum(self.traffic_gen.delivered_latencies) / deliv_count
                 else:
                     avg_latency = 0.0
-                
-                # In ra Terminal một phiên bản gọn gàng
-                print(f"[{self.env.now:05.1f}s] Sống: {alive_nodes:3d} | Gửi: {gen_count} | Tới: {deliv_count} | Rớt: {drop_count} | Trễ: {avg_latency:.4f}s")
-                
-                # Ghi vào CSV
+
+                if not self.quiet:
+                    print(
+                        f"[{self.env.now:05.1f}s] Sống: {alive_nodes:3d} | "
+                        f"Gửi: {gen_count} | Tới: {deliv_count} | Rớt: {drop_count} | Trễ: {avg_latency:.4f}s"
+                    )
+
                 writer.writerow([
-                    round(self.env.now, 1), 
-                    alive_nodes, 
-                    round(total_energy, 4), 
-                    gen_count, 
-                    deliv_count, 
-                    drop_count, 
-                    round(avg_latency, 5)
+                    round(self.env.now, 1),
+                    alive_nodes,
+                    round(total_energy, 4),
+                    gen_count,
+                    deliv_count,
+                    drop_count,
+                    round(avg_latency, 5),
                 ])
-                file.flush() 
-                
+                file.flush()
+
                 if alive_nodes == 0:
                     break
-                    
+
                 yield self.env.timeout(10.0)
 
-    def _print_summary(self):
-        """In báo cáo khi đồng hồ tạm dừng."""
+    def _print_summary(self) -> None:
+        """In báo cáo khi mô phỏng tạm dừng."""
+        if not self.traffic_gen:
+            return
         total_generated = len(self.traffic_gen.generated_packets)
         alive_nodes = len([s for s in self.network.sensors.values() if s.is_alive])
-        
+
         print("-" * 40)
         print(f"[TẠM DỪNG] Tại giây thứ {self.env.now:.1f}")
         print(f" -> Cảm biến còn sống : {alive_nodes}/{self.config.num_sensors}")

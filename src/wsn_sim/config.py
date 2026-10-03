@@ -1,17 +1,17 @@
-"""Configuration loading and validation for WSN experiments."""
+"""Module nạp, kiểm tra tính hợp lệ và quản lý cấu hình thí nghiệm WSN."""
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
 import json
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Mapping
-
 
 REQUIRED_COMMUNICATION_RANGES_M = {250.0, 300.0, 350.0}
 
 
 def _require_positive_number(name: str, value: object) -> None:
+    """Kiểm tra một giá trị bắt buộc phải là số dương (int hoặc float > 0)."""
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise TypeError(f"{name} must be a number")
     if value <= 0:
@@ -19,6 +19,7 @@ def _require_positive_number(name: str, value: object) -> None:
 
 
 def _require_positive_integer(name: str, value: object) -> None:
+    """Kiểm tra một giá trị bắt buộc phải là số nguyên dương (int > 0)."""
     if isinstance(value, bool) or not isinstance(value, int):
         raise TypeError(f"{name} must be an integer")
     if value <= 0:
@@ -27,7 +28,11 @@ def _require_positive_integer(name: str, value: object) -> None:
 
 @dataclass(frozen=True, slots=True)
 class SimulationConfig:
-    """Store and validate all parameters used by the initial simulation."""
+    """Lưu trữ và xác thực toàn bộ các tham số đầu vào của mô phỏng WSN.
+
+    frozen=True: Đảm bảo cấu hình là bất biến (Immutable), tránh việc vô tình sửa đổi tham số
+    trong quá trình đang chạy mô phỏng.
+    """
 
     area_width_m: float
     area_height_m: float
@@ -40,7 +45,7 @@ class SimulationConfig:
     seed: int
 
     def __post_init__(self) -> None:
-        """Validate types, positive values, and required communication ranges."""
+        """Thực hiện kiểm tra nghiêm ngặt kiểu dữ liệu và miền giá trị logic."""
         _require_positive_number("area_width_m", self.area_width_m)
         _require_positive_number("area_height_m", self.area_height_m)
         _require_positive_integer("num_sensors", self.num_sensors)
@@ -51,32 +56,22 @@ class SimulationConfig:
 
         if isinstance(self.seed, bool) or not isinstance(self.seed, int):
             raise TypeError("seed must be an integer")
+
         if not isinstance(self.communication_ranges_m, tuple):
             raise TypeError("communication_ranges_m must be a tuple")
         if not self.communication_ranges_m:
             raise ValueError("communication_ranges_m must not be empty")
         for radius in self.communication_ranges_m:
             _require_positive_number("communication range", radius)
-        if not REQUIRED_COMMUNICATION_RANGES_M.issubset(
-            set(self.communication_ranges_m)
-        ):
-            raise ValueError(
-                "communication_ranges_m must contain 250, 300, and 350"
-            )
+
+        if not REQUIRED_COMMUNICATION_RANGES_M.issubset(set(self.communication_ranges_m)):
+            raise ValueError("communication_ranges_m must contain 250, 300, and 350")
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, Any]) -> "SimulationConfig":
-        """Create a validated configuration from a mapping.
+    def from_dict(cls, data: Mapping[str, Any]) -> SimulationConfig:
+        """Tạo đối tượng SimulationConfig từ một từ điển (dictionary/mapping).
 
-        Args:
-            data: Mapping containing every configuration field.
-
-        Returns:
-            A validated immutable configuration.
-
-        Raises:
-            TypeError: If the input or range collection has an invalid type.
-            ValueError: If a required field is missing or has an invalid value.
+        Kiểm tra sự hiện diện đầy đủ của tất cả các trường cấu hình bắt buộc.
         """
         if not isinstance(data, Mapping):
             raise TypeError("configuration must be a mapping")
@@ -113,22 +108,15 @@ class SimulationConfig:
         )
 
     @classmethod
-    def from_json(cls, path: str | Path) -> "SimulationConfig":
-        """Load a UTF-8 JSON file and return a validated configuration.
-
-        Args:
-            path: Location of the JSON configuration file.
-
-        Returns:
-            A validated :class:`SimulationConfig` instance.
-        """
+    def from_json(cls, path: str | Path) -> SimulationConfig:
+        """Đọc và phân tích cú pháp tệp JSON (chuẩn mã hóa UTF-8) thành đối tượng cấu hình."""
         config_path = Path(path)
         with config_path.open("r", encoding="utf-8") as file_handle:
             data = json.load(file_handle)
         return cls.from_dict(data)
 
     def to_dict(self) -> dict[str, Any]:
-        """Return a JSON-serializable representation of the configuration."""
+        """Chuyển đổi cấu hình thành dictionary có thể chuyển tiếp thành chuỗi JSON."""
         data = asdict(self)
         data["communication_ranges_m"] = list(self.communication_ranges_m)
         return data

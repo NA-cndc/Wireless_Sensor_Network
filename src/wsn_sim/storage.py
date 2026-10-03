@@ -2,18 +2,17 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from importlib.metadata import PackageNotFoundError, version
 import json
-from pathlib import Path
 import platform
 import subprocess
+from datetime import datetime, timezone
+from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
 from typing import Any, Iterable
 
 import pandas as pd
 
 from wsn_sim.config import SimulationConfig
-
 
 RUNTIME_LIBRARIES = ("networkx", "simpy", "numpy", "pandas", "matplotlib")
 
