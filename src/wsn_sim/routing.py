@@ -65,15 +65,21 @@ class RoutingEngine:
         route: list[str],
         algorithm: str = "EMHR",
         threshold_j: float | None = None,
+        is_source: bool = True,
+        avoid_nodes: set[str] | Sequence[str] | None = None,
     ) -> bool:
         """Kiểm tra xem lộ trình hiện tại còn hợp lệ để tiếp tục truyền dẫn hay không."""
         if not route or len(route) < 2:
             return False
 
         eth = self.threshold_j if threshold_j is None else float(threshold_j)
+        avoid = set(avoid_nodes) if avoid_nodes else set()
 
         src = self.network.sensors.get(route[0])
         if not src or not src.is_alive:
+            return False
+
+        if not is_source and algorithm == "EMHR" and not src.can_forward(eth):
             return False
 
         if route[-1] not in self.network.sinks:
@@ -84,11 +90,14 @@ class RoutingEngine:
             if not self.network.graph.has_edge(u, v):
                 return False
 
+            if v in avoid:
+                return False
+
             if i > 0:
                 relay = self.network.sensors.get(u)
                 if not relay or not relay.is_alive:
                     return False
-                if algorithm == "EMHR" and relay.energy_j < eth:
+                if algorithm == "EMHR" and not relay.can_forward(eth):
                     return False
 
         return True
@@ -97,6 +106,8 @@ class RoutingEngine:
         self,
         source_id: str,
         threshold_j: float | None = None,
+        avoid_nodes: set[str] | Sequence[str] | None = None,
+        is_source: bool = True,
     ) -> list[str] | None:
         """Thuật toán tìm đường Lexicographic hiệu năng cao bằng BFS Layering và DAG DP."""
         if source_id not in self.network.sensors:
@@ -104,12 +115,15 @@ class RoutingEngine:
         source_sensor = self.network.sensors[source_id]
         if not source_sensor.is_alive:
             return None
+        if not is_source and threshold_j is not None and not source_sensor.can_forward(threshold_j):
+            return None
 
         sinks = set(self.network.sinks.keys())
         eth = self.threshold_j if threshold_j is None else float(threshold_j)
         e0 = self.network.config.initial_energy_j
 
-        visited = {source_id}
+        avoid = set(avoid_nodes) if avoid_nodes else set()
+        visited = {source_id} | avoid
         levels = [{source_id}]
         found_sinks: list[str] = []
 
@@ -174,40 +188,51 @@ class RoutingEngine:
 
         return best_overall[2] if best_overall else None
 
-    def get_mhr_route(self, source_id: str) -> list[str] | None:
+    def get_mhr_route(
+        self,
+        source_id: str,
+        avoid_nodes: set[str] | Sequence[str] | None = None,
+        is_source: bool = True,
+    ) -> list[str] | None:
         """Minimum Hop Routing (MHR) baseline."""
-        return self._find_lexicographic_path(source_id, threshold_j=None)
+        return self._find_lexicographic_path(source_id, threshold_j=None, avoid_nodes=avoid_nodes, is_source=is_source)
 
     def get_emhr_route(
         self,
         source_id: str,
         threshold_j: float | None = None,
+        avoid_nodes: set[str] | Sequence[str] | None = None,
+        is_source: bool = True,
     ) -> list[str] | None:
         """Energy-aware Minimum-Hop Routing (EMHR)."""
         eth = self.threshold_j if threshold_j is None else float(threshold_j)
-        return self._find_lexicographic_path(source_id, threshold_j=eth)
+        return self._find_lexicographic_path(source_id, threshold_j=eth, avoid_nodes=avoid_nodes, is_source=is_source)
 
     def get_route(
         self,
         source_id: str,
         algorithm: str | None = None,
+        avoid_nodes: set[str] | Sequence[str] | None = None,
+        is_source: bool = True,
     ) -> list[str] | None:
         """Điều phối tìm tuyến theo thuật toán cấu hình có caching và tự động vô hiệu hóa cache."""
         algo = algorithm if algorithm is not None else self.algorithm
+        avoid = set(avoid_nodes) if avoid_nodes else set()
 
-        cached = self._route_cache.get(source_id)
-        if cached:
-            if self.is_route_valid(cached, algorithm=algo):
-                return list(cached)
-            else:
-                self.route_change_count += 1
-                self._route_cache.pop(source_id, None)
+        if not avoid and is_source:
+            cached = self._route_cache.get(source_id)
+            if cached:
+                if self.is_route_valid(cached, algorithm=algo, is_source=True):
+                    return list(cached)
+                else:
+                    self.route_change_count += 1
+                    self._route_cache.pop(source_id, None)
 
         if algo == "MHR":
-            route = self.get_mhr_route(source_id)
+            route = self.get_mhr_route(source_id, avoid_nodes=avoid, is_source=is_source)
         else:
-            route = self.get_emhr_route(source_id, threshold_j=self.threshold_j)
+            route = self.get_emhr_route(source_id, threshold_j=self.threshold_j, avoid_nodes=avoid, is_source=is_source)
 
-        if route:
+        if route and not avoid and is_source:
             self._route_cache[source_id] = list(route)
         return route

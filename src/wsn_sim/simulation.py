@@ -248,8 +248,7 @@ class Simulation:
             ])
             all_pkts = []
             if self.traffic_gen:
-                all_pkts.extend(self.traffic_gen.delivered_packets)
-                all_pkts.extend(self.traffic_gen.dropped_packets)
+                all_pkts = list(self.traffic_gen.generated_packets)
             all_pkts.sort(key=lambda p: (p.source_id, p.sequence_number, p.created_at))
             for p in all_pkts:
                 writer.writerow([

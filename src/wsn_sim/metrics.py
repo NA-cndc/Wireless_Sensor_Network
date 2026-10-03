@@ -8,6 +8,7 @@ from typing import Any
 import pandas as pd
 
 from wsn_sim.energy import RadioModel
+from wsn_sim.models import PacketStatus
 from wsn_sim.network import Network
 from wsn_sim.routing import RoutingEngine
 from wsn_sim.traffic import TrafficGenerator
@@ -50,13 +51,18 @@ def calculate_simulation_metrics(
     gen_count = len(traffic_gen.generated_packets)
     deliv_count = len(traffic_gen.delivered_packets)
     drop_count = len(traffic_gen.dropped_packets)
-    pending_count = max(0, gen_count - deliv_count - drop_count)
+    pending_packets = [
+        p for p in traffic_gen.generated_packets
+        if p.status in (PacketStatus.CREATED, PacketStatus.IN_TRANSIT)
+    ]
+    pending_count = len(pending_packets)
 
     drop_reasons: dict[str, int] = {
         "energy_depletion": 0,
         "queue_drop": 0,
         "unreachable": 0,
         "node_dead_mid_flight": 0,
+        "relay_below_threshold": 0,
     }
     for pkt in traffic_gen.dropped_packets:
         reason = pkt.drop_reason or "unreachable"

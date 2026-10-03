@@ -44,14 +44,17 @@ class TrafficGenerator:
         self.delivered_latencies: list[float] = []
 
         self.queues: dict[str, list[Packet]] = {s_id: [] for s_id in self.network.sensors}
+        self.tx_events: dict[str, simpy.Event] = {}
 
         base_seed = config.seed
         self.traffic_rng = np.random.default_rng(base_seed if traffic_seed is None else traffic_seed)
 
     def start(self) -> None:
-        """Khởi động luồng sinh gói cho TẤT CẢ các sensor còn sống."""
+        """Khởi động luồng sinh gói và tiến trình truyền cho TẤT CẢ các sensor còn sống."""
         for sensor_id in sorted(self.network.sensors.keys()):
+            self.tx_events[sensor_id] = self.env.event()
             self.env.process(self._sensor_loop(sensor_id))
+            self.env.process(self._sensor_tx_loop(sensor_id))
 
     def _sensor_loop(self, sensor_id: str):
         """Vòng đời định kỳ sinh dữ liệu của từng sensor node."""
@@ -83,41 +86,104 @@ class TrafficGenerator:
                 sensor_obj.dropped_packets += 1
                 continue
 
-            route = self.router.get_route(sensor_id)
+            route = self.router.get_route(sensor_id, is_source=True)
 
             if route:
                 packet.assign_route(route)
-                self.env.process(self._transmit_packet(packet, route))
+                queue.append(packet)
+                if not self.tx_events[sensor_id].triggered:
+                    self.tx_events[sensor_id].succeed()
             else:
                 packet.mark_dropped("unreachable", node_id=sensor_id, no_route=True)
                 self.dropped_packets.append(packet)
                 sensor_obj.dropped_packets += 1
 
-    def _transmit_packet(self, packet: Packet, route: list[str]):
-        """Mô phỏng hành trình truyền multi-hop của một gói tin qua các nút mạng."""
-        transmission_delay_s = (packet.size_bytes * 8) / self.bandwidth_bps
-        current_route = list(route)
+    def _sensor_tx_loop(self, sensor_id: str):
+        """Tiến trình FIFO phục vụ phát gói tin tuần tự độc quyền cho từng sensor node."""
+        sensor = self.network.sensors[sensor_id]
+        transmission_delay_s = (self.config.packet_size_bytes * 8) / self.bandwidth_bps
 
-        i = 0
-        while i < len(current_route) - 1:
-            sender_id = current_route[i]
-            receiver_id = current_route[i + 1]
+        while sensor.is_alive:
+            if not self.queues[sensor_id]:
+                self.tx_events[sensor_id] = self.env.event()
+                yield self.tx_events[sensor_id]
+                if not sensor.is_alive:
+                    break
 
-            sender = self.network.sensors[sender_id]
-            receiver = self.network.sensors.get(receiver_id) or self.network.sinks.get(receiver_id)
+            if not self.queues[sensor_id]:
+                continue
+
+            packet = self.queues[sensor_id].pop(0)
+
+            is_source = (sensor_id == packet.source_id)
+            if not is_source and self.router.algorithm == "EMHR":
+                if not sensor.can_forward(self.router.threshold_j):
+                    packet.mark_dropped("relay_below_threshold", node_id=sensor_id)
+                    self.dropped_packets.append(packet)
+                    sensor.dropped_packets += 1
+                    continue
+
+            avoid_nodes = set(packet.path) - {sensor_id}
+
+            try:
+                curr_idx = len(packet.path) - 1
+                if curr_idx < len(packet.route) and packet.route[curr_idx] == sensor_id:
+                    remaining_route = packet.route[curr_idx:]
+                else:
+                    remaining_route = packet.route[packet.route.index(sensor_id):]
+            except (ValueError, IndexError):
+                remaining_route = []
+
+            route_valid = bool(
+                remaining_route
+                and len(remaining_route) >= 2
+                and self.router.is_route_valid(
+                    remaining_route,
+                    algorithm=self.router.algorithm,
+                    is_source=is_source,
+                    avoid_nodes=avoid_nodes,
+                )
+            )
+
+            if not route_valid:
+                new_sub_route = self.router.get_route(
+                    sensor_id,
+                    algorithm=self.router.algorithm,
+                    avoid_nodes=avoid_nodes,
+                    is_source=is_source,
+                )
+                if new_sub_route:
+                    self.router.route_change_count += 1
+                    packet.route = list(packet.path[:-1]) + new_sub_route
+                    packet.sink_id = new_sub_route[-1]
+                    packet.current_hop_index = len(packet.path) - 1
+                    remaining_route = new_sub_route
+                else:
+                    packet.mark_dropped("unreachable", node_id=sensor_id, no_route=True)
+                    self.dropped_packets.append(packet)
+                    sensor.dropped_packets += 1
+                    continue
+
+            next_hop_id = remaining_route[1]
+            receiver = self.network.sensors.get(next_hop_id) or self.network.sinks.get(next_hop_id)
+            if receiver is None:
+                packet.mark_dropped("unreachable", node_id=sensor_id, no_route=True)
+                self.dropped_packets.append(packet)
+                sensor.dropped_packets += 1
+                continue
 
             yield self.env.timeout(transmission_delay_s)
 
-            if not sender.is_alive:
-                packet.mark_dropped("node_dead_mid_flight", node_id=sender_id)
+            if not sensor.is_alive:
+                packet.mark_dropped("node_dead_mid_flight", node_id=sensor_id)
                 self.dropped_packets.append(packet)
-                sender.dropped_packets += 1
-                return
+                sensor.dropped_packets += 1
+                continue
 
-            dist_m = math.hypot(sender.x - receiver.x, sender.y - receiver.y)
+            dist_m = math.hypot(sensor.x - receiver.x, sensor.y - receiver.y)
 
             ledger_entry = self.radio.attempt_transmission(
-                sender=sender,
+                sender=sensor,
                 receiver=receiver,
                 packet_size_bytes=packet.size_bytes,
                 distance_m=dist_m,
@@ -126,15 +192,15 @@ class TrafficGenerator:
             )
 
             if not ledger_entry["success"]:
-                fail_node = sender_id if ledger_entry["reason"] == "TX_INSUFFICIENT_ENERGY" else receiver_id
+                fail_node = sensor_id if ledger_entry["reason"] == "TX_INSUFFICIENT_ENERGY" else next_hop_id
                 packet.mark_dropped("energy_depletion", node_id=fail_node)
                 self.dropped_packets.append(packet)
-                sender.dropped_packets += 1
-                return
+                sensor.dropped_packets += 1
+                continue
 
-            packet.record_hop(receiver_id)
-            if sender_id != packet.source_id:
-                sender.forwarded_packets += 1
+            packet.record_hop(next_hop_id)
+            if not is_source:
+                sensor.forwarded_packets += 1
 
             if isinstance(receiver, Sink):
                 is_new = receiver.receive(packet, float(self.env.now))
@@ -142,29 +208,30 @@ class TrafficGenerator:
                     self.delivered_packets.append(packet)
                     if packet.latency_s is not None:
                         self.delivered_latencies.append(packet.latency_s)
-                return
+                continue
 
             if isinstance(receiver, Sensor):
                 receiver.received_packets += 1
+                if not receiver.is_alive:
+                    packet.mark_dropped("energy_depletion", node_id=receiver.node_id)
+                    self.dropped_packets.append(packet)
+                    receiver.dropped_packets += 1
+                    if receiver.node_id in self.tx_events and not self.tx_events[receiver.node_id].triggered:
+                        self.tx_events[receiver.node_id].succeed()
+                    continue
 
-                remaining_route = current_route[i + 1 :]
-                route_is_valid = self.router.is_route_valid(
-                    remaining_route,
-                    algorithm=self.router.algorithm,
-                )
+                queue = self.queues[receiver.node_id]
+                if len(queue) >= self.queue_capacity:
+                    packet.mark_dropped("queue_drop", node_id=receiver.node_id)
+                    self.dropped_packets.append(packet)
+                    receiver.dropped_packets += 1
+                else:
+                    queue.append(packet)
+                    if not self.tx_events[receiver.node_id].triggered:
+                        self.tx_events[receiver.node_id].succeed()
 
-                if not route_is_valid:
-                    new_sub_route = self.router.get_route(receiver_id)
-                    if new_sub_route:
-                        self.router.route_change_count += 1
-                        current_route = list(packet.path[:-1]) + new_sub_route
-                        i = len(packet.path) - 1
-                        packet.route = current_route
-                        continue
-                    else:
-                        packet.mark_dropped("unreachable", node_id=receiver_id, no_route=True)
-                        self.dropped_packets.append(packet)
-                        receiver.dropped_packets += 1
-                        return
-
-            i += 1
+        while self.queues[sensor_id]:
+            pkt = self.queues[sensor_id].pop(0)
+            pkt.mark_dropped("energy_depletion", node_id=sensor_id)
+            self.dropped_packets.append(pkt)
+            sensor.dropped_packets += 1
