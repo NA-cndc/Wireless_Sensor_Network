@@ -1,101 +1,96 @@
-# topology.py
-import math
-import numpy as np
-import networkx as nx
+"""Root compatibility wrapper for network topology generation and visualization.
+
+Quy về package src/wsn_sim làm nguồn logic chính để bảo đảm tính nhất quán.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
 import matplotlib.pyplot as plt
+import networkx as nx
+
 import config
+from wsn_sim.config import SimulationConfig
+from wsn_sim.network import Network
+from wsn_sim.visualization import save_topology_plot
 
-def generate_valid_positions(num_nodes, area_size, min_dist=5.0):
-    """
-    Sinh tọa độ ngẫu nhiên đảm bảo các nút cách nhau ít nhất min_dist (mét)
-    """
-    positions = []
-    while len(positions) < num_nodes:
-        new_pos = np.random.uniform(0, area_size, 2)
-        # Kiểm tra khoảng cách với các nút đã sinh trước đó
-        if all(math.dist(new_pos, p) >= min_dist for p in positions):
-            positions.append(new_pos)
-    return np.array(positions)
 
-def create_wsn_topology():
-    # Cố định Seed để kết quả có thể tái lập
-    np.random.seed(config.SEED)
-    
-    # Bước 1: Sinh tổng cộng 457 vị trí không trùng lặp (cách nhau ít nhất 20m)
-    total_nodes = config.NUM_SENSORS + config.NUM_SINKS
-    all_positions = generate_valid_positions(total_nodes, config.AREA_SIZE, min_dist=20.0)
-    
-    # Cắt mảng (slice) để chia tọa độ cho Sensor và Sink
-    sensors = all_positions[:config.NUM_SENSORS]
-    sinks = all_positions[config.NUM_SENSORS:]
-    
-    G = nx.Graph()
-    
-    # Gán ID cho Sensor Node (từ 1 đến 450)
-    for i, pos in enumerate(sensors):
-        G.add_node(i + 1, pos=tuple(pos), type='sensor')
-        
-    # Gán ID cho Sink Node (từ 451 đến 457)
-    for i, pos in enumerate(sinks):
-        sink_id = config.NUM_SENSORS + i + 1
-        G.add_node(sink_id, pos=tuple(pos), type='sink')
-        
-    # Bước 2: Xây dựng mạng kết nối dựa trên bán kính truyền (Euclid <= R)
-    nodes = list(G.nodes(data=True))
-    for i in range(len(nodes)):
-        for j in range(i + 1, len(nodes)):
-            n1_id, n1_data = nodes[i]
-            n2_id, n2_data = nodes[j]
-            
-            dist = math.dist(n1_data['pos'], n2_data['pos'])
-            
-            if dist <= config.TX_RADIUS:
-                if n1_data['type'] == 'sink' and n2_data['type'] == 'sink':
-                    continue
-                G.add_edge(n1_id, n2_id, distance=dist)
-                
-    # Bước 3: Thêm Virtual Super-Sink (ID: 0) để gom 7 Sink thật
-    G.add_node(0, pos=(config.AREA_SIZE/2, config.AREA_SIZE/2), type='virtual_sink')
-    for i in range(config.NUM_SINKS):
-        sink_id = config.NUM_SENSORS + i + 1
-        G.add_edge(0, sink_id, distance=0)
-        
-    return G
+def create_wsn_topology(
+    seed: int | None = None,
+    range_m: float | None = None,
+    include_virtual_sink: bool = True,
+) -> nx.Graph:
+    """Sinh topology mạng cảm biến WSN dựa trên logic chuẩn của wsn_sim.network.Network."""
+    s = seed if seed is not None else config.SEED
+    r = range_m if range_m is not None else float(config.TX_RADIUS)
 
-def visualize_network(G):
-    plt.figure(figsize=(10, 10))
-    pos = nx.get_node_attributes(G, 'pos')
-    
-    sensor_nodes = [n for n, attr in G.nodes(data=True) if attr['type'] == 'sensor']
-    sink_nodes = [n for n, attr in G.nodes(data=True) if attr['type'] == 'sink']
-    
-    nx.draw_networkx_edges(G, pos, alpha=0.15, edge_color='gray')
-    nx.draw_networkx_nodes(G, pos, nodelist=sensor_nodes, node_color='blue', node_size=15, label='Sensor')
-    nx.draw_networkx_nodes(G, pos, nodelist=sink_nodes, node_color='red', node_size=100, node_shape='s', label='Sink Node')
-    
-    plt.title(f"Topology Mạng WSN ({config.NUM_SENSORS} Sensors, {config.NUM_SINKS} Sinks, R={config.TX_RADIUS}m)")
+    cfg = SimulationConfig(
+        area_width_m=float(config.AREA_SIZE),
+        area_height_m=float(config.AREA_SIZE),
+        num_sensors=config.NUM_SENSORS,
+        num_sinks=config.NUM_SINKS,
+        initial_energy_j=5.0,
+        packet_size_bytes=128,
+        packet_interval_s=10.0,
+        communication_ranges_m=(250.0, 300.0, 350.0),
+        seed=s,
+    )
+    net = Network(cfg, communication_range_m=r)
+
+    if include_virtual_sink:
+        return net.build_virtual_super_sink_graph("virtual_sink")
+    return net.graph
+
+
+def visualize_network(G: nx.Graph, output_file: str | Path | None = None) -> None:
+    """Vẽ topology mạng cảm biến."""
+    if output_file:
+        plt.figure(figsize=(9, 9))
+    else:
+        plt.figure(figsize=(9, 9))
+
+    pos = {node: (data.get("x", 0.0), data.get("y", 0.0)) for node, data in G.nodes(data=True)}
+    sensors = [n for n, d in G.nodes(data=True) if d.get("node_type") == "sensor" or str(n).startswith("sensor_")]
+    sinks = [n for n, d in G.nodes(data=True) if d.get("node_type") == "sink" or str(n).startswith("sink_")]
+
+    nx.draw_networkx_edges(G, pos, alpha=0.2, edge_color="gray", width=0.5)
+    nx.draw_networkx_nodes(G, pos, nodelist=sensors, node_color="tab:blue", node_size=15, label="Sensor")
+    nx.draw_networkx_nodes(G, pos, nodelist=sinks, node_color="tab:red", node_size=80, node_shape="^", label="Sink")
+
+    plt.title(f"WSN Topology ({len(sensors)} Sensors, {len(sinks)} Sinks)")
     plt.legend()
-    plt.grid(True, linestyle='--', alpha=0.5)
-    plt.show()
-    
-def check_network_connectivity(G):
-    """Kiểm tra các node bị cô lập và tính liên thông của mạng"""
-    # 1. Tìm các node không có bất kỳ liên kết nào
-    isolated_nodes = list(nx.isolates(G))
-    if isolated_nodes:
-        print(f"[CẢNH BÁO] Phát hiện {len(isolated_nodes)} node bị cô lập hoàn toàn: {isolated_nodes}")
+    plt.grid(True, linestyle="--", alpha=0.4)
+
+    if output_file:
+        Path(output_file).parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(output_file, dpi=150, bbox_inches="tight")
+        plt.close()
     else:
-        print("[OK] Không có node nào bị cô lập hoàn toàn.")
-        
-    # 2. Bỏ qua Virtual Sink (ID: 0) để đánh giá mạng lưới vật lý thực tế
-    G_physical = G.copy()
-    if G_physical.has_node(0):
-        G_physical.remove_node(0)
-    
-    # 3. Phân tích các cụm liên thông (Connected Components)
-    components = list(nx.connected_components(G_physical))
-    if len(components) == 1:
-        print("[OK] Mạng lưới liên thông hoàn hảo. Mọi sensor đều có đường truyền hợp lệ tới Sinks.")
-    else:
-        print(f"[CẢNH BÁO] Sóng vô tuyến không phủ kín! Mạng bị đứt gãy thành {len(components)} mảnh riêng biệt.")
-        print(f" -> Mảnh lớn nhất chứa {len(max(components, key=len))} thiết bị.")
+        plt.show()
+
+
+def check_network_connectivity(G: nx.Graph) -> dict[str, Any]:
+    """Kiểm tra các node cô lập và tính liên thông của mạng."""
+    g_phys = G.copy()
+    if g_phys.has_node("virtual_sink"):
+        g_phys.remove_node("virtual_sink")
+    if g_phys.has_node(0):
+        g_phys.remove_node(0)
+
+    isolated_nodes = list(nx.isolates(g_phys))
+    components = list(nx.connected_components(g_phys))
+
+    return {
+        "isolated_nodes_count": len(isolated_nodes),
+        "connected_components_count": len(components),
+        "largest_component_size": max((len(c) for c in components), default=0),
+    }
+
+
+__all__ = [
+    "create_wsn_topology",
+    "visualize_network",
+    "check_network_connectivity",
+]

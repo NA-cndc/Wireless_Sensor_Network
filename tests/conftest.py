@@ -14,7 +14,6 @@ for _git_dir in [Path(r"D:\ProgramFiles\Git\cmd"), Path(r"C:\Program Files\Git\c
         os.environ["PATH"] = str(_git_dir) + os.pathsep + os.environ.get("PATH", "")
 
 
-
 @pytest.fixture(scope="session")
 def project_root() -> Path:
     return Path(__file__).resolve().parents[1]

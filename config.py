@@ -1,8 +1,16 @@
-# config.py
+"""Root alias and backwards compatibility wrapper for wsn_sim.config."""
 
-# CẤU HÌNH THAM SỐ TOÀN CỤC WSN
-AREA_SIZE = 3000      # Vùng không gian 3000m x 3000m
-NUM_SENSORS = 450     # Số lượng sensor node
-NUM_SINKS = 7         # Số lượng sink node
-TX_RADIUS = 300       # Bán kính truyền thông R = 300m
-SEED = 55             # Cố định sự ngẫu nhiên
+from pathlib import Path
+
+from wsn_sim.config import SimulationConfig
+
+_default_config_path = Path(__file__).resolve().parent / "configs" / "default.json"
+_default_config = SimulationConfig.from_json(_default_config_path)
+
+AREA_SIZE = int(_default_config.area_width_m)
+NUM_SENSORS = _default_config.num_sensors
+NUM_SINKS = _default_config.num_sinks
+TX_RADIUS = int(_default_config.communication_ranges_m[1] if len(_default_config.communication_ranges_m) > 1 else 300)
+SEED = _default_config.seed
+
+__all__ = ["AREA_SIZE", "NUM_SENSORS", "NUM_SINKS", "TX_RADIUS", "SEED", "SimulationConfig"]
