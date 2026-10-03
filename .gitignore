@@ -17,12 +17,14 @@ dist/
 results/csv/*.csv
 results/figures/*.png
 results/logs/*
+results/experiments/*
 results/run_manifest.json
 data/topologies/*
 !data/topologies/.gitkeep
 !results/csv/.gitkeep
 !results/figures/.gitkeep
 !results/logs/.gitkeep
+!results/experiments/.gitkeep
 
 # IDE and local files
 .agents/
