@@ -33,6 +33,8 @@ class Sensor:
     received_packets: int = 0
     forwarded_packets: int = 0
     dropped_packets: int = 0
+    tx_energy_total_j: float = 0.0
+    rx_energy_total_j: float = 0.0
 
     def __post_init__(self) -> None:
         """Kiểm tra tính hợp lệ của dữ liệu ngay sau khi khởi tạo đối tượng."""
@@ -54,6 +56,15 @@ class Sensor:
         """
         return hypot(self.x - other.x, self.y - other.y)
 
+    def has_enough_energy(self, amount_j: float) -> bool:
+        """Kiểm tra xem sensor có đủ năng lượng để thực hiện truyền/nhận hay không.
+
+        Sử dụng dung sai số thực 1e-15 để tránh lỗi làm tròn khi năng lượng xấp xỉ bằng chi phí.
+        """
+        if not self.is_alive or self.energy_j <= 0:
+            return False
+        return self.energy_j >= (amount_j - 1e-15)
+
     def consume_energy(self, amount_j: float) -> float:
         """Trừ bớt năng lượng tiêu thụ khi sensor thực hiện truyền (TX) hoặc nhận (RX) gói tin.
 
@@ -71,7 +82,11 @@ class Sensor:
         if amount_j < 0:
             raise ValueError("amount_j must not be negative")
         self.energy_j = max(0.0, self.energy_j - amount_j)
-        self.is_alive = self.energy_j > 0
+        if self.energy_j <= 1e-14:
+            self.energy_j = 0.0
+            self.is_alive = False
+        else:
+            self.is_alive = True
         return self.energy_j
 
     def can_forward(self, threshold_j: float) -> bool:
@@ -87,4 +102,4 @@ class Sensor:
         """
         if threshold_j < 0:
             raise ValueError("threshold_j must not be negative")
-        return self.is_alive and self.energy_j >= threshold_j
+        return self.is_alive and self.energy_j >= (threshold_j - 1e-15)

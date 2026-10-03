@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import csv
-import os
 from collections.abc import Generator
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -12,6 +11,7 @@ from typing import Any
 import simpy
 
 from wsn_sim.config import SimulationConfig
+from wsn_sim.detection import TrustDetector
 from wsn_sim.energy import RadioModel
 from wsn_sim.network import Network
 from wsn_sim.routing import RoutingEngine
@@ -76,7 +76,8 @@ class Simulation:
         channel_loss_prob: float = 0.0,
         enable_traffic: bool = True,
         csv_log_path: str | Path | None = None,
-        quiet: bool = False,
+        quiet: bool = True,
+        seed: int | None = None,
     ) -> None:
         self.env = env if env is not None else simpy.Environment()
         self.quiet = quiet
@@ -102,13 +103,13 @@ class Simulation:
         self.drop_prob = drop_prob
         self.channel_loss_prob = channel_loss_prob
 
-        # Khởi tạo các thành phần mô phỏng
         self.router = RoutingEngine(
             self.network,
             algorithm=self.routing_algorithm,
             alpha_energy=self.alpha_energy,
         )
         self.radio = RadioModel()
+        self.detector = TrustDetector()
 
         self.enable_traffic = enable_traffic
         if self.enable_traffic:
@@ -121,6 +122,8 @@ class Simulation:
                 attacker_ratio=self.attacker_ratio,
                 drop_prob=self.drop_prob,
                 channel_loss_prob=self.channel_loss_prob,
+                detector=self.detector,
+                traffic_seed=seed,
             )
             self.traffic_gen.start()
             if self.csv_log_path is not None:
@@ -147,7 +150,6 @@ class Simulation:
             raise ValueError("duration_s must be greater than zero")
 
         target_time = self.env.now + duration_s
-        # Đảm bảo có ít nhất một sự kiện tại target_time nếu không có tiến trình
         self.env.process(self.smoke_process(duration_s))
         self.env.run(until=target_time)
 
@@ -216,3 +218,111 @@ class Simulation:
         print(f" -> Cảm biến còn sống : {alive_nodes}/{self.config.num_sensors}")
         print(f" -> Gói tin đã sinh   : {total_generated}")
         print("-" * 40)
+
+    def get_metrics(self) -> dict[str, Any]:
+        """Tính toán và trả về toàn bộ bộ chỉ số của mô phỏng."""
+        from wsn_sim.metrics import calculate_simulation_metrics
+
+        if not self.traffic_gen:
+            return {
+                "simulated_time_s": float(self.env.now),
+                "nodes": self.network.graph.number_of_nodes(),
+                "sensors": len(self.network.sensors),
+                "sinks": len(self.network.sinks),
+            }
+        return calculate_simulation_metrics(
+            network=self.network,
+            traffic_gen=self.traffic_gen,
+            radio=self.radio,
+            sim_time_s=float(self.env.now),
+            router=self.router,
+            detector=self.detector,
+        )
+
+    def export_results(self, output_dir: str | Path) -> dict[str, Path]:
+        """Xuất toàn bộ dữ liệu raw CSV và JSON ra thư mục độc lập."""
+        from wsn_sim.storage import create_run_manifest, save_json
+
+        out_path = Path(output_dir)
+        out_path.mkdir(parents=True, exist_ok=True)
+        saved_files: dict[str, Path] = {}
+
+        cfg_path = out_path / "config.json"
+        save_json(self.config.to_dict(), cfg_path)
+        saved_files["config"] = cfg_path
+
+        metrics = self.get_metrics()
+        metrics_path = out_path / "metrics.json"
+        save_json(metrics, metrics_path)
+        saved_files["metrics"] = metrics_path
+
+        nodes_csv_path = out_path / "nodes.csv"
+        with nodes_csv_path.open("w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                "node_id", "type", "x", "y", "initial_energy_j", "energy_j",
+                "is_alive", "generated_packets", "received_packets",
+                "forwarded_packets", "dropped_packets", "tx_energy_total_j", "rx_energy_total_j"
+            ])
+            for s in self.network.sensors.values():
+                writer.writerow([
+                    s.node_id, "sensor", s.x, s.y, s.initial_energy_j, s.energy_j,
+                    s.is_alive, s.generated_packets, s.received_packets,
+                    s.forwarded_packets, s.dropped_packets, s.tx_energy_total_j, s.rx_energy_total_j
+                ])
+            for k in self.network.sinks.values():
+                writer.writerow([
+                    k.node_id, "sink", k.x, k.y, "unlimited", "unlimited",
+                    True, 0, k.received_packet_count, 0, 0, 0.0, 0.0
+                ])
+        saved_files["nodes"] = nodes_csv_path
+
+        packets_csv_path = out_path / "packets.csv"
+        with packets_csv_path.open("w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                "packet_id", "sequence_number", "source_id", "sink_id",
+                "created_at", "delivered_at", "latency_s", "hop_count",
+                "status", "drop_reason", "drop_node_id", "route", "path"
+            ])
+            all_pkts = []
+            if self.traffic_gen:
+                all_pkts.extend(self.traffic_gen.delivered_packets)
+                all_pkts.extend(self.traffic_gen.dropped_packets)
+            all_pkts.sort(key=lambda p: (p.source_id, p.sequence_number, p.created_at))
+            for p in all_pkts:
+                writer.writerow([
+                    p.packet_id, p.sequence_number, p.source_id, p.sink_id or "",
+                    p.created_at, p.delivered_at if p.delivered_at is not None else "",
+                    p.latency_s if p.latency_s is not None else "",
+                    p.hop_count, p.status.value, p.drop_reason or "",
+                    p.drop_node_id or "", "->".join(p.route), "->".join(p.path)
+                ])
+        saved_files["packets"] = packets_csv_path
+
+        ledger_path = out_path / "energy_ledger.csv"
+        with ledger_path.open("w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                "time_s", "packet_id", "sender_id", "receiver_id", "distance_m",
+                "tx_energy_j", "rx_energy_j", "success", "reason"
+            ])
+            for entry in self.radio.energy_ledger:
+                writer.writerow([
+                    entry.get("time_s"), entry.get("packet_id"), entry.get("sender_id"),
+                    entry.get("receiver_id"), entry.get("distance_m"),
+                    entry.get("tx_energy_j"), entry.get("rx_energy_j"),
+                    entry.get("success"), entry.get("reason")
+                ])
+        saved_files["energy_ledger"] = ledger_path
+
+        manifest_path = out_path / "run_manifest.json"
+        manifest = create_run_manifest(
+            self.config,
+            [p.name for p in saved_files.values()],
+            Path.cwd(),
+        )
+        save_json(manifest, manifest_path)
+        saved_files["manifest"] = manifest_path
+
+        return saved_files

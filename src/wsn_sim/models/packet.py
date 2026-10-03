@@ -28,11 +28,14 @@ class Packet:
     - sink_id: ID của Sink đích được thuật toán định tuyến lựa chọn.
     - created_at: Mốc thời gian gói được sinh ra (giây).
     - size_bytes: Kích thước gói tin (mặc định 128 byte).
-    - route: Tuyến đường chuyển tiếp [source, relay_1, relay_2, ..., sink].
+    - route: Tuyến đường dự kiến [source, relay_1, relay_2, ..., sink].
+    - path: Đường đi thực tế gói đã qua [source, ...].
     - current_hop_index: Vị trí chặng nhảy hiện tại của gói trên tuyến đường.
     - status: Trạng thái hiện thời của gói.
     - delivered_at: Mốc thời gian nhận gói tại trạm Sink.
     - drop_reason: Lý do cụ thể nếu gói bị hủy (natural_link_loss, selective_forwarding, energy_depletion, v.v.).
+    - drop_node_id: ID node xảy ra drop.
+    - ttl: Thời gian sống còn lại tính theo số hop (nếu sử dụng).
     """
 
     packet_id: str
@@ -42,10 +45,13 @@ class Packet:
     sequence_number: int = 0
     sink_id: str | None = None
     route: list[str] = field(default_factory=list)
+    path: list[str] = field(default_factory=list)
     current_hop_index: int = 0
     status: PacketStatus = PacketStatus.CREATED
     delivered_at: float | None = None
     drop_reason: str | None = None
+    drop_node_id: str | None = None
+    ttl: int | None = None
 
     def __post_init__(self) -> None:
         """Xác thực tính toàn vẹn của gói tin ngay sau khi tạo đối tượng."""
@@ -61,6 +67,8 @@ class Packet:
             raise ValueError("size_bytes must be greater than zero")
         if self.sequence_number < 0:
             raise ValueError("sequence_number must not be negative")
+        if not self.path:
+            self.path = [self.source_id]
         if self.route:
             route = list(self.route)
             self.route = []
@@ -82,15 +90,28 @@ class Packet:
         if route_nodes[0] != self.source_id:
             raise ValueError("route must start at source_id")
         self.route = route_nodes
+        self.path = [self.source_id]
         self.current_hop_index = 0
         self.status = PacketStatus.IN_TRANSIT
         self.delivered_at = None
         self.drop_reason = None
+        self.drop_node_id = None
+        if len(route_nodes) > 1 and route_nodes[-1].startswith("sink_"):
+            self.sink_id = route_nodes[-1]
+
+    def record_hop(self, next_node_id: str) -> None:
+        """Ghi nhận gói tin đã bước tiếp sang node tiếp theo."""
+        self.path.append(next_node_id)
+        self.current_hop_index = len(self.path) - 1
 
     @property
     def hop_count(self) -> int:
-        """Tính số chặng nhảy (số cạnh truyền dẫn) trên đường đi: số cạnh = len(route) - 1."""
-        return max(0, len(self.route) - 1)
+        """Tính số chặng nhảy đã thực hiện: số cạnh = len(path) - 1 nếu đã đi, hoặc len(route) - 1."""
+        if len(self.path) > 1:
+            return len(self.path) - 1
+        if self.route:
+            return max(0, len(self.route) - 1)
+        return 0
 
     @property
     def latency_s(self) -> float | None:
@@ -99,29 +120,46 @@ class Packet:
             return None
         return self.delivered_at - self.created_at
 
-    def mark_delivered(self, delivered_at: float) -> None:
+    def mark_delivered(self, delivered_at: float, sink_id: str | None = None) -> None:
         """Đánh dấu gói tin đã được giao tới Sink đích thành công.
 
         Args:
             delivered_at: Mốc thời gian nhận gói (không được nhỏ hơn thời gian tạo created_at).
+            sink_id: Định danh trạm sink nhận gói (tùy chọn).
         """
         if delivered_at < self.created_at:
             raise ValueError("delivered_at must not be earlier than created_at")
         self.delivered_at = delivered_at
         self.status = PacketStatus.DELIVERED
         self.drop_reason = None
+        self.drop_node_id = None
+        if sink_id:
+            self.sink_id = sink_id
+            if not self.path or self.path[-1] != sink_id:
+                self.path.append(sink_id)
+        elif self.route and (not self.path or self.path[-1] != self.route[-1]):
+            self.path.append(self.route[-1])
         if self.route:
             self.current_hop_index = len(self.route) - 1
+        elif len(self.path) > 1:
+            self.current_hop_index = len(self.path) - 1
 
-    def mark_dropped(self, reason: str, no_route: bool = False) -> None:
+    def mark_dropped(
+        self,
+        reason: str,
+        node_id: str | None = None,
+        no_route: bool = False,
+    ) -> None:
         """Đánh dấu gói tin bị hủy trên đường truyền hoặc không tìm thấy đường đi.
 
         Args:
             reason: Chuỗi mô tả nguyên nhân hủy (ví dụ: 'energy_depletion', 'selective_forwarding').
+            node_id: Định danh node xảy ra việc hủy gói (nếu có).
             no_route: Đặt True nếu lý do là đồ thị không có đường nối tới Sink.
         """
         if not reason:
             raise ValueError("drop reason must not be empty")
         self.status = PacketStatus.NO_ROUTE if no_route else PacketStatus.DROPPED
         self.drop_reason = reason
+        self.drop_node_id = node_id
         self.delivered_at = None
