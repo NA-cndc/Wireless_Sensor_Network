@@ -64,7 +64,7 @@ def test_isolated_sensor_generates_no_route_packet():
 def test_packet_conservation_equation():
     """Phương trình bảo toàn gói: generated == delivered + dropped + pending."""
     cfg = SimulationConfig.from_json("configs/default.json")
-    sim = Simulation(cfg, current_range_m=300.0, channel_loss_prob=0.02, quiet=True)
+    sim = Simulation(cfg, current_range_m=300.0, quiet=True)
     sim.run_for(50.0)
 
     metrics = sim.get_metrics()

@@ -6,7 +6,6 @@ build-backend = "setuptools.build_meta"
 name = "wsn-sim"
 version = "0.1.0"
 description = "Initial software architecture for a reproducible wireless sensor network simulation."
-readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "networkx",
@@ -14,7 +13,6 @@ dependencies = [
     "numpy",
     "pandas",
     "matplotlib",
-    "scipy",
 ]
 
 [project.optional-dependencies]

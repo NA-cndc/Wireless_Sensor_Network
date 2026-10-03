@@ -13,19 +13,25 @@ dist/
 .idea/
 .vscode/
 *.swp
+*.tmp
+*.bak
+backup/
+pytest-result.txt
+
+*.[mM][dD]
+PROMPT_*
+*.docx
 
 results/csv/*.csv
 results/figures/*.png
 results/logs/*
-results/experiments/*
+results/simulation/*
+results/archive_previous_scope/*
 results/run_manifest.json
 data/topologies/*
 !data/topologies/.gitkeep
 !results/csv/.gitkeep
 !results/figures/.gitkeep
 !results/logs/.gitkeep
-!results/experiments/.gitkeep
 
-# IDE and local files
 .agents/
-*.docx

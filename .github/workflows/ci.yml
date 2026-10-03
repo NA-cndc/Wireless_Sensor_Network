@@ -2,9 +2,9 @@ name: WSN Simulation CI
 
 on:
   push:
-    branches: [ main, NA, XB, integration/** ]
+    branches: [ main, NA, XB, integration/**, chore/** ]
   pull_request:
-    branches: [ main, NA, XB, integration/** ]
+    branches: [ main, NA, XB, integration/**, chore/** ]
 
 jobs:
   test:

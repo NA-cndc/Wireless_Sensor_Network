@@ -1,4 +1,4 @@
-"""Module điều phối chính của mô phỏng WSN bằng SimPy (Hợp nhất hoàn chỉnh)."""
+"""Module điều phối chính của mô phỏng WSN bằng SimPy cho truyền multi-hop."""
 
 from __future__ import annotations
 
@@ -11,7 +11,6 @@ from typing import Any
 import simpy
 
 from wsn_sim.config import SimulationConfig
-from wsn_sim.detection import TrustDetector
 from wsn_sim.energy import RadioModel
 from wsn_sim.network import Network
 from wsn_sim.routing import RoutingEngine
@@ -34,15 +33,7 @@ class SimulationResult:
 
 
 def run_smoke_simulation(network: Network, duration_s: float) -> SimulationResult:
-    """Hàm tiện ích nhanh khởi tạo và thực thi mô phỏng SimPy trong duration_s giây.
-
-    Args:
-        network: Đối tượng mạng Network chứa topology các sensor và sink.
-        duration_s: Thời lượng mô phỏng cần chạy (giây).
-
-    Returns:
-        Đối tượng SimulationResult chứa các chỉ số kết quả.
-    """
+    """Hàm tiện ích nhanh khởi tạo và thực thi mô phỏng SimPy trong duration_s giây."""
     sim = Simulation(network, enable_traffic=False)
     sim_time = sim.run_for(duration_s)
     return SimulationResult(
@@ -54,12 +45,7 @@ def run_smoke_simulation(network: Network, duration_s: float) -> SimulationResul
 
 
 class Simulation:
-    """Quản lý toàn bộ vòng đời và tiến trình mô phỏng mạng cảm biến.
-
-    Tương thích đồng thời hai kiểu gọi:
-    1. Simulation(network, env=...) (từ demo, test_simulation)
-    2. Simulation(config, current_range_m=..., env=...) (từ main đa tiến trình)
-    """
+    """Quản lý toàn bộ vòng đời và tiến trình mô phỏng mạng cảm biến."""
 
     def __init__(
         self,
@@ -71,9 +57,6 @@ class Simulation:
         config: SimulationConfig | None = None,
         routing_algorithm: str = "EMHR",
         alpha_energy: float = 0.20,
-        attacker_ratio: float = 0.0,
-        drop_prob: float = 0.0,
-        channel_loss_prob: float = 0.0,
         enable_traffic: bool = True,
         csv_log_path: str | Path | None = None,
         quiet: bool = True,
@@ -99,9 +82,6 @@ class Simulation:
 
         self.routing_algorithm = routing_algorithm
         self.alpha_energy = alpha_energy
-        self.attacker_ratio = attacker_ratio
-        self.drop_prob = drop_prob
-        self.channel_loss_prob = channel_loss_prob
 
         self.router = RoutingEngine(
             self.network,
@@ -109,7 +89,6 @@ class Simulation:
             alpha_energy=self.alpha_energy,
         )
         self.radio = RadioModel()
-        self.detector = TrustDetector()
 
         self.enable_traffic = enable_traffic
         if self.enable_traffic:
@@ -119,10 +98,6 @@ class Simulation:
                 router=self.router,
                 radio=self.radio,
                 config=self.config,
-                attacker_ratio=self.attacker_ratio,
-                drop_prob=self.drop_prob,
-                channel_loss_prob=self.channel_loss_prob,
-                detector=self.detector,
                 traffic_seed=seed,
             )
             self.traffic_gen.start()
@@ -138,14 +113,7 @@ class Simulation:
         yield self.env.timeout(timeout_s)
 
     def run_for(self, duration_s: float) -> float:
-        """Tua nhanh mô phỏng thêm một khoảng thời gian duration_s.
-
-        Args:
-            duration_s: Số giây muốn chạy mô phỏng.
-
-        Returns:
-            Thời gian tuyệt đối của hệ thống sau khi chạy xong (env.now).
-        """
+        """Tua nhanh mô phỏng thêm một khoảng thời gian duration_s."""
         if duration_s <= 0:
             raise ValueError("duration_s must be greater than zero")
 
@@ -168,7 +136,7 @@ class Simulation:
             writer = csv.writer(file)
             writer.writerow([
                 "Time_s", "Alive_Nodes", "Total_Energy_J",
-                "Generated_Packets", "Delivered_Packets", "Dropped_Packets", "Avg_Latency_s"
+                "Generated_Packets", "Delivered_Packets", "Dropped_Packets"
             ])
 
             while True:
@@ -179,15 +147,10 @@ class Simulation:
                 deliv_count = len(self.traffic_gen.delivered_packets) if self.traffic_gen else 0
                 drop_count = len(self.traffic_gen.dropped_packets) if self.traffic_gen else 0
 
-                if deliv_count > 0 and self.traffic_gen and self.traffic_gen.delivered_latencies:
-                    avg_latency = sum(self.traffic_gen.delivered_latencies) / deliv_count
-                else:
-                    avg_latency = 0.0
-
                 if not self.quiet:
                     print(
                         f"[{self.env.now:05.1f}s] Sống: {alive_nodes:3d} | "
-                        f"Gửi: {gen_count} | Tới: {deliv_count} | Rớt: {drop_count} | Trễ: {avg_latency:.4f}s"
+                        f"Gửi: {gen_count} | Tới: {deliv_count} | Rớt: {drop_count}"
                     )
 
                 writer.writerow([
@@ -197,7 +160,6 @@ class Simulation:
                     gen_count,
                     deliv_count,
                     drop_count,
-                    round(avg_latency, 5),
                 ])
                 file.flush()
 
@@ -236,7 +198,6 @@ class Simulation:
             radio=self.radio,
             sim_time_s=float(self.env.now),
             router=self.router,
-            detector=self.detector,
         )
 
     def export_results(self, output_dir: str | Path) -> dict[str, Path]:

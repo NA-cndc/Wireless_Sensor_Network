@@ -1,12 +1,4 @@
-"""Tests for routing algorithms: MHR, EMHR, and S-EMHR.
-
-Kiểm tra:
-- Item 4: MHR tìm đường ít hop nhất tới nhiều sink, no-route, không đi qua node chết.
-- Item 5: EMHR lọc pin dưới/bằng/trên ngưỡng, source dưới ngưỡng nhưng đủ pin TX.
-- Item 6: Ưu tiên hop trước distance, distance trước energy, deterministic tie cuối.
-- Item 7: Reroute khi relay chết/thấp pin, đổi sink, no-route không fallback.
-- Item 23: S-EMHR tránh node blacklist, đổi sink, no-route khi không còn đường.
-"""
+"""Tests for routing algorithms: MHR and EMHR."""
 
 import networkx as nx
 import pytest
@@ -136,15 +128,3 @@ def test_emhr_lexicographic_order():
 
     route = router.get_emhr_route("sensor_000")
     assert route == ["sensor_000", "sensor_002", "sink_01"]
-
-
-def test_semhr_avoids_blacklisted_nodes():
-    net = make_test_network()
-    router = RoutingEngine(net, algorithm="S-EMHR", alpha_energy=0.20)
-
-    blacklist = {"sensor_001"}
-    route = router.get_semhr_route("sensor_000", blacklist=blacklist)
-    assert route == ["sensor_000", "sensor_002", "sink_01"]
-
-    blacklist.add("sensor_002")
-    assert router.get_semhr_route("sensor_000", blacklist=blacklist) is None

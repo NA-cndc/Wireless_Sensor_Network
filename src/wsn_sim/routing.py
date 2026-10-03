@@ -1,23 +1,14 @@
-"""Routing algorithms for the WSN simulation: MHR, EMHR, and S-EMHR.
-
-Triển khai BFS Layering kết hợp DAG Dynamic Programming để tối ưu hóa thứ tự Lexicographic:
-1. H(P): Số chặng nhảy (hops) nhỏ nhất tới bất kỳ Sink nào.
-2. D(P): Tổng khoảng cách vật lý nhỏ nhất.
-3. Phi_E(P): Hàm phạt năng lượng các nút trung gian nhỏ nhất.
-4. Tuple định danh nút để tie-break xác định tuyệt đối (Deterministic).
-
-Bảo đảm vô hiệu hóa bộ đệm (Cache Invalidation) khi năng lượng/ngưỡng/blacklist thay đổi.
-"""
+"""Routing algorithms for the WSN simulation: MHR and EMHR."""
 
 from __future__ import annotations
 
-from typing import Any, Sequence
+from typing import Sequence
 
 from wsn_sim.network import Network
 
 
 class RoutingEngine:
-    """Cung cấp các thuật toán định tuyến MHR, EMHR, và S-EMHR theo đặc tả đề cương."""
+    """Cung cấp các thuật toán định tuyến MHR và EMHR."""
 
     def __init__(
         self,
@@ -60,10 +51,7 @@ class RoutingEngine:
         return total_dist
 
     def compute_energy_penalty(self, path: Sequence[str]) -> float:
-        """Hàm phạt năng lượng của các sensor trong đường:
-
-        Phi_E(P) = sum_{u in V(P) cap V_S} (E0 / (E_u + epsilon))
-        """
+        """Hàm phạt năng lượng của các sensor trong đường."""
         e0 = self.network.config.initial_energy_j
         penalty = 0.0
         for node_id in path:
@@ -77,14 +65,12 @@ class RoutingEngine:
         route: list[str],
         algorithm: str = "EMHR",
         threshold_j: float | None = None,
-        blacklist: set[str] | None = None,
     ) -> bool:
         """Kiểm tra xem lộ trình hiện tại còn hợp lệ để tiếp tục truyền dẫn hay không."""
         if not route or len(route) < 2:
             return False
 
         eth = self.threshold_j if threshold_j is None else float(threshold_j)
-        bl = blacklist if blacklist is not None else set()
 
         src = self.network.sensors.get(route[0])
         if not src or not src.is_alive:
@@ -102,9 +88,7 @@ class RoutingEngine:
                 relay = self.network.sensors.get(u)
                 if not relay or not relay.is_alive:
                     return False
-                if algorithm in ("EMHR", "S-EMHR") and relay.energy_j < eth:
-                    return False
-                if algorithm == "S-EMHR" and u in bl:
+                if algorithm == "EMHR" and relay.energy_j < eth:
                     return False
 
         return True
@@ -113,7 +97,6 @@ class RoutingEngine:
         self,
         source_id: str,
         threshold_j: float | None = None,
-        blacklist: set[str] | None = None,
     ) -> list[str] | None:
         """Thuật toán tìm đường Lexicographic hiệu năng cao bằng BFS Layering và DAG DP."""
         if source_id not in self.network.sensors:
@@ -123,7 +106,6 @@ class RoutingEngine:
             return None
 
         sinks = set(self.network.sinks.keys())
-        bl = blacklist if blacklist is not None else set()
         eth = self.threshold_j if threshold_j is None else float(threshold_j)
         e0 = self.network.config.initial_energy_j
 
@@ -135,7 +117,7 @@ class RoutingEngine:
             next_level: set[str] = set()
             for u in levels[-1]:
                 for v in self.network.graph.neighbors(u):
-                    if v in bl or v in visited:
+                    if v in visited:
                         continue
                     if v in sinks:
                         next_level.add(v)
@@ -194,40 +176,28 @@ class RoutingEngine:
 
     def get_mhr_route(self, source_id: str) -> list[str] | None:
         """Minimum Hop Routing (MHR) baseline."""
-        return self._find_lexicographic_path(source_id, threshold_j=None, blacklist=None)
+        return self._find_lexicographic_path(source_id, threshold_j=None)
 
     def get_emhr_route(
         self,
         source_id: str,
         threshold_j: float | None = None,
-        blacklist: set[str] | None = None,
     ) -> list[str] | None:
-        """Energy-aware Minimum-Hop Routing (EMHR) / S-EMHR."""
+        """Energy-aware Minimum-Hop Routing (EMHR)."""
         eth = self.threshold_j if threshold_j is None else float(threshold_j)
-        return self._find_lexicographic_path(source_id, threshold_j=eth, blacklist=blacklist)
-
-    def get_semhr_route(
-        self,
-        source_id: str,
-        blacklist: set[str],
-        threshold_j: float | None = None,
-    ) -> list[str] | None:
-        """Security-aware EMHR: Tìm tuyến tối ưu bỏ qua các node nghi ngờ trong blacklist."""
-        return self.get_emhr_route(source_id, threshold_j=threshold_j, blacklist=blacklist)
+        return self._find_lexicographic_path(source_id, threshold_j=eth)
 
     def get_route(
         self,
         source_id: str,
         algorithm: str | None = None,
-        blacklist: set[str] | None = None,
     ) -> list[str] | None:
         """Điều phối tìm tuyến theo thuật toán cấu hình có caching và tự động vô hiệu hóa cache."""
         algo = algorithm if algorithm is not None else self.algorithm
-        bl = blacklist or set()
 
         cached = self._route_cache.get(source_id)
         if cached:
-            if self.is_route_valid(cached, algorithm=algo, blacklist=bl):
+            if self.is_route_valid(cached, algorithm=algo):
                 return list(cached)
             else:
                 self.route_change_count += 1
@@ -235,10 +205,6 @@ class RoutingEngine:
 
         if algo == "MHR":
             route = self.get_mhr_route(source_id)
-        elif algo in ("EMHR", "MHR-SF"):
-            route = self.get_emhr_route(source_id, threshold_j=self.threshold_j)
-        elif algo == "S-EMHR":
-            route = self.get_semhr_route(source_id, blacklist=bl, threshold_j=self.threshold_j)
         else:
             route = self.get_emhr_route(source_id, threshold_j=self.threshold_j)
 
