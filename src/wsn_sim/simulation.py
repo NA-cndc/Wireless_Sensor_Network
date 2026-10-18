@@ -20,6 +20,7 @@ from wsn_sim.traffic import TrafficGenerator
 
 TIMESERIES_COLUMNS = [
     'time_s',
+    'event_seq',
     'alive_sensors',
     'dead_sensors',
     'total_energy_j',
@@ -30,6 +31,10 @@ TIMESERIES_COLUMNS = [
     'reachable_sensors',
     'reachability_ratio',
     'reachability_state',
+    'routing_eligible_sensors',
+    'routing_eligible_ratio',
+    'energy_feasible_sensors',
+    'energy_feasible_ratio',
     'delivered_bytes',
     'delivered_payload_bytes',
     'snapshot_kind',
@@ -81,6 +86,7 @@ class Simulation:
         self.quiet = quiet
         self.csv_log_path = Path(csv_log_path) if csv_log_path else None
         self.requested_duration_s = 0.0
+        self.event_seq_counter: int = 0
         self.reachability_history: list[dict[str, Any]] = []
         self.timeseries_snapshots: list[dict[str, Any]] = []
 
@@ -114,8 +120,12 @@ class Simulation:
             self.network,
             algorithm=self.routing_algorithm,
             alpha_energy=self.alpha_energy,
+            event_seq_provider=self.next_event_seq,
         )
-        self.radio = RadioModel(death_callback=self._on_node_death)
+        self.radio = RadioModel(
+            death_callback=self._on_node_death,
+            event_seq_provider=self.next_event_seq,
+        )
         self.enable_traffic = enable_traffic
         self.traffic_gen: TrafficGenerator | None = None
         if self.enable_traffic:
@@ -126,6 +136,7 @@ class Simulation:
                 radio=self.radio,
                 config=self.config,
                 traffic_seed=self.traffic_seed,
+                event_seq_provider=self.next_event_seq,
             )
             self.traffic_gen.start()
 
@@ -136,6 +147,10 @@ class Simulation:
         if self.enable_traffic:
             self.env.process(self._monitor_network())
 
+    def next_event_seq(self) -> int:
+        self.event_seq_counter += 1
+        return self.event_seq_counter
+
     def _record_reachability_event(
         self,
         trigger: str,
@@ -144,6 +159,7 @@ class Simulation:
         snapshot = self.network.physical_reachability_snapshot(float(self.env.now))
         snapshot['trigger'] = trigger
         snapshot['death_node_id'] = death_node_id
+        snapshot['event_seq'] = self.next_event_seq()
         self.reachability_history.append(snapshot)
 
     def _on_node_death(self, event: dict[str, Any]) -> None:
@@ -174,8 +190,14 @@ class Simulation:
         )
         reachability = self.network.physical_reachability_snapshot(float(self.env.now))
         alive_count = reachability['alive_sensors']
+        feasibility = self.router.transmission_feasibility_snapshot(
+            radio=self.radio,
+            packet_size_bytes=int(self.config.packet_size_bytes),
+            time_s=float(self.env.now),
+        )
         return {
             'time_s': float(self.env.now),
+            'event_seq': self.next_event_seq(),
             'alive_sensors': alive_count,
             'dead_sensors': len(self.network.sensors) - alive_count,
             'total_energy_j': sum(
@@ -188,6 +210,10 @@ class Simulation:
             'reachable_sensors': reachability['reachable_sensors'],
             'reachability_ratio': reachability['reachability_ratio'],
             'reachability_state': reachability['state'],
+            'routing_eligible_sensors': feasibility['routing_eligible_sensors'],
+            'routing_eligible_ratio': feasibility['routing_eligible_ratio'],
+            'energy_feasible_sensors': feasibility['energy_feasible_sensors'],
+            'energy_feasible_ratio': feasibility['energy_feasible_ratio'],
             'delivered_bytes': sum(packet.size_bytes for packet in unique_delivered),
             'delivered_payload_bytes': sum(
                 packet.payload_size_bytes for packet in unique_delivered
@@ -399,7 +425,11 @@ class Simulation:
             'size_bytes',
             'payload_size_bytes',
             'created_at',
+            'created_event_seq',
             'delivered_at',
+            'delivered_event_seq',
+            'dropped_at',
+            'dropped_event_seq',
             'latency_s',
             'hop_count',
             'status',
@@ -421,7 +451,11 @@ class Simulation:
                     'size_bytes': packet.size_bytes,
                     'payload_size_bytes': packet.payload_size_bytes,
                     'created_at': packet.created_at,
+                    'created_event_seq': packet.created_event_seq,
                     'delivered_at': packet.delivered_at,
+                    'delivered_event_seq': packet.delivered_event_seq,
+                    'dropped_at': packet.dropped_at,
+                    'dropped_event_seq': packet.dropped_event_seq,
                     'latency_s': packet.latency_s,
                     'hop_count': len(packet.path) - 1,
                     'status': packet.status.value,
@@ -434,9 +468,25 @@ class Simulation:
         self._write_rows(packets_path, packet_fields, packet_rows)
         saved_files['packets'] = packets_path
 
+        route_events_path = out_path / 'route_events.csv'
+        route_fields = [
+            'time_s',
+            'event_seq',
+            'source_id',
+            'packet_id',
+            'current_node_id',
+            'old_route',
+            'new_route',
+            'reason',
+            'outcome',
+        ]
+        self._write_rows(route_events_path, route_fields, self.router.route_events)
+        saved_files['route_events'] = route_events_path
+
         ledger_path = out_path / 'energy_ledger.csv'
         ledger_fields = [
             'time_s',
+            'event_seq',
             'packet_id',
             'sender_id',
             'receiver_id',
@@ -460,6 +510,7 @@ class Simulation:
             'energy_before_j',
             'energy_after_j',
             'cause',
+            'event_seq',
         ]
         self._write_rows(deaths_path, death_fields, self.radio.death_events)
         saved_files['node_deaths'] = deaths_path
@@ -467,6 +518,7 @@ class Simulation:
         reachability_path = out_path / 'reachability_events.csv'
         reachability_fields = [
             'time_s',
+            'event_seq',
             'alive_sensors',
             'reachable_sensors',
             'reachability_ratio',
@@ -493,7 +545,7 @@ class Simulation:
             output_names,
             Path.cwd(),
             run_metadata={
-                'export_schema_version': 2,
+                'export_schema_version': 3,
                 'routing_algorithm': self.routing_algorithm,
                 'communication_range_m': self.network.communication_range_m,
                 'topology_seed': self.config.seed,

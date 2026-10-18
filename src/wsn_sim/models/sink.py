@@ -29,7 +29,12 @@ class Sink:
         if not self.node_id:
             raise ValueError("node_id must not be empty")
 
-    def receive(self, packet: Packet, received_at: float) -> bool:
+    def receive(
+        self,
+        packet: Packet,
+        received_at: float,
+        event_seq: int | None = None,
+    ) -> bool:
         """Tiếp nhận một gói tin khi nó di chuyển đến trạm Sink đích.
 
         Quy trình xử lý thống nhất:
@@ -41,6 +46,7 @@ class Sink:
         Args:
             packet: Gói tin đến trạm sink.
             received_at: Mốc thời gian mô phỏng (giây) tại thời điểm nhận.
+            event_seq: Thứ tự toàn cục của sự kiện nhận gói.
 
         Returns:
             True nếu gói tin được nhận mới thành công; False nếu là gói trùng lặp.
@@ -50,7 +56,11 @@ class Sink:
             return False
 
         # Bước 2: Ghi nhận gói mới đến sink thành công, cập nhật trạng thái DELIVERED và timestamp (giây)
-        packet.mark_delivered(received_at, sink_id=self.node_id)
+        packet.mark_delivered(
+            received_at,
+            sink_id=self.node_id,
+            event_seq=event_seq,
+        )
         self.received_packet_ids.add(packet.packet_id)
         self.delivered_packets.append(packet)
         return True

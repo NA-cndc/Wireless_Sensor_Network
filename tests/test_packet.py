@@ -34,14 +34,16 @@ def test_delivery_status_and_latency() -> None:
 
 def test_dropped_and_no_route_are_distinct() -> None:
     dropped = make_packet()
-    dropped.mark_dropped("energy depleted")
+    dropped.mark_dropped("energy depleted", sim_time_s=3.0)
     no_route = Packet("packet_002", "sensor_000", 2.0, 128)
-    no_route.mark_dropped("no sink component", no_route=True)
+    no_route.mark_dropped("no sink component", no_route=True, sim_time_s=4.0)
 
     assert dropped.status is PacketStatus.DROPPED
     assert no_route.status is PacketStatus.NO_ROUTE
     assert dropped.drop_reason == "energy depleted"
     assert no_route.drop_reason == "no sink component"
+    assert dropped.dropped_at == 3.0
+    assert no_route.dropped_at == 4.0
 
 
 @pytest.mark.parametrize(

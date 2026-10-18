@@ -28,25 +28,33 @@ CSV_FIELDS = {
     'topology_edges.csv': {'source_id', 'target_id', 'distance_m'},
     'packets.csv': {
         'packet_id', 'source_id', 'sink_id', 'sequence_number', 'size_bytes',
-        'payload_size_bytes', 'created_at', 'delivered_at', 'latency_s', 'hop_count',
+        'payload_size_bytes', 'created_at', 'created_event_seq',
+        'delivered_at', 'delivered_event_seq', 'dropped_at', 'dropped_event_seq',
+        'latency_s', 'hop_count',
         'status', 'drop_reason', 'drop_node_id', 'route', 'path',
     },
+    'route_events.csv': {
+        'time_s', 'event_seq', 'source_id', 'packet_id', 'current_node_id', 'old_route', 'new_route',
+        'reason', 'outcome',
+    },
     'energy_ledger.csv': {
-        'time_s', 'packet_id', 'sender_id', 'receiver_id', 'distance_m', 'tx_energy_j',
+        'time_s', 'event_seq', 'packet_id', 'sender_id', 'receiver_id', 'distance_m', 'tx_energy_j',
         'rx_energy_j', 'success', 'reason', 'sender_energy_before',
         'sender_energy_after', 'receiver_energy_before', 'receiver_energy_after',
     },
     'node_deaths.csv': {
-        'node_id', 'death_time_s', 'energy_before_j', 'energy_after_j', 'cause',
+        'node_id', 'death_time_s', 'energy_before_j', 'energy_after_j', 'cause', 'event_seq',
     },
     'reachability_events.csv': {
-        'time_s', 'alive_sensors', 'reachable_sensors', 'reachability_ratio', 'state',
+        'time_s', 'event_seq', 'alive_sensors', 'reachable_sensors', 'reachability_ratio', 'state',
         'trigger', 'death_node_id',
     },
     'timeseries.csv': {
-        'time_s', 'alive_sensors', 'dead_sensors', 'total_energy_j',
+        'time_s', 'event_seq', 'alive_sensors', 'dead_sensors', 'total_energy_j',
         'generated_packets', 'delivered_packets', 'dropped_packets', 'pending_packets',
         'reachable_sensors', 'reachability_ratio', 'reachability_state',
+        'routing_eligible_sensors', 'routing_eligible_ratio',
+        'energy_feasible_sensors', 'energy_feasible_ratio',
         'delivered_bytes', 'delivered_payload_bytes', 'snapshot_kind',
     },
 }
@@ -58,9 +66,12 @@ METRIC_FIELDS = {
     'packet_conservation_holds', 'drop_reasons', 'total_delivered_bytes',
     'total_delivered_bits', 'total_delivered_payload_bytes',
     'total_delivered_payload_bits', 'total_hops_delivered',
-    'total_end_to_end_delay_s', 'throughput_bps', 'goodput_bps', 'pdr_percent',
+    'total_end_to_end_delay_s', 'throughput_bps', 'goodput_bps', 'offered_rate_bps',
+    'configured_rate_bps', 'pdr_percent',
     'average_hops', 'average_end_to_end_delay_s', 'initial_total_energy_j',
-    'residual_total_energy_j', 'consumed_energy_sensors_j', 'route_change_count',
+    'residual_total_energy_j', 'consumed_energy_sensors_j', 'energy_per_delivered_bit_j',
+    'route_recompute_count', 'route_change_count', 'route_failure_count',
+    'relay_jain_fairness', 'delivered_bits_at_fnd', 'delivered_bits_at_hnd', 'delivered_bits_at_lnd',
     'functional_network_death_s', 'functional_network_death_status',
     'network_lifetime_s', 'network_lifetime_status', 'network_lifetime_definition',
     'current_reachable_sensors',
@@ -144,7 +155,17 @@ def _number(
     return result
 
 
-def _integer(value: Any, location: str, *, non_negative: bool = False) -> int:
+def _integer(
+    value: Any,
+    location: str,
+    *,
+    optional: bool = False,
+    non_negative: bool = False,
+) -> int | None:
+    if value is None or value == '':
+        if optional:
+            return None
+        raise InputDataError(f'{location}: integer value is required')
     if isinstance(value, bool):
         raise InputDataError(f'{location}: boolean is not an integer counter')
     if isinstance(value, int):
@@ -340,11 +361,11 @@ def validate_run(
         'run_manifest.json.export_schema_version',
         non_negative=True,
     )
-    if schema_version < 2:
+    if schema_version < 3:
         raise InputDataError(
-            'run_manifest.json.export_schema_version: schema v2 with the actual '
-            'topology_edges.csv is required; legacy geometry reconstruction is '
-            'not accepted as evidence of the simulated topology'
+            'run_manifest.json.export_schema_version: schema v3 with packet '
+            'lifecycle event sequences and the actual topology_edges.csv is '
+            'required'
         )
     tables = {
         name: _read_csv(run_path / name, fields)
@@ -357,6 +378,7 @@ def validate_run(
     deaths = tables['node_deaths.csv']
     reachability = tables['reachability_events.csv']
     timeseries = tables['timeseries.csv']
+    route_events = tables['route_events.csv']
     if not nodes:
         raise InputDataError('nodes.csv: at least one node is required')
     if not timeseries:
@@ -407,7 +429,9 @@ def validate_run(
             non_negative=non_negative,
         )
 
-    def metric_integer(name: str) -> int:
+    def metric_integer(name: str, *, optional: bool = False) -> int | None:
+        if optional and (metrics.get(name) is None or metrics.get(name) == ''):
+            return None
         return _integer(metrics[name], f'metrics.json.{name}', non_negative=True)
 
     configuration = manifest['configuration']
@@ -645,6 +669,11 @@ def validate_run(
         if sequence < 0:
             packet_errors.append(f'{location}.sequence_number: negative')
         created = _number(row['created_at'], f'{location}.created_at', non_negative=True)
+        created_seq = _integer(
+            row['created_event_seq'],
+            f'{location}.created_event_seq',
+            non_negative=True,
+        )
         if created is not None and not (0 <= created < actual_duration):
             packet_errors.append(
                 f'{location}.created_at: {created} outside [0,{actual_duration})'
@@ -667,15 +696,41 @@ def validate_run(
             row['delivered_at'], f'{location}.delivered_at', optional=True,
             non_negative=True,
         )
+        delivered_seq = _integer(
+            row['delivered_event_seq'],
+            f'{location}.delivered_event_seq',
+            non_negative=True,
+            optional=True,
+        )
+        dropped_at = _number(
+            row['dropped_at'], f'{location}.dropped_at', optional=True,
+            non_negative=True,
+        )
+        dropped_seq = _integer(
+            row['dropped_event_seq'],
+            f'{location}.dropped_event_seq',
+            non_negative=True,
+            optional=True,
+        )
         latency = _number(
             row['latency_s'], f'{location}.latency_s', optional=True,
             non_negative=True,
         )
         if status == 'DELIVERED':
             delivered_rows.append(row)
+            if dropped_at is not None or dropped_seq is not None:
+                packet_errors.append(
+                    f'{location}: delivered packet has dropped lifecycle fields'
+                )
+            if delivered_seq is None:
+                packet_errors.append(f'{location}: delivered packet has no delivered_event_seq')
+            elif delivered_seq <= created_seq:
+                packet_errors.append(
+                    f'{location}.delivered_event_seq: must follow created_event_seq'
+                )
             if (
                 delivered_at is None or created is None or delivered_at < created
-                or not (0 <= delivered_at < actual_duration)
+                or not (0 <= delivered_at <= actual_duration)
             ):
                 packet_errors.append(f'{location}: invalid delivered timestamp interval')
             if not path or path[-1] not in sink_ids or sink_id != path[-1]:
@@ -696,12 +751,22 @@ def validate_run(
         elif status in {'DROPPED', 'NO_ROUTE'}:
             dropped_rows.append(row)
             drop_reasons[row['drop_reason'] or 'unspecified'] += 1
-            if delivered_at is not None or latency is not None:
+            if delivered_at is not None or latency is not None or delivered_seq is not None:
                 packet_errors.append(f'{location}: dropped packet has delivery fields')
+            if dropped_seq is None:
+                packet_errors.append(f'{location}: dropped packet has no dropped_event_seq')
+            elif dropped_seq <= created_seq:
+                packet_errors.append(
+                    f'{location}.dropped_event_seq: must follow created_event_seq'
+                )
+            if dropped_at is None or created is None or dropped_at < created or not (0 <= dropped_at <= actual_duration):
+                packet_errors.append(f'{location}: invalid dropped_at timestamp interval')
         else:
             pending_rows.append(row)
-            if delivered_at is not None or latency is not None:
+            if delivered_at is not None or latency is not None or delivered_seq is not None:
                 packet_errors.append(f'{location}: pending packet has delivery fields')
+            if dropped_at is not None or dropped_seq is not None:
+                packet_errors.append(f'{location}: pending packet has dropped_at')
     duplicate_packet_ids = sorted(
         packet_id for packet_id, count in Counter(packet_ids).items() if count > 1
     )
@@ -713,6 +778,59 @@ def validate_run(
     add(
         'packet_field_and_domain_validity', len(packet_errors), 0,
         passed=not packet_errors, detail='; '.join(packet_errors[:10]), category='schema',
+    )
+
+    route_event_errors: list[str] = []
+    valid_route_outcomes = {'initial_route', 'unchanged', 'changed', 'failed'}
+    for index, row in enumerate(route_events, start=2):
+        location = f'route_events.csv:{index}'
+        route_time = _number(
+            row['time_s'],
+            f'{location}.time_s',
+            non_negative=True,
+        )
+        _integer(
+            row['event_seq'],
+            f'{location}.event_seq',
+            non_negative=True,
+        )
+        outcome = row['outcome'].strip()
+        reason = row['reason'].strip()
+        if route_time is not None and not (0 <= route_time < actual_duration):
+            route_event_errors.append(
+                f'{location}.time_s: {route_time} outside [0,{actual_duration})'
+            )
+        if row['source_id'] not in sensor_ids:
+            route_event_errors.append(f'{location}.source_id: unknown sensor')
+        if row['current_node_id'] not in sensor_ids:
+            route_event_errors.append(f'{location}.current_node_id: unknown sensor')
+        if row['packet_id'] not in set(packet_ids):
+            route_event_errors.append(f'{location}.packet_id: unknown packet')
+        if outcome not in valid_route_outcomes:
+            route_event_errors.append(
+                f'{location}.outcome: unsupported value {outcome!r}'
+            )
+        if not reason:
+            route_event_errors.append(f'{location}.reason: value must not be empty')
+        if reason == 'initial_route' and outcome not in {'initial_route', 'failed'}:
+            route_event_errors.append(
+                f'{location}: initial_route reason has invalid outcome {outcome!r}'
+            )
+        if reason == 'route_invalid' and outcome == 'initial_route':
+            route_event_errors.append(
+                f'{location}: route_invalid cannot have initial_route outcome'
+            )
+        if outcome == 'failed' and row['new_route'].strip():
+            route_event_errors.append(f'{location}: failed event has a new_route')
+        if outcome != 'failed' and not row['new_route'].strip():
+            route_event_errors.append(f'{location}: successful event has no new_route')
+    add(
+        'route_event_field_and_domain_validity',
+        len(route_event_errors),
+        0,
+        passed=not route_event_errors,
+        detail='; '.join(route_event_errors[:10]),
+        category='schema',
     )
 
     counts = {
@@ -1246,13 +1364,13 @@ def validate_run(
 
     timeseries_errors: list[str] = []
     previous_snapshot_time = -math.inf
-    deaths_with_order = list(enumerate(death_rows))
     for offset, row in enumerate(timeseries):
         index = offset + 2
         location = f'timeseries.csv:{index}'
         time_s = _number(row['time_s'], f'{location}.time_s', non_negative=True)
         is_final = offset == len(timeseries) - 1
-        expected_kind = 'final' if is_final else ('initial' if offset == 0 else 'periodic')
+        is_initial = offset == 0
+        expected_kind = 'final' if is_final else ('initial' if is_initial else 'periodic')
         if row['snapshot_kind'] != expected_kind:
             timeseries_errors.append(
                 f'{location}.snapshot_kind: {row["snapshot_kind"]!r} != {expected_kind!r}'
@@ -1266,7 +1384,8 @@ def validate_run(
             )
         if time_s is not None and time_s < previous_snapshot_time:
             timeseries_errors.append(f'{location}.time_s: snapshots are not chronological')
-        previous_snapshot_time = float(time_s)
+        previous_snapshot_time = float(time_s) if time_s is not None else previous_snapshot_time
+
         counters = {
             field: _integer(row[field], f'{location}.{field}', non_negative=True)
             for field in (
@@ -1275,11 +1394,12 @@ def validate_run(
                 'reachable_sensors', 'delivered_bytes', 'delivered_payload_bytes',
             )
         }
-        _number(row['total_energy_j'], f'{location}.total_energy_j', non_negative=True)
+        energy_val = _number(row['total_energy_j'], f'{location}.total_energy_j', non_negative=True)
         ratio = _number(
             row['reachability_ratio'], f'{location}.reachability_ratio', optional=True,
             non_negative=True,
         )
+
         if counters['alive_sensors'] + counters['dead_sensors'] != initial_count:
             timeseries_errors.append(f'{location}: alive + dead does not equal sensor count')
         if counters['reachable_sensors'] > counters['alive_sensors']:
@@ -1289,26 +1409,199 @@ def validate_run(
             + counters['pending_packets'] != counters['generated_packets']
         ):
             timeseries_errors.append(f'{location}: packet counters do not conserve')
+
+        snap_time = float(time_s) if time_s is not None else 0.0
+        snap_seq = _integer(
+            row['event_seq'],
+            f'{location}.event_seq',
+            non_negative=True,
+        )
+
+        def is_before_snapshot(t_val: float, s_val: int) -> bool:
+            return (t_val, s_val) <= (snap_time, snap_seq)
+
+        # Recompute dead sensors before snapshot
         dead_at_snapshot = set()
-        if offset != 0:
-            dead_at_snapshot = {
-                str(death['node_id']) for _, death in deaths_with_order
-                if float(death['death_time_s']) <= float(time_s)
-            }
-        expected_alive, expected_reachable, expected_ratio, expected_state = (
+        for death in deaths:
+            d_time = float(death['death_time_s'])
+            d_seq = _integer(
+                death['event_seq'],
+                'node_deaths.csv.event_seq',
+                non_negative=True,
+            )
+            if is_before_snapshot(d_time, d_seq):
+                dead_at_snapshot.add(str(death['node_id']))
+
+        expected_alive = initial_count - len(dead_at_snapshot)
+        expected_dead = len(dead_at_snapshot)
+        _, expected_reachable, expected_ratio, expected_state = (
             _physical_snapshot(adjacency, sensor_ids, sink_ids, dead_at_snapshot)
         )
-        if (
-            counters['alive_sensors'] != expected_alive
-            or counters['reachable_sensors'] != expected_reachable
-            or not _same_number(ratio, expected_ratio, tolerance)[1]
-            or row['reachability_state'] != expected_state
-        ):
-            timeseries_errors.append(f'{location}: reachability does not match topology replay')
+
+        if counters['alive_sensors'] != expected_alive:
+            timeseries_errors.append(f'{location}.alive_sensors: {counters["alive_sensors"]} != replay {expected_alive}')
+        if counters['dead_sensors'] != expected_dead:
+            timeseries_errors.append(f'{location}.dead_sensors: {counters["dead_sensors"]} != replay {expected_dead}')
+        if counters['reachable_sensors'] != expected_reachable:
+            timeseries_errors.append(f'{location}.reachable_sensors: {counters["reachable_sensors"]} != replay {expected_reachable}')
+        if not _same_number(ratio, expected_ratio, tolerance)[1]:
+            timeseries_errors.append(f'{location}.reachability_ratio: {ratio} != replay {expected_ratio}')
+        if row['reachability_state'] != expected_state:
+            timeseries_errors.append(f'{location}.reachability_state: {row["reachability_state"]!r} != replay {expected_state!r}')
+
+        # Recompute total energy before snapshot: initial - (TX + RX)
+        initial_total_energy_all = sum(node_values[s]['initial'] for s in sensor_ids)
+        consumed_at_snap = 0.0
+        for entry in ledger:
+            l_time = float(entry['time_s'])
+            l_seq = _integer(
+                entry['event_seq'],
+                'energy_ledger.csv.event_seq',
+                non_negative=True,
+            )
+            if is_before_snapshot(l_time, l_seq):
+                consumed_at_snap += float(entry['tx_energy_j']) + float(entry['rx_energy_j'])
+        expected_total_energy = max(0.0, initial_total_energy_all - consumed_at_snap)
+
+        if not _same_number(energy_val, expected_total_energy, tolerance)[1]:
+            timeseries_errors.append(
+                f'{location}.total_energy_j: {energy_val} != replay {expected_total_energy}'
+            )
+
+        # Recompute packets before snapshot
+        gen_before = []
+        deliv_before = []
+        drop_before = []
+        for p in packets:
+            c_time = float(p['created_at'])
+            c_seq = int(p['created_event_seq'])
+            if is_before_snapshot(c_time, c_seq):
+                gen_before.append(p)
+            if p['status'] == 'DELIVERED' and p['delivered_at']:
+                d_time = float(p['delivered_at'])
+                d_seq = int(p['delivered_event_seq'])
+                if is_before_snapshot(d_time, d_seq):
+                    deliv_before.append(p)
+            elif p['status'] in {'DROPPED', 'NO_ROUTE'} and p.get('dropped_at'):
+                dr_time = float(p['dropped_at'])
+                dr_seq = int(p['dropped_event_seq'])
+                if is_before_snapshot(dr_time, dr_seq):
+                    drop_before.append(p)
+
+        expected_gen = len(gen_before)
+        expected_deliv = len({p['packet_id'] for p in deliv_before})
+        expected_dropped = len(drop_before)
+        expected_pending = expected_gen - expected_deliv - expected_dropped
+        expected_deliv_bytes = sum(int(p['size_bytes']) for p in deliv_before)
+        expected_deliv_payload_bytes = sum(int(p['payload_size_bytes']) for p in deliv_before)
+
+        if counters['generated_packets'] != expected_gen:
+            timeseries_errors.append(
+                f'{location}.generated_packets: {counters["generated_packets"]} != replay {expected_gen}'
+            )
+        if counters['delivered_packets'] != expected_deliv:
+            timeseries_errors.append(
+                f'{location}.delivered_packets: {counters["delivered_packets"]} != replay {expected_deliv}'
+            )
+        if counters['dropped_packets'] != expected_dropped:
+            timeseries_errors.append(
+                f'{location}.dropped_packets: {counters["dropped_packets"]} != replay {expected_dropped}'
+            )
+        if counters['pending_packets'] != expected_pending:
+            timeseries_errors.append(
+                f'{location}.pending_packets: {counters["pending_packets"]} != replay {expected_pending}'
+            )
+        if counters['delivered_bytes'] != expected_deliv_bytes:
+            timeseries_errors.append(
+                f'{location}.delivered_bytes: {counters["delivered_bytes"]} != replay {expected_deliv_bytes}'
+            )
+        if counters['delivered_payload_bytes'] != expected_deliv_payload_bytes:
+            timeseries_errors.append(
+                f'{location}.delivered_payload_bytes: {counters["delivered_payload_bytes"]} != replay {expected_deliv_payload_bytes}'
+            )
+
     add(
         'timeseries_integrity', len(timeseries_errors), 0,
         passed=not timeseries_errors, detail='; '.join(timeseries_errors[:10]),
     )
+
+    event_sequence_records: list[tuple[int, float, str]] = []
+
+    def add_event_sequence(
+        seq_value: Any,
+        time_value: Any,
+        location: str,
+    ) -> None:
+        seq = _integer(seq_value, f'{location}.event_seq', non_negative=True)
+        event_time = _number(time_value, f'{location}.time_s', non_negative=True)
+        event_sequence_records.append((int(seq), float(event_time), location))
+
+    for index, row in enumerate(packets, start=2):
+        add_event_sequence(
+            row['created_event_seq'],
+            row['created_at'],
+            f'packets.csv:{index}.created',
+        )
+        if row['status'] == 'DELIVERED':
+            add_event_sequence(
+                row['delivered_event_seq'],
+                row['delivered_at'],
+                f'packets.csv:{index}.delivered',
+            )
+        elif row['status'] in {'DROPPED', 'NO_ROUTE'}:
+            add_event_sequence(
+                row['dropped_event_seq'],
+                row['dropped_at'],
+                f'packets.csv:{index}.dropped',
+            )
+
+    for filename, rows, time_field in (
+        ('route_events.csv', route_events, 'time_s'),
+        ('energy_ledger.csv', ledger, 'time_s'),
+        ('node_deaths.csv', deaths, 'death_time_s'),
+        ('reachability_events.csv', reachability, 'time_s'),
+        ('timeseries.csv', timeseries, 'time_s'),
+    ):
+        for index, row in enumerate(rows, start=2):
+            add_event_sequence(
+                row['event_seq'],
+                row[time_field],
+                f'{filename}:{index}',
+            )
+
+    event_sequence_errors: list[str] = []
+    seq_locations: dict[int, list[str]] = {}
+    for seq, _, location in event_sequence_records:
+        seq_locations.setdefault(seq, []).append(location)
+    duplicate_sequences = {
+        seq: locations
+        for seq, locations in seq_locations.items()
+        if len(locations) > 1
+    }
+    if duplicate_sequences:
+        event_sequence_errors.append(
+            f'duplicate event_seq values: {dict(list(duplicate_sequences.items())[:10])}'
+        )
+
+    previous_time = -math.inf
+    previous_location = ''
+    for _, event_time, location in sorted(event_sequence_records):
+        if event_time + tolerance < previous_time:
+            event_sequence_errors.append(
+                f'{location}: event time {event_time} precedes the earlier sequence '
+                f'at {previous_location} with time {previous_time}'
+            )
+        previous_time = max(previous_time, event_time)
+        previous_location = location
+    add(
+        'event_sequence_integrity',
+        len(event_sequence_errors),
+        0,
+        passed=not event_sequence_errors,
+        detail='; '.join(event_sequence_errors[:10]),
+        category='schema',
+    )
+
     final = timeseries[-1]
     final_matches = (
         _integer(final['alive_sensors'], 'timeseries.final.alive_sensors', non_negative=True)
@@ -1334,7 +1627,98 @@ def validate_run(
         exact=True,
     )
     add('dead_sensors', len(death_id_set), metric_integer('dead_sensors'), exact=True)
-    metric_integer('route_change_count')
+
+    # Validate offered_rate_bps and configured_rate_bps
+    total_gen_bytes = sum(int(p['size_bytes']) for p in packets)
+    expected_offered_rate = (
+        8.0 * total_gen_bytes / actual_duration if actual_duration > 0 else None
+    )
+    add(
+        'offered_rate_bps', expected_offered_rate,
+        metric_number('offered_rate_bps', optional=True),
+    )
+
+    pkt_interval = float(manifest['configuration'].get('packet_interval_s', 10.0))
+    pkt_size = int(manifest['configuration'].get('packet_size_bytes', 128))
+    expected_configured_rate = (
+        (initial_count * pkt_size * 8.0) / pkt_interval if pkt_interval > 0 else None
+    )
+    add(
+        'configured_rate_bps', expected_configured_rate,
+        metric_number('configured_rate_bps', optional=True),
+    )
+
+    # Validate energy_per_delivered_bit_j
+    expected_energy_per_bit = (
+        consumed_energy / (total_bytes * 8.0) if total_bytes > 0 else None
+    )
+    add(
+        'energy_per_delivered_bit_j', expected_energy_per_bit,
+        metric_number('energy_per_delivered_bit_j', optional=True),
+    )
+
+    # Validate relay_jain_fairness
+    forwarded_counts = [int(node_by_id[s]['forwarded_packets']) for s in sensor_ids]
+    sum_f = sum(forwarded_counts)
+    sum_f_sq = sum(c ** 2 for c in forwarded_counts)
+    expected_fairness = (
+        (sum_f ** 2) / (initial_count * sum_f_sq)
+        if sum_f > 0 and initial_count > 0 else None
+    )
+    add(
+        'relay_jain_fairness', expected_fairness,
+        metric_number('relay_jain_fairness', optional=True),
+    )
+
+    # Validate milestone delivered bits
+    fnd_s = metric_number('fnd_s', optional=True)
+    hnd_s = metric_number('hnd_s', optional=True)
+    lnd_s = metric_number('lnd_s', optional=True)
+
+    expected_bits_fnd = (
+        sum(int(p['size_bytes']) * 8 for p in delivered_rows if float(p['delivered_at']) <= fnd_s + tolerance)
+        if fnd_s is not None else None
+    )
+    add(
+        'delivered_bits_at_fnd', expected_bits_fnd,
+        metric_integer('delivered_bits_at_fnd', optional=True), exact=True,
+    )
+
+    expected_bits_hnd = (
+        sum(int(p['size_bytes']) * 8 for p in delivered_rows if float(p['delivered_at']) <= hnd_s + tolerance)
+        if hnd_s is not None else None
+    )
+    add(
+        'delivered_bits_at_hnd', expected_bits_hnd,
+        metric_integer('delivered_bits_at_hnd', optional=True), exact=True,
+    )
+
+    expected_bits_lnd = (
+        sum(int(p['size_bytes']) * 8 for p in delivered_rows if float(p['delivered_at']) <= lnd_s + tolerance)
+        if lnd_s is not None else None
+    )
+    add(
+        'delivered_bits_at_lnd', expected_bits_lnd,
+        metric_integer('delivered_bits_at_lnd', optional=True), exact=True,
+    )
+
+    # Validate route event counters from route_events.csv
+    route_events_table = tables.get('route_events.csv') or route_events
+    expected_route_changes = sum(1 for e in route_events_table if e.get('outcome') == 'changed')
+    expected_route_recomputes = sum(1 for e in route_events_table if e.get('reason') == 'route_invalid')
+    expected_route_failures = sum(1 for e in route_events_table if e.get('outcome') == 'failed')
+    add(
+        'route_change_count', expected_route_changes,
+        metric_integer('route_change_count'), exact=True,
+    )
+    add(
+        'route_recompute_count', expected_route_recomputes,
+        metric_integer('route_recompute_count'), exact=True,
+    )
+    add(
+        'route_failure_count', expected_route_failures,
+        metric_integer('route_failure_count'), exact=True,
+    )
 
     report = {
         'run_directory': str(run_path),

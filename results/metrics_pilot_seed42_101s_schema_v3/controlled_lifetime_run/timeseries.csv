@@ -1,0 +1,3 @@
+time_s,event_seq,alive_sensors,dead_sensors,total_energy_j,generated_packets,delivered_packets,dropped_packets,pending_packets,reachable_sensors,reachability_ratio,reachability_state,routing_eligible_sensors,routing_eligible_ratio,energy_feasible_sensors,energy_feasible_ratio,delivered_bytes,delivered_payload_bytes,snapshot_kind
+0.0,2,4,0,20.0,0,0,0,0,4,1.0,operational,4,1.0,4,1.0,0,0,initial
+9.0,16,0,4,0.0,0,0,0,0,0,,all_dead,0,,0,,0,0,final

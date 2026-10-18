@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import json
 import shutil
 import subprocess
@@ -60,7 +61,7 @@ def _known_answer_components():
     second.mark_delivered(0.3, 'sink_00')
 
     dropped = Packet('p3', 'sensor_2', 0.0, 128, payload_size_bytes=100)
-    dropped.mark_dropped('unreachable', no_route=True)
+    dropped.mark_dropped('unreachable', no_route=True, sim_time_s=0.2)
     pending = Packet('p4', 'sensor_3', 0.0, 128, payload_size_bytes=100)
 
     traffic = SimpleNamespace(
@@ -229,6 +230,7 @@ def test_failed_rx_transaction_can_kill_sender_at_event_time():
             'energy_before_j': tx_cost,
             'energy_after_j': 0.0,
             'cause': 'tx',
+            'event_seq': 0,
         }
     ]
 
@@ -561,3 +563,260 @@ def test_validator_detects_intentional_corruption(tmp_path: Path):
     )
     assert completed.returncode == 1
     assert 'Result: FAIL' in completed.stdout
+
+
+def _mutate_csv(path: Path, mutation) -> None:
+    with path.open('r', newline='', encoding='utf-8') as file_handle:
+        reader = csv.DictReader(file_handle)
+        fields = list(reader.fieldnames or [])
+        rows = list(reader)
+    mutation(rows)
+    with path.open('w', newline='', encoding='utf-8') as file_handle:
+        writer = csv.DictWriter(file_handle, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def test_timeseries_and_route_tampering_fail(tmp_path: Path):
+    config = replace(
+        SimulationConfig.from_json('configs/default.json'),
+        num_sensors=4,
+        num_sinks=1,
+    )
+    network = Network(config, communication_range_m=250.0)
+    simulation = Simulation(network, routing_algorithm='MHR', quiet=True, seed=42)
+    simulation.run_for(21.0)
+    original = tmp_path / 'orig_run'
+    simulation.export_results(original)
+
+    # 0. Original passes
+    assert validate_run(original)['passed'] is True
+
+    # 1. Alter snapshot energy to 999999 J -> FAIL
+    corrupt_energy = tmp_path / 'corrupt_energy'
+    shutil.copytree(original, corrupt_energy)
+    _mutate_csv(
+        corrupt_energy / 'timeseries.csv',
+        lambda rows: rows[1].__setitem__('total_energy_j', '999999.0'),
+    )
+    rep = validate_run(corrupt_energy)
+    assert rep['passed'] is False
+    failed_checks = {c['metric'] for c in rep['checks'] if not c['passed']}
+    assert 'timeseries_integrity' in failed_checks
+
+    # 2. Alter generated and dropped packet counters in snapshot (conserved but contradicts log) -> FAIL
+    corrupt_packets = tmp_path / 'corrupt_packets'
+    shutil.copytree(original, corrupt_packets)
+    _mutate_csv(
+        corrupt_packets / 'timeseries.csv',
+        lambda rows: (
+            rows[1].__setitem__('generated_packets', str(int(rows[1]['generated_packets']) + 1)),
+            rows[1].__setitem__('dropped_packets', str(int(rows[1]['dropped_packets']) + 1)),
+        ),
+    )
+    rep = validate_run(corrupt_packets)
+    assert rep['passed'] is False
+    failed_checks = {c['metric'] for c in rep['checks'] if not c['passed']}
+    assert 'timeseries_integrity' in failed_checks
+
+    # 3. Alter delivered_bytes at snapshot -> FAIL
+    corrupt_bytes = tmp_path / 'corrupt_bytes'
+    shutil.copytree(original, corrupt_bytes)
+    _mutate_csv(
+        corrupt_bytes / 'timeseries.csv',
+        lambda rows: rows[1].__setitem__('delivered_bytes', '999999'),
+    )
+    rep = validate_run(corrupt_bytes)
+    assert rep['passed'] is False
+    failed_checks = {c['metric'] for c in rep['checks'] if not c['passed']}
+    assert 'timeseries_integrity' in failed_checks
+
+    # 4. Alter route_change_count to 999999 in metrics.json -> FAIL
+    corrupt_route = tmp_path / 'corrupt_route'
+    shutil.copytree(original, corrupt_route)
+    m_path = corrupt_route / 'metrics.json'
+    m_data = json.loads(m_path.read_text(encoding='utf-8'))
+    m_data['route_change_count'] = 999999
+    m_path.write_text(json.dumps(m_data, indent=2) + '\n', encoding='utf-8')
+    rep = validate_run(corrupt_route)
+    assert rep['passed'] is False
+    failed_checks = {c['metric'] for c in rep['checks'] if not c['passed']}
+    assert 'route_change_count' in failed_checks
+
+
+def test_lifetime_real_traffic_milestones(tmp_path: Path):
+    base = SimulationConfig.from_json('configs/default.json')
+    config = replace(
+        base,
+        num_sensors=4,
+        num_sinks=1,
+        packet_size_bytes=128,
+        payload_size_bytes=128,
+        packet_interval_s=10.0,
+    )
+    network = Network(config, communication_range_m=100.0)
+    tx_cost = 0.0000768
+    sink = Sink('sink_00', 0.0, 0.0)
+    network.sensors = {
+        'S1': Sensor('S1', 50.0, 0.0, 1 * tx_cost),
+        'S2': Sensor('S2', 0.0, 50.0, 2 * tx_cost),
+        'S3': Sensor('S3', -50.0, 0.0, 3 * tx_cost),
+        'S4': Sensor('S4', 0.0, -50.0, 4 * tx_cost),
+    }
+    network.sinks = {'sink_00': sink}
+    network.graph = nx.Graph()
+    network.graph.add_node('sink_00', node_type='sink', x=0.0, y=0.0)
+    for s in network.sensors.values():
+        network.graph.add_node(s.node_id, node_type='sensor', x=s.x, y=s.y)
+        network.graph.add_edge(s.node_id, 'sink_00', distance_m=50.0, weight=50.0)
+
+    simulation = Simulation(network, routing_algorithm='MHR', quiet=True, seed=42)
+    simulation.run_for(41.0)
+    run_dir = tmp_path / 'lifetime_real'
+    simulation.export_results(run_dir)
+
+    metrics = simulation.get_metrics()
+    assert metrics['fnd_s'] == pytest.approx(10.004096, rel=1e-4)
+    assert metrics['hnd_s'] == pytest.approx(20.004096, rel=1e-4)
+    assert metrics['lnd_s'] == pytest.approx(40.004096, rel=1e-4)
+    assert metrics['generated_packets'] == 10
+    assert metrics['delivered_packets'] == 10
+    assert metrics['dropped_packets'] == 0
+    assert metrics['pending_packets'] == 0
+    assert metrics['delivered_bits_at_fnd'] == 4096
+    assert metrics['delivered_bits_at_hnd'] == 7168
+    assert metrics['delivered_bits_at_lnd'] == 10240
+
+    validation = validate_run(run_dir)
+    assert validation['passed'] is True
+
+
+def _export_failed_recompute_run(run_dir: Path) -> tuple[Simulation, Path]:
+    base = SimulationConfig.from_json('configs/default.json')
+    config = replace(
+        base,
+        num_sensors=2,
+        num_sinks=1,
+        packet_size_bytes=128,
+        payload_size_bytes=128,
+        packet_interval_s=10.0,
+    )
+    tx_cost = 0.0000768
+    network = Network(config, communication_range_m=60.0)
+    source = Sensor('S1', 0.0, 0.0, 5.0)
+    relay = Sensor('S2', 50.0, 0.0, tx_cost)
+    sink = Sink('sink_00', 100.0, 0.0)
+    network.sensors = {'S1': source, 'S2': relay}
+    network.sinks = {'sink_00': sink}
+    network.graph = nx.Graph()
+    for sensor in network.sensors.values():
+        network.graph.add_node(
+            sensor.node_id,
+            node_type='sensor',
+            x=sensor.x,
+            y=sensor.y,
+        )
+    network.graph.add_node('sink_00', node_type='sink', x=100.0, y=0.0)
+    network.graph.add_edge('S1', 'S2', distance_m=50.0, weight=50.0)
+    network.graph.add_edge('S2', 'sink_00', distance_m=50.0, weight=50.0)
+
+    simulation = Simulation(network, routing_algorithm='MHR', quiet=True, seed=42)
+    assert simulation.traffic_gen is not None
+    packet = Packet(
+        'S1_manual_1',
+        'S1',
+        created_at=0.0,
+        size_bytes=128,
+        payload_size_bytes=128,
+        sequence_number=1,
+        created_event_seq=simulation.next_event_seq(),
+    )
+    route = simulation.router.get_route('S1', is_source=True)
+    assert route == ['S1', 'S2', 'sink_00']
+    simulation.router.record_route_event(
+        time_s=0.0,
+        source_id='S1',
+        packet_id=packet.packet_id,
+        current_node_id='S1',
+        old_route='',
+        new_route=route,
+        reason='initial_route',
+        outcome='initial_route',
+    )
+    packet.assign_route(route)
+    simulation.traffic_gen.generated_packets.append(packet)
+    simulation.traffic_gen.queues['S1'].append(packet)
+    source.generated_packets += 1
+
+    death_tx = simulation.radio.attempt_transmission(
+        relay,
+        sink,
+        packet_size_bytes=128,
+        distance_m=50.0,
+        sim_time_s=0.0,
+        packet_id='setup_relay_death',
+    )
+    assert death_tx['success'] is True
+    assert relay.is_alive is False
+
+    simulation.run_for(1.0)
+    simulation.export_results(run_dir)
+    return simulation, run_dir
+
+
+def test_failed_recompute_is_logged_counted_and_validated(tmp_path: Path):
+    simulation, run_dir = _export_failed_recompute_run(tmp_path / 'failed_recompute')
+
+    assert simulation.router.route_recompute_count == 1
+    assert simulation.router.route_change_count == 0
+    assert simulation.router.route_failure_count == 1
+    failed_events = [
+        event
+        for event in simulation.router.route_events
+        if event['outcome'] == 'failed'
+    ]
+    assert len(failed_events) == 1
+    assert failed_events[0]['reason'] == 'route_invalid'
+    assert validate_run(run_dir)['passed'] is True
+
+
+def test_packet_event_sequence_controls_same_timestamp_replay(tmp_path: Path):
+    _, original = _export_failed_recompute_run(tmp_path / 'event_order_original')
+    corrupted = tmp_path / 'event_order_corrupted'
+    shutil.copytree(original, corrupted)
+
+    with (corrupted / 'packets.csv').open(
+        'r', newline='', encoding='utf-8'
+    ) as file_handle:
+        packet_reader = csv.DictReader(file_handle)
+        packet_fields = list(packet_reader.fieldnames or [])
+        packet_rows = list(packet_reader)
+    with (corrupted / 'timeseries.csv').open(
+        'r', newline='', encoding='utf-8'
+    ) as file_handle:
+        snapshot_reader = csv.DictReader(file_handle)
+        snapshot_fields = list(snapshot_reader.fieldnames or [])
+        snapshot_rows = list(snapshot_reader)
+
+    packet_seq = packet_rows[0]['created_event_seq']
+    snapshot_seq = snapshot_rows[0]['event_seq']
+    packet_rows[0]['created_event_seq'] = snapshot_seq
+    snapshot_rows[0]['event_seq'] = packet_seq
+
+    with (corrupted / 'packets.csv').open(
+        'w', newline='', encoding='utf-8'
+    ) as file_handle:
+        writer = csv.DictWriter(file_handle, fieldnames=packet_fields)
+        writer.writeheader()
+        writer.writerows(packet_rows)
+    with (corrupted / 'timeseries.csv').open(
+        'w', newline='', encoding='utf-8'
+    ) as file_handle:
+        writer = csv.DictWriter(file_handle, fieldnames=snapshot_fields)
+        writer.writeheader()
+        writer.writerows(snapshot_rows)
+
+    report = validate_run(corrupted)
+    assert report['passed'] is False
+    failed_checks = {c['metric'] for c in report['checks'] if not c['passed']}
+    assert 'timeseries_integrity' in failed_checks

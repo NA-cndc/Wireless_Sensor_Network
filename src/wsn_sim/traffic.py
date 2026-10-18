@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 
 import numpy as np
 import simpy
@@ -27,6 +28,7 @@ class TrafficGenerator:
         traffic_seed: int | None = None,
         queue_capacity: int = 50,
         bandwidth_bps: float = 250000.0,
+        event_seq_provider: Callable[[], int] | None = None,
     ) -> None:
         self.env = env
         self.network = network
@@ -36,6 +38,7 @@ class TrafficGenerator:
 
         self.queue_capacity = int(queue_capacity)
         self.bandwidth_bps = float(bandwidth_bps)
+        self.event_seq_provider = event_seq_provider
 
         self.generated_packets: list[Packet] = []
         self.delivered_packets: list[Packet] = []
@@ -47,6 +50,33 @@ class TrafficGenerator:
 
         base_seed = config.seed
         self.traffic_rng = np.random.default_rng(base_seed if traffic_seed is None else traffic_seed)
+
+    def _next_event_seq(self) -> int | None:
+        if self.event_seq_provider is None:
+            return None
+        return self.event_seq_provider()
+
+    def _drop_packet(
+        self,
+        packet: Packet,
+        reason: str,
+        node_id: str,
+        no_route: bool = False,
+        counter_sensor: Sensor | None = None,
+    ) -> None:
+        """Hàm chung để hủy gói tin, cập nhật dropped_at, bộ đếm và danh sách dropped_packets."""
+        now = float(self.env.now)
+        packet.mark_dropped(
+            reason,
+            node_id=node_id,
+            no_route=no_route,
+            sim_time_s=now,
+            event_seq=self._next_event_seq(),
+        )
+        self.dropped_packets.append(packet)
+        target = counter_sensor or self.network.sensors.get(node_id)
+        if target is not None:
+            target.dropped_packets += 1
 
     def start(self) -> None:
         """Khởi động luồng sinh gói và tiến trình truyền cho TẤT CẢ các sensor còn sống."""
@@ -78,6 +108,7 @@ class TrafficGenerator:
                 size_bytes=self.config.packet_size_bytes,
                 payload_size_bytes=self.config.payload_size_bytes,
                 sequence_number=packet_count,
+                created_event_seq=self._next_event_seq(),
             )
             self.generated_packets.append(packet)
             sensor_obj.generated_packets += 1
@@ -85,25 +116,41 @@ class TrafficGenerator:
             # Kiểm tra sức chứa hàng đợi của nút nguồn (queue_capacity: số gói đang chờ)
             queue = self.queues[sensor_id]
             if len(queue) >= self.queue_capacity:
-                packet.mark_dropped("queue_drop", node_id=sensor_id)
-                self.dropped_packets.append(packet)
-                sensor_obj.dropped_packets += 1
+                self._drop_packet(packet, "queue_drop", node_id=sensor_id, counter_sensor=sensor_obj)
                 continue
 
             # Tìm tuyến đường ban đầu từ nút nguồn tới Sink
             route = self.router.get_route(sensor_id, is_source=True)
 
             if route:
+                self.router.record_route_event(
+                    time_s=float(self.env.now),
+                    source_id=sensor_id,
+                    packet_id=packet.packet_id,
+                    current_node_id=sensor_id,
+                    old_route="",
+                    new_route=route,
+                    reason="initial_route",
+                    outcome="initial_route",
+                )
                 # Gán tuyến hợp lệ, đưa gói vào hàng đợi FIFO và đánh thức tiến trình TX
                 packet.assign_route(route)
                 queue.append(packet)
                 if not self.tx_events[sensor_id].triggered:
                     self.tx_events[sensor_id].succeed()
             else:
+                self.router.record_route_event(
+                    time_s=float(self.env.now),
+                    source_id=sensor_id,
+                    packet_id=packet.packet_id,
+                    current_node_id=sensor_id,
+                    old_route="",
+                    new_route="",
+                    reason="initial_route",
+                    outcome="failed",
+                )
                 # Nút bị cô lập hoặc không tìm thấy đường dẫn tới bất kỳ Sink nào
-                packet.mark_dropped("unreachable", node_id=sensor_id, no_route=True)
-                self.dropped_packets.append(packet)
-                sensor_obj.dropped_packets += 1
+                self._drop_packet(packet, "unreachable", node_id=sensor_id, no_route=True, counter_sensor=sensor_obj)
 
     def _sensor_tx_loop(self, sensor_id: str):
         """Tiến trình FIFO phục vụ phát gói tin tuần tự độc quyền cho từng sensor node."""
@@ -130,9 +177,7 @@ class TrafficGenerator:
             is_source = (sensor_id == packet.source_id)
             if not is_source and self.router.algorithm == "EMHR":
                 if not sensor.can_forward(self.router.threshold_j):
-                    packet.mark_dropped("relay_below_threshold", node_id=sensor_id)
-                    self.dropped_packets.append(packet)
-                    sensor.dropped_packets += 1
+                    self._drop_packet(packet, "relay_below_threshold", node_id=sensor_id, counter_sensor=sensor)
                     continue
 
             # Xác định tập các nút cần né tránh: Toàn bộ nút đã đi qua trong packet.path trừ nút hiện tại
@@ -162,6 +207,7 @@ class TrafficGenerator:
 
             # Nếu tuyến đường cũ bị gián đoạn (relay phía trước chết/hết pin), thực hiện định tuyến lại
             if not route_valid:
+                old_route = list(packet.route)
                 new_sub_route = self.router.get_route(
                     sensor_id,
                     algorithm=self.router.algorithm,
@@ -170,25 +216,45 @@ class TrafficGenerator:
                 )
                 if new_sub_route:
                     # Cập nhật nhất quán: ghép lộ trình đã đi với tuyến mới, cập nhật sink_id và chỉ số hop
-                    self.router.route_change_count += 1
-                    packet.route = list(packet.path[:-1]) + new_sub_route
+                    new_full_route = list(packet.path[:-1]) + new_sub_route
+                    if new_full_route != old_route:
+                        outcome = "changed"
+                    else:
+                        outcome = "unchanged"
+                    self.router.record_route_event(
+                        time_s=float(self.env.now),
+                        source_id=packet.source_id,
+                        packet_id=packet.packet_id,
+                        current_node_id=sensor_id,
+                        old_route=old_route,
+                        new_route=new_full_route,
+                        reason="route_invalid",
+                        outcome=outcome,
+                    )
+                    packet.route = new_full_route
                     packet.sink_id = new_sub_route[-1]
                     packet.current_hop_index = len(packet.path) - 1
                     remaining_route = new_sub_route
                 else:
+                    self.router.record_route_event(
+                        time_s=float(self.env.now),
+                        source_id=packet.source_id,
+                        packet_id=packet.packet_id,
+                        current_node_id=sensor_id,
+                        old_route=old_route,
+                        new_route="",
+                        reason="route_invalid",
+                        outcome="failed",
+                    )
                     # Không còn đường vòng nào hợp lệ tới Sink mà tránh được các nút đã qua -> Hủy gói NO_ROUTE
-                    packet.mark_dropped("unreachable", node_id=sensor_id, no_route=True)
-                    self.dropped_packets.append(packet)
-                    sensor.dropped_packets += 1
+                    self._drop_packet(packet, "unreachable", node_id=sensor_id, no_route=True, counter_sensor=sensor)
                     continue
 
             # Xác định nút nhận ở chặng kế tiếp (tiếp tục hành trình multi-hop)
             next_hop_id = remaining_route[1]
             receiver = self.network.sensors.get(next_hop_id) or self.network.sinks.get(next_hop_id)
             if receiver is None:
-                packet.mark_dropped("unreachable", node_id=sensor_id, no_route=True)
-                self.dropped_packets.append(packet)
-                sensor.dropped_packets += 1
+                self._drop_packet(packet, "unreachable", node_id=sensor_id, no_route=True, counter_sensor=sensor)
                 continue
 
             # Chiếm dụng kênh truyền vô tuyến trong khoảng thời gian delay truyền sóng
@@ -196,9 +262,7 @@ class TrafficGenerator:
 
             # Kiểm tra nếu nút gửi bị chết giữa chừng trong lúc truyền sóng
             if not sensor.is_alive:
-                packet.mark_dropped("node_dead_mid_flight", node_id=sensor_id)
-                self.dropped_packets.append(packet)
-                sensor.dropped_packets += 1
+                self._drop_packet(packet, "node_dead_mid_flight", node_id=sensor_id, counter_sensor=sensor)
                 continue
 
             # Tính khoảng cách hình học thực tế giữa nút phát và nút thu (mét)
@@ -217,9 +281,7 @@ class TrafficGenerator:
             # Nếu giao dịch thất bại do không đủ năng lượng TX hoặc RX
             if not ledger_entry["success"]:
                 fail_node = sensor_id if ledger_entry["reason"] == "TX_INSUFFICIENT_ENERGY" else next_hop_id
-                packet.mark_dropped("energy_depletion", node_id=fail_node)
-                self.dropped_packets.append(packet)
-                sensor.dropped_packets += 1
+                self._drop_packet(packet, "energy_depletion", node_id=fail_node, counter_sensor=sensor)
                 continue
 
             # Ghi nhận chặng nhảy thành công vào lịch sử đường đi của gói tin
@@ -229,7 +291,11 @@ class TrafficGenerator:
 
             # Trường hợp 1: Nút nhận là trạm Sink đích
             if isinstance(receiver, Sink):
-                is_new = receiver.receive(packet, float(self.env.now))
+                is_new = receiver.receive(
+                    packet,
+                    float(self.env.now),
+                    event_seq=self._next_event_seq(),
+                )
                 if is_new:
                     self.delivered_packets.append(packet)
                     if packet.latency_s is not None:
@@ -241,9 +307,7 @@ class TrafficGenerator:
                 receiver.received_packets += 1
                 # Nếu receiver cạn kiệt năng lượng sau khi tốn chi phí RX -> Hủy gói tại receiver
                 if not receiver.is_alive:
-                    packet.mark_dropped("energy_depletion", node_id=receiver.node_id)
-                    self.dropped_packets.append(packet)
-                    receiver.dropped_packets += 1
+                    self._drop_packet(packet, "energy_depletion", node_id=receiver.node_id, counter_sensor=receiver)
                     if receiver.node_id in self.tx_events and not self.tx_events[receiver.node_id].triggered:
                         self.tx_events[receiver.node_id].succeed()
                     continue
@@ -252,9 +316,7 @@ class TrafficGenerator:
                 queue = self.queues[receiver.node_id]
                 if len(queue) >= self.queue_capacity:
                     # Hàng đợi đầy: Gói bị loại queue_drop, chi phí RX đã tốn được giữ nguyên, không tính TX
-                    packet.mark_dropped("queue_drop", node_id=receiver.node_id)
-                    self.dropped_packets.append(packet)
-                    receiver.dropped_packets += 1
+                    self._drop_packet(packet, "queue_drop", node_id=receiver.node_id, counter_sensor=receiver)
                 else:
                     # Hàng đợi còn chỗ: Đưa gói vào hàng đợi của relay và đánh thức tiến trình TX của relay
                     queue.append(packet)
@@ -264,6 +326,4 @@ class TrafficGenerator:
         # Khi cảm biến chết (hết pin): Toàn bộ gói tin còn tồn đọng trong hàng đợi bị loại do energy_depletion
         while self.queues[sensor_id]:
             pkt = self.queues[sensor_id].pop(0)
-            pkt.mark_dropped("energy_depletion", node_id=sensor_id)
-            self.dropped_packets.append(pkt)
-            sensor.dropped_packets += 1
+            self._drop_packet(pkt, "energy_depletion", node_id=sensor_id, counter_sensor=sensor)

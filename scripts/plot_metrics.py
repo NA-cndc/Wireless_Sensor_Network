@@ -26,16 +26,23 @@ SUMMARY_FIELDS = {
     'scenario', 'algorithm', 'range_m', 'seed', 'requested_duration_s',
     'actual_duration_s', 'generated_packets', 'delivered_packets',
     'dropped_packets', 'pending_packets', 'pdr_percent', 'throughput_bps',
-    'goodput_bps', 'average_hops', 'average_end_to_end_delay_s', 'fnd_s',
-    'hnd_s', 'lnd_s', 'functional_network_death_s', 'validation_passed',
-    'output_dir',
+    'goodput_bps', 'offered_rate_bps', 'configured_rate_bps',
+    'energy_per_delivered_bit_j', 'average_hops', 'average_end_to_end_delay_s',
+    'fnd_s', 'hnd_s', 'lnd_s', 'functional_network_death_s',
+    'delivered_bits_at_fnd', 'delivered_bits_at_hnd', 'delivered_bits_at_lnd',
+    'relay_jain_fairness', 'route_recompute_count', 'route_change_count',
+    'route_failure_count', 'validation_passed', 'output_dir',
 }
 
 SUMMARY_METRICS = (
     'actual_duration_s', 'generated_packets', 'delivered_packets',
     'dropped_packets', 'pending_packets', 'pdr_percent', 'throughput_bps',
-    'goodput_bps', 'average_hops', 'average_end_to_end_delay_s', 'fnd_s',
-    'hnd_s', 'lnd_s', 'functional_network_death_s',
+    'goodput_bps', 'offered_rate_bps', 'configured_rate_bps',
+    'energy_per_delivered_bit_j', 'average_hops', 'average_end_to_end_delay_s',
+    'fnd_s', 'hnd_s', 'lnd_s', 'functional_network_death_s',
+    'delivered_bits_at_fnd', 'delivered_bits_at_hnd', 'delivered_bits_at_lnd',
+    'relay_jain_fairness', 'route_recompute_count', 'route_change_count',
+    'route_failure_count',
 )
 
 FIGURE_BASENAMES = [
@@ -46,6 +53,11 @@ FIGURE_BASENAMES = [
     '05_average_delay_by_range',
     '06_pilot_lifetime_milestones',
     '07_controlled_lifetime_fixture',
+    '08_residual_energy_over_time',
+    '09_energy_feasible_ratio_over_time',
+    '10_cumulative_delivered_bits_over_time',
+    '11_dropped_packets_by_reason',
+    '12_energy_per_delivered_bit_by_range',
 ]
 
 
@@ -443,6 +455,10 @@ def main() -> int:
             _same_optional_number(row['throughput_bps'], row['goodput_bps'])
             for row in selected
         )
+    max_rate_diff = max(
+        (abs(float(row['throughput_bps']) - float(row['goodput_bps'])) for row in summary),
+        default=0.0,
+    )
     if all_equal:
         size_pairs = {
             (
@@ -457,7 +473,14 @@ def main() -> int:
         )
         axis.text(
             0.02, 0.03,
-            f'Throughput and goodput overlap: {size_text}.',
+            f'Throughput and goodput overlap (diff = 0 bit/s): {size_text}.',
+            transform=axis.transAxes, fontsize=8,
+            bbox={'facecolor': 'white', 'alpha': 0.8, 'edgecolor': '0.8'},
+        )
+    else:
+        axis.text(
+            0.02, 0.03,
+            f'Max rate difference: {max_rate_diff:.2f} bit/s.',
             transform=axis.transAxes, fontsize=8,
             bbox={'facecolor': 'white', 'alpha': 0.8, 'edgecolor': '0.8'},
         )
@@ -465,6 +488,15 @@ def main() -> int:
         title=f'Sink throughput and goodput by communication range\n{subtitle}',
         xlabel='Communication range R (m)', ylabel='Rate (bit/s)',
     )
+    max_rate = max(
+        (
+            float(row[key])
+            for row in summary
+            for key in ('throughput_bps', 'goodput_bps')
+        ),
+        default=0.0,
+    )
+    axis.set_ylim(0, max_rate * 1.05 if max_rate > 0 else 1.0)
     axis.grid(alpha=0.25)
     axis.legend(fontsize=8)
     save_plot(figure, '03_throughput_goodput_by_range')
@@ -531,12 +563,12 @@ def main() -> int:
     single_metric_plot(
         '04_average_hops_by_range', 'average_hops',
         'Average actual hops of delivered packets (edges, not relays)',
-        'Average actual path length (hop)', 'average_hops',
+        'Average actual path length (hop) [delivered packets only]', 'average_hops',
     )
     single_metric_plot(
         '05_average_delay_by_range', 'average_end_to_end_delay_s',
         'Average end-to-end delay of delivered packets',
-        'Average end-to-end delay (ms)', 'average_end_to_end_delay_ms', 1000.0,
+        'Average end-to-end delay (ms) [delivered packets only]', 'average_end_to_end_delay_ms', 1000.0,
     )
 
     # Figure 06: never invent values or connect across missing observations.
@@ -679,6 +711,235 @@ def main() -> int:
             ['record_type', 'label', 'time_s', 'cumulative_dead_sensors', 'status',
              'algorithm', 'range_m', 'seed', 'measurement_duration_s'],
         )
+
+    # Figure 08: Residual energy over time
+    energy_source: list[dict[str, Any]] = []
+    figure, axis = plt.subplots(figsize=(9, 5))
+    for row in summary:
+        timeseries = _read_csv(row['_run_path'] / 'timeseries.csv')
+        points = [(float(entry['time_s']), float(entry['total_energy_j'])) for entry in timeseries]
+        range_m = float(row['range_m'])
+        axis.plot(
+            [p[0] for p in points], [p[1] for p in points],
+            label=f'{row["algorithm"]} R={range_m:g}m seed={row["seed"]}',
+            color=range_colors[range_m],
+            linestyle=algorithm_lines[row['algorithm']],
+            linewidth=1.5,
+        )
+        for time_s, energy in points:
+            energy_source.append({
+                'scenario': row['scenario'], 'algorithm': row['algorithm'],
+                'range_m': range_m, 'seed': row['seed'],
+                'time_s': time_s, 'total_energy_j': energy,
+            })
+    axis.set(
+        title=f'Residual network energy over simulation time\n{subtitle}',
+        xlabel='Simulation time (s)', ylabel='Residual energy (J)',
+    )
+    axis.grid(alpha=0.25)
+    axis.legend(fontsize=7, ncol=2)
+    save_plot(figure, '08_residual_energy_over_time')
+    save_source(
+        '08_residual_energy_over_time', energy_source,
+        ['scenario', 'algorithm', 'range_m', 'seed', 'time_s', 'total_energy_j'],
+    )
+
+    # Figure 09: Energy feasible ratio over time
+    feasibility_source: list[dict[str, Any]] = []
+    figure, axis = plt.subplots(figsize=(9, 5))
+    for row in summary:
+        timeseries = _read_csv(row['_run_path'] / 'timeseries.csv')
+        points = [
+            (float(entry['time_s']), float(entry['energy_feasible_ratio']) * 100.0, int(entry['energy_feasible_sensors']))
+            for entry in timeseries if 'energy_feasible_ratio' in entry
+        ]
+        range_m = float(row['range_m'])
+        if points:
+            axis.plot(
+                [p[0] for p in points], [p[1] for p in points],
+                label=f'{row["algorithm"]} R={range_m:g}m seed={row["seed"]}',
+                color=range_colors[range_m],
+                linestyle=algorithm_lines[row['algorithm']],
+                linewidth=1.5,
+            )
+        for time_s, ratio, count in points:
+            feasibility_source.append({
+                'scenario': row['scenario'], 'algorithm': row['algorithm'],
+                'range_m': range_m, 'seed': row['seed'],
+                'time_s': time_s, 'energy_feasible_sensors': count,
+                'energy_feasible_ratio': ratio / 100.0,
+            })
+    axis.text(
+        0.02, 0.03,
+        'Feasibility measures independent single-packet send capability at snapshot;\n'
+        'does not guarantee concurrent transmissions succeed.',
+        transform=axis.transAxes, fontsize=8,
+        bbox={'facecolor': 'white', 'alpha': 0.8, 'edgecolor': '0.8'},
+    )
+    axis.set(
+        title=f'Ratio of sensors with sufficient transmission energy over time\n{subtitle}',
+        xlabel='Simulation time (s)', ylabel='Feasible sensors ratio (%)',
+        ylim=(0, 105),
+    )
+    axis.grid(alpha=0.25)
+    axis.legend(fontsize=7, ncol=2)
+    save_plot(figure, '09_energy_feasible_ratio_over_time')
+    save_source(
+        '09_energy_feasible_ratio_over_time', feasibility_source,
+        ['scenario', 'algorithm', 'range_m', 'seed', 'time_s', 'energy_feasible_sensors', 'energy_feasible_ratio'],
+    )
+
+    # Figure 10: Cumulative delivered bits over time
+    bits_source: list[dict[str, Any]] = []
+    figure, axis = plt.subplots(figsize=(9, 5))
+    for row in summary:
+        timeseries = _read_csv(row['_run_path'] / 'timeseries.csv')
+        points = [(float(entry['time_s']), int(entry['delivered_bytes']) * 8) for entry in timeseries]
+        range_m = float(row['range_m'])
+        axis.step(
+            [p[0] for p in points], [p[1] for p in points],
+            where='post',
+            label=f'{row["algorithm"]} R={range_m:g}m seed={row["seed"]}',
+            color=range_colors[range_m],
+            linestyle=algorithm_lines[row['algorithm']],
+            linewidth=1.5,
+        )
+        for time_s, bits in points:
+            bits_source.append({
+                'scenario': row['scenario'], 'algorithm': row['algorithm'],
+                'range_m': range_m, 'seed': row['seed'],
+                'time_s': time_s, 'delivered_bytes': bits // 8, 'delivered_bits': bits,
+            })
+    axis.set(
+        title=f'Cumulative delivered bits to sink over simulation time\n{subtitle}',
+        xlabel='Simulation time (s)', ylabel='Cumulative delivered bits (bit)',
+    )
+    axis.set_ylim(bottom=0)
+    axis.grid(alpha=0.25)
+    axis.legend(fontsize=7, ncol=2)
+    save_plot(figure, '10_cumulative_delivered_bits_over_time')
+    save_source(
+        '10_cumulative_delivered_bits_over_time', bits_source,
+        ['scenario', 'algorithm', 'range_m', 'seed', 'time_s', 'delivered_bytes', 'delivered_bits'],
+    )
+
+    # Figure 11: Dropped packets by reason
+    dropped_source: list[dict[str, Any]] = []
+    scenario_drop_reasons: dict[str, dict[str, int]] = {}
+    all_reasons: set[str] = set()
+    for row in summary:
+        scenario = row['scenario']
+        packets = _read_csv(row['_run_path'] / 'packets.csv')
+        reasons_counter = Counter(
+            p['drop_reason'].strip()
+            for p in packets
+            if p['status'] == 'dropped' or p['drop_reason'].strip()
+        )
+        scenario_drop_reasons[scenario] = dict(reasons_counter)
+        all_reasons.update(reasons_counter.keys())
+        if not reasons_counter:
+            dropped_source.append({
+                'scenario': scenario, 'algorithm': row['algorithm'],
+                'range_m': row['range_m'], 'seed': row['seed'],
+                'drop_reason': 'none', 'dropped_packets': 0,
+            })
+        else:
+            for reason, count in sorted(reasons_counter.items()):
+                dropped_source.append({
+                    'scenario': scenario, 'algorithm': row['algorithm'],
+                    'range_m': row['range_m'], 'seed': row['seed'],
+                    'drop_reason': reason, 'dropped_packets': count,
+                })
+    figure, axis = plt.subplots(figsize=(10, 5))
+    scenarios_list = [row['scenario'] for row in summary]
+    x_indices = list(range(len(scenarios_list)))
+    if all_reasons:
+        sorted_reasons = sorted(all_reasons)
+        reason_colors = ['tab:red', 'tab:purple', 'tab:olive', 'tab:gray']
+        for idx, reason in enumerate(sorted_reasons):
+            counts = [scenario_drop_reasons[sc].get(reason, 0) for sc in scenarios_list]
+            offset = (idx - len(sorted_reasons) / 2 + 0.5) * (0.8 / len(sorted_reasons))
+            axis.bar(
+                [x + offset for x in x_indices], counts,
+                width=0.8 / len(sorted_reasons),
+                label=reason,
+                color=reason_colors[idx % len(reason_colors)],
+            )
+        axis.legend(title='Drop reason', fontsize=8)
+    else:
+        axis.text(0.5, 0.5, 'Zero packets dropped in all scenarios', ha='center', va='center', transform=axis.transAxes)
+
+    axis.text(
+        0.02, 0.88,
+        'Authentic behavior note: Drops in EMHR (e.g. at R=350m)\n'
+        'are caused by candidate relay nodes falling below threshold Eth.',
+        transform=axis.transAxes, fontsize=8,
+        bbox={'facecolor': 'white', 'alpha': 0.85, 'edgecolor': '0.8'},
+    )
+    axis.set_xticks(x_indices)
+    axis.set_xticklabels(scenarios_list, rotation=25, ha='right', fontsize=8)
+    axis.set(
+        title=f'Dropped packets by drop reason\n{subtitle}',
+        xlabel='Scenario', ylabel='Dropped packets (count)',
+    )
+    axis.set_ylim(bottom=0)
+    axis.grid(alpha=0.25, axis='y')
+    save_plot(figure, '11_dropped_packets_by_reason')
+    save_source(
+        '11_dropped_packets_by_reason', dropped_source,
+        ['scenario', 'algorithm', 'range_m', 'seed', 'drop_reason', 'dropped_packets'],
+    )
+
+    # Figure 12: Energy consumed per delivered bit by range
+    energy_bit_source: list[dict[str, Any]] = []
+    figure, axis = plt.subplots(figsize=(8, 5))
+    for algorithm, seed in groups:
+        selected = sorted(
+            (row for row in summary if row['algorithm'] == algorithm and int(row['seed']) == seed),
+            key=lambda row: float(row['range_m']),
+        )
+        points = [
+            (float(row['range_m']), _optional_float(row.get('energy_per_delivered_bit_j')))
+            for row in selected
+        ]
+        observed = [(r, val) for r, val in points if val is not None]
+        if observed:
+            axis.plot(
+                [p[0] for p in observed], [p[1] for p in observed],
+                marker='o' if algorithm == 'MHR' else 's',
+                linestyle=algorithm_lines[algorithm],
+                color=algorithm_colors[algorithm],
+                label=f'{algorithm} seed={seed}',
+            )
+            for r, val in observed:
+                axis.annotate(
+                    f'{val:.2e} J/bit', (r, val),
+                    xytext=(0, 10 if algorithm == 'MHR' else -15),
+                    textcoords='offset points', ha='center', fontsize=7,
+                )
+        for row, (range_m, val) in zip(selected, points):
+            energy_bit_source.append({
+                'scenario': row['scenario'], 'algorithm': algorithm,
+                'range_m': range_m, 'seed': seed,
+                'measurement_duration_s': row['actual_duration_s'],
+                'energy_per_delivered_bit_j': val,
+                'status': 'observed' if val is not None else 'not_observed',
+            })
+    axis.set(
+        title=f'Energy consumed per delivered bit by communication range\n{subtitle}',
+        xlabel='Communication range R (m)', ylabel='Energy per delivered bit (J/bit)',
+    )
+    axis.set_ylim(bottom=0)
+    axis.grid(alpha=0.25)
+    handles, labels = axis.get_legend_handles_labels()
+    if handles:
+        axis.legend(fontsize=8)
+    save_plot(figure, '12_energy_per_delivered_bit_by_range')
+    save_source(
+        '12_energy_per_delivered_bit_by_range', energy_bit_source,
+        ['scenario', 'algorithm', 'range_m', 'seed', 'measurement_duration_s',
+         'energy_per_delivered_bit_j', 'status'],
+    )
 
     manifest = {
         'pilot_directory': '.',

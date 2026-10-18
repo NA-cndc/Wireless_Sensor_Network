@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import deque
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Sequence
 
 from wsn_sim.network import Network
@@ -23,13 +24,56 @@ class RoutingEngine:
         algorithm: str = "EMHR",
         alpha_energy: float = 0.20,
         epsilon: float = 1e-9,
+        event_seq_provider: Callable[[], int] | None = None,
     ) -> None:
         self.network = network
         self.algorithm = algorithm
         self.alpha_energy = float(alpha_energy)
         self.epsilon = float(epsilon)
+        self.route_recompute_count: int = 0
         self.route_change_count: int = 0
+        self.route_failure_count: int = 0
+        self.route_events: list[dict[str, Any]] = []
+        self.event_seq_provider = event_seq_provider
         self._route_cache: dict[str, list[str]] = {}
+
+    def record_route_event(
+        self,
+        time_s: float,
+        source_id: str,
+        packet_id: str,
+        current_node_id: str,
+        old_route: list[str] | str | None,
+        new_route: list[str] | str | None,
+        reason: str,
+        outcome: str,
+    ) -> dict[str, Any]:
+        """Ghi nhận sự kiện định tuyến và lưu vào danh sách route_events."""
+        valid_outcomes = {'initial_route', 'unchanged', 'changed', 'failed'}
+        if outcome not in valid_outcomes:
+            raise ValueError(f'unsupported route outcome: {outcome!r}')
+        old_str = "->".join(old_route) if isinstance(old_route, list) else (old_route or "")
+        new_str = "->".join(new_route) if isinstance(new_route, list) else (new_route or "")
+        seq = self.event_seq_provider() if self.event_seq_provider is not None else 0
+        event = {
+            "time_s": float(time_s),
+            "event_seq": seq,
+            "source_id": str(source_id),
+            "packet_id": str(packet_id),
+            "current_node_id": str(current_node_id),
+            "old_route": old_str,
+            "new_route": new_str,
+            "reason": str(reason),
+            "outcome": str(outcome),
+        }
+        self.route_events.append(event)
+        if reason == 'route_invalid':
+            self.route_recompute_count += 1
+        if outcome == 'changed':
+            self.route_change_count += 1
+        if outcome == 'failed':
+            self.route_failure_count += 1
+        return event
 
     @property
     def threshold_j(self) -> float:
@@ -256,7 +300,6 @@ class RoutingEngine:
                 if self.is_route_valid(cached, algorithm=algo, is_source=True):
                     return list(cached)
                 else:
-                    self.route_change_count += 1
                     self._route_cache.pop(source_id, None)
 
         # Tính toán đường đi mới theo thuật toán được chọn

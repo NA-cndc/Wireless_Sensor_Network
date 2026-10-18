@@ -128,12 +128,22 @@ def calculate_simulation_metrics(
     )
 
     measurement_duration_s = float(sim_time_s)
+    total_generated_bytes = sum(packet.size_bytes for packet in packets)
     if measurement_duration_s > 0:
         throughput_bps = 8.0 * total_delivered_bytes / measurement_duration_s
         goodput_bps = 8.0 * total_delivered_payload_bytes / measurement_duration_s
+        offered_rate_bps = 8.0 * total_generated_bytes / measurement_duration_s
     else:
         throughput_bps = None
         goodput_bps = None
+        offered_rate_bps = None
+
+    pkt_interval = getattr(network.config, 'packet_interval_s', 10.0)
+    pkt_size = getattr(network.config, 'packet_size_bytes', 128)
+    if pkt_interval and pkt_interval > 0:
+        configured_rate_bps = (total_sensors * pkt_size * 8.0) / float(pkt_interval)
+    else:
+        configured_rate_bps = None
 
     pdr_percent = (
         100.0 * delivered_count / generated_count if generated_count > 0 else None
@@ -147,7 +157,52 @@ def calculate_simulation_metrics(
     residual_total_energy = sum(sensor.energy_j for sensor in network.sensors.values())
     consumed_energy = max(0.0, initial_total_energy - residual_total_energy)
 
+    total_delivered_bits = total_delivered_bytes * 8
+    if total_delivered_bits > 0:
+        energy_per_delivered_bit_j = consumed_energy / total_delivered_bits
+    else:
+        energy_per_delivered_bit_j = None
+
     lifetime = calculate_lifetime_milestones(total_sensors, radio.death_events)
+    fnd_time = lifetime.get('fnd_s')
+    hnd_time = lifetime.get('hnd_s')
+    lnd_time = lifetime.get('lnd_s')
+
+    if fnd_time is not None:
+        delivered_bits_at_fnd = sum(
+            p.size_bytes * 8
+            for p in delivered
+            if p.delivered_at is not None and p.delivered_at <= fnd_time + 1e-9
+        )
+    else:
+        delivered_bits_at_fnd = None
+
+    if hnd_time is not None:
+        delivered_bits_at_hnd = sum(
+            p.size_bytes * 8
+            for p in delivered
+            if p.delivered_at is not None and p.delivered_at <= hnd_time + 1e-9
+        )
+    else:
+        delivered_bits_at_hnd = None
+
+    if lnd_time is not None:
+        delivered_bits_at_lnd = sum(
+            p.size_bytes * 8
+            for p in delivered
+            if p.delivered_at is not None and p.delivered_at <= lnd_time + 1e-9
+        )
+    else:
+        delivered_bits_at_lnd = None
+
+    forwarded_counts = [sensor.forwarded_packets for sensor in network.sensors.values()]
+    sum_f = sum(forwarded_counts)
+    sum_f_sq = sum(c ** 2 for c in forwarded_counts)
+    if sum_f == 0 or total_sensors == 0:
+        relay_jain_fairness = None
+    else:
+        relay_jain_fairness = (sum_f ** 2) / (total_sensors * sum_f_sq)
+
     history = list(reachability_history or [])
     functional_death_s = next(
         (
@@ -202,20 +257,29 @@ def calculate_simulation_metrics(
         ),
         'drop_reasons': drop_reasons,
         'total_delivered_bytes': total_delivered_bytes,
-        'total_delivered_bits': total_delivered_bytes * 8,
+        'total_delivered_bits': total_delivered_bits,
         'total_delivered_payload_bytes': total_delivered_payload_bytes,
         'total_delivered_payload_bits': total_delivered_payload_bytes * 8,
         'total_hops_delivered': total_hops,
         'total_end_to_end_delay_s': total_delay_s,
         'throughput_bps': throughput_bps,
         'goodput_bps': goodput_bps,
+        'offered_rate_bps': offered_rate_bps,
+        'configured_rate_bps': configured_rate_bps,
         'pdr_percent': pdr_percent,
         'average_hops': average_hops,
         'average_end_to_end_delay_s': average_delay_s,
         'initial_total_energy_j': initial_total_energy,
         'residual_total_energy_j': residual_total_energy,
         'consumed_energy_sensors_j': consumed_energy,
-        'route_change_count': router.route_change_count if router else 0,
+        'energy_per_delivered_bit_j': energy_per_delivered_bit_j,
+        'route_recompute_count': getattr(router, 'route_recompute_count', 0) if router else 0,
+        'route_change_count': getattr(router, 'route_change_count', 0) if router else 0,
+        'route_failure_count': getattr(router, 'route_failure_count', 0) if router else 0,
+        'relay_jain_fairness': relay_jain_fairness,
+        'delivered_bits_at_fnd': delivered_bits_at_fnd,
+        'delivered_bits_at_hnd': delivered_bits_at_hnd,
+        'delivered_bits_at_lnd': delivered_bits_at_lnd,
         'functional_network_death_s': functional_death_s,
         'functional_network_death_status': (
             'observed' if functional_death_s is not None else 'not_observed'

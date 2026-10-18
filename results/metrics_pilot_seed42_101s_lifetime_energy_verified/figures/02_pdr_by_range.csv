@@ -1,7 +1,0 @@
-scenario,algorithm,range_m,seed,measurement_duration_s,generated_packets,delivered_packets,lost_packets,pdr_percent,status
-EMHR_R250m_seed42,EMHR,250.0,42,101.0,4500,4500,0,100.0,observed
-EMHR_R300m_seed42,EMHR,300.0,42,101.0,4500,4500,0,100.0,observed
-EMHR_R350m_seed42,EMHR,350.0,42,101.0,4500,4495,5,99.88888888888889,observed
-MHR_R250m_seed42,MHR,250.0,42,101.0,4500,4500,0,100.0,observed
-MHR_R300m_seed42,MHR,300.0,42,101.0,4500,4500,0,100.0,observed
-MHR_R350m_seed42,MHR,350.0,42,101.0,4500,4500,0,100.0,observed

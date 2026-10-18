@@ -33,6 +33,8 @@ class Packet:
     - current_hop_index: Vị trí chặng nhảy hiện tại của gói trên tuyến đường.
     - status: Trạng thái hiện thời của gói.
     - delivered_at: Mốc thời gian nhận gói tại trạm Sink.
+    - created_event_seq/delivered_event_seq/dropped_event_seq: Thứ tự toàn cục
+      dùng để phân giải các sự kiện có cùng timestamp.
     - drop_reason: Lý do cụ thể nếu gói bị hủy (natural_link_loss, selective_forwarding, energy_depletion, v.v.).
     - drop_node_id: ID node xảy ra drop.
     - ttl: Thời gian sống còn lại tính theo số hop (nếu sử dụng).
@@ -50,6 +52,10 @@ class Packet:
     current_hop_index: int = 0
     status: PacketStatus = PacketStatus.CREATED
     delivered_at: float | None = None
+    dropped_at: float | None = None
+    created_event_seq: int | None = None
+    delivered_event_seq: int | None = None
+    dropped_event_seq: int | None = None
     drop_reason: str | None = None
     drop_node_id: str | None = None
     ttl: int | None = None
@@ -77,6 +83,10 @@ class Packet:
             raise ValueError("payload_size_bytes must not exceed size_bytes")
         if self.sequence_number < 0:
             raise ValueError("sequence_number must not be negative")
+        self.created_event_seq = self._validate_event_seq(
+            self.created_event_seq,
+            "created_event_seq",
+        )
 
         # Khởi tạo đường đi thực tế bắt đầu từ nút nguồn (đơn vị: danh sách node_id)
         if not self.path:
@@ -90,7 +100,28 @@ class Packet:
 
         # Nếu đã có mốc thời gian nhận (giây), cập nhật trạng thái DELIVERED
         if self.delivered_at is not None:
-            self.mark_delivered(self.delivered_at)
+            self.mark_delivered(
+                self.delivered_at,
+                event_seq=self.delivered_event_seq,
+            )
+        elif self.dropped_at is not None:
+            self.mark_dropped(
+                self.drop_reason or "unspecified",
+                node_id=self.drop_node_id,
+                no_route=(self.status == PacketStatus.NO_ROUTE),
+                sim_time_s=self.dropped_at,
+                event_seq=self.dropped_event_seq,
+            )
+
+    @staticmethod
+    def _validate_event_seq(value: int | None, field_name: str) -> int | None:
+        if value is None:
+            return None
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise TypeError(f"{field_name} must be an integer")
+        if value < 0:
+            raise ValueError(f"{field_name} must not be negative")
+        return value
 
     def assign_route(self, route: Sequence[str]) -> None:
         """Gán tuyến đường chuyển tiếp multi-hop cho gói tin.
@@ -112,6 +143,9 @@ class Packet:
         self.current_hop_index = 0
         self.status = PacketStatus.IN_TRANSIT
         self.delivered_at = None
+        self.dropped_at = None
+        self.delivered_event_seq = None
+        self.dropped_event_seq = None
         self.drop_reason = None
         self.drop_node_id = None
 
@@ -142,18 +176,30 @@ class Packet:
             return None
         return self.delivered_at - self.created_at
 
-    def mark_delivered(self, delivered_at: float, sink_id: str | None = None) -> None:
+    def mark_delivered(
+        self,
+        delivered_at: float,
+        sink_id: str | None = None,
+        event_seq: int | None = None,
+    ) -> None:
         """Đánh dấu gói tin đã được giao tới Sink đích thành công.
 
         Args:
             delivered_at: Mốc thời gian nhận gói (giây, không nhỏ hơn created_at).
             sink_id: Định danh trạm sink nhận gói (tùy chọn).
+            event_seq: Thứ tự toàn cục của sự kiện nhận gói.
         """
         if delivered_at < self.created_at:
             raise ValueError("delivered_at must not be earlier than created_at")
 
         # Ghi nhận trạng thái giao thành công và mốc thời gian nhận gói
         self.delivered_at = delivered_at
+        self.dropped_at = None
+        self.delivered_event_seq = self._validate_event_seq(
+            event_seq,
+            "delivered_event_seq",
+        )
+        self.dropped_event_seq = None
         self.status = PacketStatus.DELIVERED
         self.drop_reason = None
         self.drop_node_id = None
@@ -177,6 +223,9 @@ class Packet:
         reason: str,
         node_id: str | None = None,
         no_route: bool = False,
+        *,
+        sim_time_s: float,
+        event_seq: int | None = None,
     ) -> None:
         """Đánh dấu gói tin bị hủy trên đường truyền hoặc không tìm thấy đường đi.
 
@@ -184,9 +233,21 @@ class Packet:
             reason: Chuỗi mô tả nguyên nhân hủy (queue_drop, relay_below_threshold, energy_depletion, unreachable).
             node_id: Định danh node xảy ra việc hủy gói (nếu có).
             no_route: Đặt True nếu lý do là đồ thị không có đường nối tới Sink (trạng thái NO_ROUTE).
+            sim_time_s: Mốc thời gian gói bị hủy (giây, không nhỏ hơn created_at).
+            event_seq: Thứ tự toàn cục của sự kiện hủy gói.
         """
         if not reason:
             raise ValueError("drop reason must not be empty")
+
+        time_val = float(sim_time_s)
+        if time_val < self.created_at:
+            raise ValueError("dropped_at must not be earlier than created_at")
+        self.dropped_at = time_val
+        self.dropped_event_seq = self._validate_event_seq(
+            event_seq,
+            "dropped_event_seq",
+        )
+        self.delivered_event_seq = None
 
         # Phân biệt rõ giữa mất do không tìm thấy đường (NO_ROUTE) và rơi gói giữa chặng (DROPPED)
         self.status = PacketStatus.NO_ROUTE if no_route else PacketStatus.DROPPED

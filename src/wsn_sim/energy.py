@@ -29,6 +29,7 @@ class RadioModel:
         e_da_j_bit: float = 0.0,
         d0_m: float | None = None,
         death_callback: Callable[[dict[str, Any]], None] | None = None,
+        event_seq_provider: Callable[[], int] | None = None,
     ) -> None:
         self.e_elec = float(e_elec_j_bit)
         self.e_fs = float(e_fs_j_bit_m2)
@@ -43,6 +44,10 @@ class RadioModel:
         self.energy_ledger: list[dict[str, Any]] = []
         self.death_events: list[dict[str, Any]] = []
         self.death_callback = death_callback
+        self.event_seq_provider = event_seq_provider
+
+    def _get_seq(self) -> int:
+        return self.event_seq_provider() if self.event_seq_provider is not None else 0
 
     def _debit_sensor(
         self,
@@ -62,6 +67,7 @@ class RadioModel:
                 'energy_before_j': energy_before,
                 'energy_after_j': sensor.energy_j,
                 'cause': cause,
+                'event_seq': self._get_seq(),
             }
             self.death_events.append(event)
             if self.death_callback is not None:
@@ -128,6 +134,7 @@ class RadioModel:
         # Khởi tạo bản ghi sổ cái năng lượng (Energy Ledger Entry)
         ledger_entry: dict[str, Any] = {
             "time_s": sim_time_s,
+            "event_seq": self._get_seq(),
             "packet_id": packet_id,
             "sender_id": sender.node_id,
             "receiver_id": receiver.node_id,

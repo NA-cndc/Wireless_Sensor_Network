@@ -300,12 +300,22 @@ def _make_pilot(root: Path) -> Path:
         'pdr_percent': metrics['pdr_percent'],
         'throughput_bps': metrics['throughput_bps'],
         'goodput_bps': metrics['goodput_bps'],
+        'offered_rate_bps': metrics['offered_rate_bps'],
+        'configured_rate_bps': metrics['configured_rate_bps'],
+        'energy_per_delivered_bit_j': metrics['energy_per_delivered_bit_j'],
         'average_hops': metrics['average_hops'],
         'average_end_to_end_delay_s': metrics['average_end_to_end_delay_s'],
         'fnd_s': metrics['fnd_s'],
         'hnd_s': metrics['hnd_s'],
         'lnd_s': metrics['lnd_s'],
         'functional_network_death_s': metrics['functional_network_death_s'],
+        'delivered_bits_at_fnd': metrics['delivered_bits_at_fnd'],
+        'delivered_bits_at_hnd': metrics['delivered_bits_at_hnd'],
+        'delivered_bits_at_lnd': metrics['delivered_bits_at_lnd'],
+        'relay_jain_fairness': metrics['relay_jain_fairness'],
+        'route_recompute_count': metrics['route_recompute_count'],
+        'route_change_count': metrics['route_change_count'],
+        'route_failure_count': metrics['route_failure_count'],
         'validation_passed': True,
         'output_dir': scenario,
     }
@@ -378,7 +388,7 @@ def test_plotter_valid_run_has_zero_exit_and_creates_figures(tmp_path: Path):
     pilot = _make_pilot(tmp_path / 'pilot')
     completed = _run_plotter(pilot)
     assert completed.returncode == 0, completed.stderr
-    assert len(list((pilot / 'figures').glob('*.png'))) == 6
+    assert len(list((pilot / 'figures').glob('*.png'))) == 11
     with (pilot / 'figures' / '02_pdr_by_range.csv').open(
         newline='', encoding='utf-8'
     ) as file_handle:
