@@ -404,6 +404,60 @@ def test_positive_battery_can_be_physically_reachable_but_energy_infeasible():
     assert metrics['current_energy_feasible_sensors'] == 0
 
 
+@pytest.mark.parametrize('algorithm', ['MHR', 'EMHR'])
+@pytest.mark.parametrize(
+    ('initial_energy_j', 'expected_energy_feasible'),
+    [(0.0001, 0), (0.001, 1)],
+)
+def test_feasibility_uses_geometry_when_edge_distance_is_missing(
+    tmp_path: Path,
+    algorithm: str,
+    initial_energy_j: float,
+    expected_energy_feasible: int,
+):
+    config = replace(
+        SimulationConfig.from_json('configs/default.json'),
+        num_sensors=1,
+        num_sinks=1,
+        initial_energy_j=initial_energy_j,
+    )
+    network = Network(config, communication_range_m=250.0)
+    sensor = Sensor('sensor_0', 100.0, 0.0, initial_energy_j)
+    sink = Sink('sink_00', 0.0, 0.0)
+    network.sensors = {'sensor_0': sensor}
+    network.sinks = {'sink_00': sink}
+    network.graph = nx.Graph()
+    network.graph.add_node('sensor_0', node_type='sensor', x=100.0, y=0.0)
+    network.graph.add_node('sink_00', node_type='sink', x=0.0, y=0.0)
+    network.graph.add_edge('sensor_0', 'sink_00')
+    network.communication_range_m = 250.0
+
+    simulation = Simulation(
+        network,
+        routing_algorithm=algorithm,
+        quiet=True,
+        seed=42,
+    )
+    simulation.run_for(1.0)
+    battery_before = sensor.energy_j
+    edge_data_before = dict(network.graph['sensor_0']['sink_00'])
+
+    expected_tx_cost = simulation.radio.compute_tx_energy(128 * 8, 100.0)
+    assert expected_tx_cost == pytest.approx(0.00018432)
+    metrics = simulation.get_metrics()
+    assert metrics['current_reachable_sensors'] == 1
+    assert metrics['current_routing_eligible_sensors'] == 1
+    assert metrics['current_energy_feasible_sensors'] == expected_energy_feasible
+    assert sensor.energy_j == battery_before
+    assert dict(network.graph['sensor_0']['sink_00']) == edge_data_before == {}
+
+    run_dir = tmp_path / f'{algorithm}_{initial_energy_j}'
+    simulation.export_results(run_dir)
+    assert sensor.energy_j == battery_before
+    assert dict(network.graph['sensor_0']['sink_00']) == edge_data_before == {}
+    assert validate_run(run_dir)['passed'] is True
+
+
 def test_emhr_alive_relay_below_threshold_is_not_a_physical_death():
     network = _controlled_network()
     network.sensors['relay'].energy_j = 0.5

@@ -315,9 +315,20 @@ class RoutingEngine:
                 return False
             if not include_energy:
                 return True
-            distance = float(
-                self.network.graph[node_id][next_id].get('distance_m', 0.0)
-            )
+            edge_data = self.network.graph[node_id][next_id]
+            distance_value = edge_data.get('distance_m')
+            if distance_value is None:
+                receiver = self.network.sensors.get(next_id)
+                if receiver is None:
+                    receiver = self.network.sinks.get(next_id)
+                if receiver is None:
+                    raise ValueError(
+                        f'Cannot determine distance from {node_id!r} to '
+                        f'unknown receiver {next_id!r}'
+                    )
+                distance = sensor.distance_to(receiver)
+            else:
+                distance = float(distance_value)
             tx_cost = radio.compute_tx_energy(packet_bits, distance)
             available = sensor.energy_j if is_source else sensor.energy_j - rx_cost
             if (

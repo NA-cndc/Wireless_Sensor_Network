@@ -351,24 +351,42 @@ def main() -> int:
         for row, (range_m, value) in zip(selected, points):
             generated = int(row['generated_packets'])
             delivered = int(row['delivered_packets'])
-            lost = generated - delivered
+            dropped = int(row['dropped_packets'])
+            pending = int(row['pending_packets'])
+
+            if generated != delivered + dropped + pending:
+                raise ValueError(
+                    f"{row['scenario']}: packet conservation failed: "
+                    f"generated={generated}, delivered={delivered}, "
+                    f"dropped={dropped}, pending={pending}"
+                )
             if value is not None:
-                y_offset = -18 if algorithm == 'MHR' else -48
+                if value == 0.0:
+                    y_offset = 18 if algorithm == 'MHR' else 48
+                    vertical_alignment = 'bottom'
+                else:
+                    y_offset = -18 if algorithm == 'MHR' else -48
+                    vertical_alignment = 'top'
                 x_offset = 28 if range_m == min(range_values) else (
                     -28 if range_m == max(range_values) else 0
                 )
                 axis.annotate(
-                    f'{value:.6f}%\n{delivered}/{generated}; lost={lost}',
+                    (
+                        f'{value:.6f}%\n'
+                        f'{delivered}/{generated}\n'
+                        f'dropped={dropped}; pending={pending}'
+                    ),
                     (range_m, value), xytext=(x_offset, y_offset),
                     textcoords='offset points',
-                    ha='center', va='top', fontsize=7,
+                    ha='center', va=vertical_alignment, fontsize=7,
                 )
             pdr_source.append({
                 'scenario': row['scenario'], 'algorithm': algorithm,
                 'range_m': range_m, 'seed': seed,
                 'measurement_duration_s': row['actual_duration_s'],
                 'generated_packets': generated, 'delivered_packets': delivered,
-                'lost_packets': lost, 'pdr_percent': value,
+                'dropped_packets': dropped, 'pending_packets': pending,
+                'pdr_percent': value,
                 'status': 'observed' if value is not None else 'not_observed',
             })
     axis.set(
@@ -388,7 +406,8 @@ def main() -> int:
     save_source(
         '02_pdr_by_range', pdr_source,
         ['scenario', 'algorithm', 'range_m', 'seed', 'measurement_duration_s',
-         'generated_packets', 'delivered_packets', 'lost_packets', 'pdr_percent', 'status'],
+         'generated_packets', 'delivered_packets', 'dropped_packets',
+         'pending_packets', 'pdr_percent', 'status'],
     )
 
     # Figure 03: throughput/goodput remain separate series even when they overlap.

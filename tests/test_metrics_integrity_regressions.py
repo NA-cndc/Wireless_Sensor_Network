@@ -379,6 +379,16 @@ def test_plotter_valid_run_has_zero_exit_and_creates_figures(tmp_path: Path):
     completed = _run_plotter(pilot)
     assert completed.returncode == 0, completed.stderr
     assert len(list((pilot / 'figures').glob('*.png'))) == 6
+    with (pilot / 'figures' / '02_pdr_by_range.csv').open(
+        newline='', encoding='utf-8'
+    ) as file_handle:
+        reader = csv.DictReader(file_handle)
+        pdr_fields = list(reader.fieldnames or [])
+        pdr_rows = list(reader)
+    assert pdr_rows
+    assert 'dropped_packets' in pdr_fields
+    assert 'pending_packets' in pdr_fields
+    assert 'lost_packets' not in pdr_fields
 
 
 def test_plotter_rejects_legacy_run_without_exported_topology(tmp_path: Path):
