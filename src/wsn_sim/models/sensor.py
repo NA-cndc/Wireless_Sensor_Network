@@ -28,6 +28,8 @@ class Sensor:
     initial_energy_j: float
     energy_j: float | None = None
     is_alive: bool = True
+    death_time_s: float | None = None
+    death_cause: str | None = None
 
     generated_packets: int = 0
     received_packets: int = 0
@@ -38,14 +40,19 @@ class Sensor:
 
     def __post_init__(self) -> None:
         """Kiểm tra tính hợp lệ của dữ liệu ngay sau khi khởi tạo đối tượng."""
+        # Kiểm tra ràng buộc hợp lệ cho định danh và năng lượng ban đầu (Joule > 0)
         if not self.node_id:
             raise ValueError("node_id must not be empty")
         if self.initial_energy_j <= 0:
             raise ValueError("initial_energy_j must be greater than zero")
+
+        # Mặc định năng lượng hiện tại bằng năng lượng ban đầu nếu chưa được gán
         if self.energy_j is None:
             self.energy_j = float(self.initial_energy_j)
         if self.energy_j < 0:
             raise ValueError("energy_j must not be negative")
+
+        # Xác định trạng thái sống: node chỉ sống khi năng lượng còn dương (is_alive = True)
         self.energy_j = float(self.energy_j)
         self.is_alive = self.energy_j > 0
 
@@ -61,11 +68,18 @@ class Sensor:
 
         Sử dụng dung sai số thực 1e-15 để tránh lỗi làm tròn khi năng lượng xấp xỉ bằng chi phí.
         """
+        # Node đã chết hoặc hết pin thì không thể thực hiện bất kỳ thao tác vô tuyến nào
         if not self.is_alive or self.energy_j <= 0:
             return False
+        # Kiểm tra lượng pin còn lại có đáp ứng đủ chi phí yêu cầu (Joule)
         return self.energy_j >= (amount_j - 1e-15)
 
-    def consume_energy(self, amount_j: float) -> float:
+    def consume_energy(
+        self,
+        amount_j: float,
+        sim_time_s: float | None = None,
+        cause: str | None = None,
+    ) -> float:
         """Trừ bớt năng lượng tiêu thụ khi sensor thực hiện truyền (TX) hoặc nhận (RX) gói tin.
 
         Đảm bảo nguyên tắc bảo toàn năng lượng:
@@ -77,14 +91,22 @@ class Sensor:
             amount_j: Lượng năng lượng tiêu thụ tính bằng Joule.
 
         Returns:
-            Năng lượng còn lại của sensor sau khi tiêu hao.
+            Năng lượng còn lại của sensor sau khi tiêu hao (Joule).
         """
         if amount_j < 0:
             raise ValueError("amount_j must not be negative")
+
+        # Trừ pin có chặn dưới tại 0.0 J để đảm bảo pin không bao giờ âm
+        was_alive = self.is_alive
         self.energy_j = max(0.0, self.energy_j - amount_j)
+
+        # Ngưỡng epsilon 1e-14 J xử lý sai số làm tròn số thực dấu phẩy động
         if self.energy_j <= 1e-14:
             self.energy_j = 0.0
             self.is_alive = False
+            if was_alive and self.death_time_s is None and sim_time_s is not None:
+                self.death_time_s = float(sim_time_s)
+                self.death_cause = cause
         else:
             self.is_alive = True
         return self.energy_j
@@ -102,4 +124,5 @@ class Sensor:
         """
         if threshold_j < 0:
             raise ValueError("threshold_j must not be negative")
+        # Nút phải còn sống và năng lượng còn lại phải đạt ngưỡng E_th (có dung sai số thực)
         return self.is_alive and self.energy_j >= (threshold_j - 1e-15)

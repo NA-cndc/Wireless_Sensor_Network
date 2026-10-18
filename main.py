@@ -6,8 +6,8 @@ import argparse
 import concurrent.futures
 import json
 import multiprocessing
-from pathlib import Path
 import sys
+from pathlib import Path
 
 if sys.stdout and hasattr(sys.stdout, "reconfigure"):
     try:
@@ -26,16 +26,23 @@ from wsn_sim.simulation import Simulation
 
 def run_single_range_worker(range_m: float, config_dict: dict, duration_s: float, output_dir: str, algorithm: str = "EMHR") -> dict:
     """Worker độc lập cho một tiến trình CPU mô phỏng một bán kính."""
+    # Khởi tạo cấu hình riêng biệt cho worker từ dictionary cấu hình nạp từ tệp
     cfg = SimulationConfig.from_dict(config_dict)
     out_folder = Path(output_dir) / f"{algorithm}_R{int(range_m)}m_seed{cfg.seed}"
 
+    # Khởi tạo đối tượng mô phỏng Simulation cho kịch bản bán kính range_m (mét)
     sim = Simulation(
         target=cfg,
         current_range_m=range_m,
         routing_algorithm=algorithm,
         quiet=True,
+        csv_log_path=out_folder / "timeseries.csv",
+        seed=cfg.seed,
     )
+    # Tiến hành chạy mô phỏng SimPy trong thời lượng duration_s (giây)
     sim.run_for(duration_s)
+
+    # Xuất toàn bộ 5 file CSV/JSON và manifest ra thư mục kết quả của kịch bản
     sim.export_results(out_folder)
     metrics = sim.get_metrics()
     metrics["range_m"] = range_m
@@ -43,19 +50,28 @@ def run_single_range_worker(range_m: float, config_dict: dict, duration_s: float
     return metrics
 
 
-def run_default_project(duration_s: float = 100.0, output_dir: str = "results/simulation", algorithm: str = "EMHR"):
+def run_default_project(
+    duration_s: float = 100.0,
+    output_dir: str = "results/simulation",
+    algorithm: str = "EMHR",
+    seed: int = 42,
+):
     """Chạy mô phỏng song song 3 bán kính bằng multiprocessing."""
     print("=" * 70)
     print(" KHỞI ĐỘNG HỆ THỐNG MÔ PHỎNG WSN - CHUYỂN TIẾP MULTI-HOP")
     print(f" Thuật toán: {algorithm} | Bán kính: [250, 300, 350] m | Thời lượng: {duration_s}s")
     print("=" * 70)
 
+    # Nạp dữ liệu cấu hình chuẩn từ configs/default.json
     cfg_path = Path("configs/default.json")
     with cfg_path.open("r", encoding="utf-8") as f:
         config_data = json.load(f)
+    config_data["seed"] = seed
 
+    # Lấy danh sách 3 bán kính truyền thông vô tuyến cần khảo nghiệm (250m, 300m, 350m)
     ranges = config_data.get("communication_ranges_m", [250.0, 300.0, 350.0])
 
+    # Tận dụng tối đa số nhân CPU để chạy song song các kịch bản bán kính độc lập
     workers = min(len(ranges), multiprocessing.cpu_count() or 1)
     with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
         futures = {
@@ -155,7 +171,12 @@ def main() -> None:
         print(json.dumps(metrics, indent=2, ensure_ascii=False))
 
     else:
-        run_default_project(duration_s=args.duration, output_dir=args.output_dir, algorithm=algo)
+        run_default_project(
+            duration_s=args.duration,
+            output_dir=args.output_dir,
+            algorithm=algo,
+            seed=args.seed,
+        )
 
 
 if __name__ == "__main__":

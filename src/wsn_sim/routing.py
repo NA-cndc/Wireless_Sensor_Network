@@ -69,34 +69,43 @@ class RoutingEngine:
         avoid_nodes: set[str] | Sequence[str] | None = None,
     ) -> bool:
         """Kiểm tra xem lộ trình hiện tại còn hợp lệ để tiếp tục truyền dẫn hay không."""
+        # Tuyến đường hợp lệ phải có ít nhất 2 nút (nút gửi và nút nhận)
         if not route or len(route) < 2:
             return False
 
         eth = self.threshold_j if threshold_j is None else float(threshold_j)
         avoid = set(avoid_nodes) if avoid_nodes else set()
 
+        # Nút đầu tiên trong tuyến phải tồn tại và còn sống
         src = self.network.sensors.get(route[0])
         if not src or not src.is_alive:
             return False
 
+        # Nếu nút đầu tiên là một Relay (không phải nguồn gốc gói) trong EMHR: bắt buộc phải >= Eth
         if not is_source and algorithm == "EMHR" and not src.can_forward(eth):
             return False
 
+        # Điểm kết thúc của tuyến đường bắt buộc phải là một trạm Sink thật
         if route[-1] not in self.network.sinks:
             return False
 
+        # Duyệt từng chặng nhảy (hop) trên tuyến để kiểm tra tính toàn vẹn
         for i in range(len(route) - 1):
             u, v = route[i], route[i + 1]
+            # Cạnh truyền thông vô tuyến giữa hai nút phải còn tồn tại trong bán kính R hiện tại
             if not self.network.graph.has_edge(u, v):
                 return False
 
+            # Nút tiếp theo không được nằm trong tập các nút cần né tránh (chống tạo vòng lặp)
             if v in avoid:
                 return False
 
+            # Các nút chuyển tiếp trung gian (i > 0) phải còn sống và đáp ứng điều kiện năng lượng
             if i > 0:
                 relay = self.network.sensors.get(u)
                 if not relay or not relay.is_alive:
                     return False
+                # Đối với thuật toán EMHR, mọi relay bắt buộc phải có năng lượng >= Eth
                 if algorithm == "EMHR" and not relay.can_forward(eth):
                     return False
 
@@ -115,6 +124,7 @@ class RoutingEngine:
         source_sensor = self.network.sensors[source_id]
         if not source_sensor.is_alive:
             return None
+        # Nếu nguồn tìm đường là relay trong EMHR thì relay đó phải có năng lượng >= Eth
         if not is_source and threshold_j is not None and not source_sensor.can_forward(threshold_j):
             return None
 
@@ -122,6 +132,8 @@ class RoutingEngine:
         eth = self.threshold_j if threshold_j is None else float(threshold_j)
         e0 = self.network.config.initial_energy_j
 
+        # Giai đoạn 1: BFS Layering để tìm độ dài chặng nhảy tối thiểu h* tới trạm Sink gần nhất
+        # Tập visited được khởi tạo chứa sẵn avoid_nodes để tuyệt đối không duyệt lại nút đã qua
         avoid = set(avoid_nodes) if avoid_nodes else set()
         visited = {source_id} | avoid
         levels = [{source_id}]
@@ -134,10 +146,12 @@ class RoutingEngine:
                     if v in visited:
                         continue
                     if v in sinks:
+                        # Đã tiếp cận được trạm Sink ở tầng hiện tại
                         next_level.add(v)
                         visited.add(v)
                     else:
                         sensor = self.network.sensors.get(v)
+                        # Lọc nút chuyển tiếp: EMHR yêu cầu pin >= Eth; MHR chỉ yêu cầu nút còn sống
                         is_ok = sensor.can_forward(eth) if threshold_j is not None else (sensor and sensor.is_alive)
                         if is_ok:
                             next_level.add(v)
@@ -148,26 +162,33 @@ class RoutingEngine:
 
             levels.append(next_level)
             sinks_in_level = next_level & sinks
+            # Dừng BFS ngay khi phát hiện Sink ở tầng nông nhất (đảm bảo số hop h* là nhỏ nhất)
             if sinks_in_level:
                 found_sinks = sorted(sinks_in_level)
                 break
 
+        # Nếu không có Sink nào tiếp cận được trong đồ thị liên thông
         if not found_sinks:
             return None
 
+        # Số chặng nhảy tối thiểu h* chính là số tầng BFS trừ đi tầng gốc 0
         h_star = len(levels) - 1
 
+        # Giai đoạn 2: Quy hoạch động (DAG Dynamic Programming) trên các tầng BFS để tối ưu thứ tự từ điển
+        # Trạng thái DP lưu: (tổng_khoảng_cách_D, hàm_phạt_năng_lượng_Phi, lộ_trình_path)
         dp: dict[str, tuple[float, float, list[str]]] = {source_id: (0.0, 0.0, [source_id])}
 
         for d in range(1, h_star + 1):
             for v in levels[d]:
                 best_v: tuple[float, float, list[str]] | None = None
+                # Hàm phạt năng lượng phi(v) = E0 / (E_v + epsilon) cho sensor; bằng 0 cho sink
                 v_penalty = (e0 / (self.network.sensors[v].energy_j + self.epsilon)) if v in self.network.sensors else 0.0
 
                 for u in levels[d - 1]:
                     if u in dp and self.network.graph.has_edge(u, v):
                         u_dist, u_phi, u_path = dp[u]
                         edge_dist = self.network.graph[u][v].get("distance_m", 0.0)
+                        # So sánh bộ 3 mục tiêu theo thứ tự Lexicographic: khoảng cách D -> hàm phạt Phi -> lộ trình
                         cand = (
                             round(u_dist + edge_dist, 6),
                             round(u_phi + v_penalty, 6),
@@ -179,6 +200,7 @@ class RoutingEngine:
                 if best_v is not None:
                     dp[v] = best_v
 
+        # Chọn đường đi tối ưu nhất trong số các Sink cùng đạt số hop nhỏ nhất h*
         best_overall: tuple[float, float, list[str]] | None = None
         for s in found_sinks:
             if s in dp:
@@ -194,7 +216,7 @@ class RoutingEngine:
         avoid_nodes: set[str] | Sequence[str] | None = None,
         is_source: bool = True,
     ) -> list[str] | None:
-        """Minimum Hop Routing (MHR) baseline."""
+        """Thuật toán MHR: Minimum Hop Routing (không ràng buộc ngưỡng năng lượng Eth)."""
         return self._find_lexicographic_path(source_id, threshold_j=None, avoid_nodes=avoid_nodes, is_source=is_source)
 
     def get_emhr_route(
@@ -204,7 +226,7 @@ class RoutingEngine:
         avoid_nodes: set[str] | Sequence[str] | None = None,
         is_source: bool = True,
     ) -> list[str] | None:
-        """Energy-aware Minimum-Hop Routing (EMHR)."""
+        """Thuật toán EMHR: Energy-aware Minimum-Hop Routing (loại các relay có pin < Eth)."""
         eth = self.threshold_j if threshold_j is None else float(threshold_j)
         return self._find_lexicographic_path(source_id, threshold_j=eth, avoid_nodes=avoid_nodes, is_source=is_source)
 
@@ -219,20 +241,24 @@ class RoutingEngine:
         algo = algorithm if algorithm is not None else self.algorithm
         avoid = set(avoid_nodes) if avoid_nodes else set()
 
+        # Cache đường đi chỉ áp dụng cho truy vấn nguồn gốc không có ràng buộc tránh node
         if not avoid and is_source:
             cached = self._route_cache.get(source_id)
             if cached:
+                # Kiểm tra tuyến trong cache còn hợp lệ hay không trước khi tái sử dụng
                 if self.is_route_valid(cached, algorithm=algo, is_source=True):
                     return list(cached)
                 else:
                     self.route_change_count += 1
                     self._route_cache.pop(source_id, None)
 
+        # Tính toán đường đi mới theo thuật toán được chọn
         if algo == "MHR":
             route = self.get_mhr_route(source_id, avoid_nodes=avoid, is_source=is_source)
         else:
             route = self.get_emhr_route(source_id, threshold_j=self.threshold_j, avoid_nodes=avoid, is_source=is_source)
 
+        # Chỉ lưu vào bộ nhớ đệm cache nếu tuyến không bị giới hạn bởi tập avoid_nodes
         if route and not avoid and is_source:
             self._route_cache[source_id] = list(route)
         return route

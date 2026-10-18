@@ -1,0 +1,231 @@
+{
+  "run_directory": "D:\\DACNTT\\Github duan\\results\\metrics_pilot_seed42_101s_verified\\EMHR_R350m_seed42",
+  "absolute_tolerance": 1e-09,
+  "passed": true,
+  "checks": [
+    {
+      "metric": "unique_packet_ids",
+      "recalculated_value": 4500,
+      "reported_value": 4500,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "packet_status_partition",
+      "recalculated_value": 4500,
+      "reported_value": 4500,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "generated_packets",
+      "recalculated_value": 4500,
+      "reported_value": 4500,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "delivered_packets",
+      "recalculated_value": 4495,
+      "reported_value": 4495,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "dropped_packets",
+      "recalculated_value": 5,
+      "reported_value": 5,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "pending_packets",
+      "recalculated_value": 0,
+      "reported_value": 0,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "packet_conservation",
+      "recalculated_value": 4500,
+      "reported_value": 4500,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "delivered_timestamp_and_sink_validity",
+      "recalculated_value": true,
+      "reported_value": true,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "per_packet_hop_count",
+      "recalculated_value": true,
+      "reported_value": true,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "per_packet_latency",
+      "recalculated_value": true,
+      "reported_value": true,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "total_hops_delivered",
+      "recalculated_value": 11715,
+      "reported_value": 11715,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "total_end_to_end_delay_s",
+      "recalculated_value": 123.76883200002982,
+      "reported_value": 123.76883200002868,
+      "difference": 1.1368683772161603e-12,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "total_delivered_bytes",
+      "recalculated_value": 575360,
+      "reported_value": 575360,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "total_delivered_payload_bytes",
+      "recalculated_value": 575360,
+      "reported_value": 575360,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "throughput_bps",
+      "recalculated_value": 45573.069306930694,
+      "reported_value": 45573.069306930694,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "goodput_bps",
+      "recalculated_value": 45573.069306930694,
+      "reported_value": 45573.069306930694,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "pdr_percent",
+      "recalculated_value": 99.88888888888889,
+      "reported_value": 99.88888888888889,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "average_hops",
+      "recalculated_value": 2.6062291434927696,
+      "reported_value": 2.6062291434927696,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "average_end_to_end_delay_s",
+      "recalculated_value": 0.02753477908788205,
+      "reported_value": 0.027534779087881798,
+      "difference": 2.5326962749261384e-16,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "unique_node_death_events",
+      "recalculated_value": true,
+      "reported_value": true,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "fnd_s",
+      "recalculated_value": null,
+      "reported_value": null,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "hnd_s",
+      "recalculated_value": null,
+      "reported_value": null,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "lnd_s",
+      "recalculated_value": null,
+      "reported_value": null,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "node_deaths_match_nodes_csv",
+      "recalculated_value": true,
+      "reported_value": true,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "functional_network_death_s",
+      "recalculated_value": null,
+      "reported_value": null,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "all_dead_reachability_is_undefined",
+      "recalculated_value": true,
+      "reported_value": true,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "sensor_energy_debit_balance",
+      "recalculated_value": 8.426592756904938e-14,
+      "reported_value": 0.0,
+      "difference": 8.426592756904938e-14,
+      "passed": true,
+      "detail": "failed-transaction TX debit included: 0.0 J"
+    },
+    {
+      "metric": "final_timeseries_snapshot",
+      "recalculated_value": true,
+      "reported_value": true,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    }
+  ]
+}

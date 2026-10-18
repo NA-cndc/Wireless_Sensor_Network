@@ -1,9 +1,9 @@
-"""Module điều phối chính của mô phỏng WSN bằng SimPy cho truyền multi-hop."""
+'''SimPy orchestration, event measurements and run export.'''
 
 from __future__ import annotations
 
 import csv
-from collections.abc import Generator
+from collections.abc import Generator, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -12,15 +12,31 @@ import simpy
 
 from wsn_sim.config import SimulationConfig
 from wsn_sim.energy import RadioModel
+from wsn_sim.models import PacketStatus
 from wsn_sim.network import Network
 from wsn_sim.routing import RoutingEngine
 from wsn_sim.traffic import TrafficGenerator
 
+TIMESERIES_COLUMNS = [
+    'time_s',
+    'alive_sensors',
+    'dead_sensors',
+    'total_energy_j',
+    'generated_packets',
+    'delivered_packets',
+    'dropped_packets',
+    'pending_packets',
+    'reachable_sensors',
+    'reachability_ratio',
+    'reachability_state',
+    'delivered_bytes',
+    'delivered_payload_bytes',
+    'snapshot_kind',
+]
+
 
 @dataclass(slots=True)
 class SimulationResult:
-    """Đóng gói kết quả đầu ra của phiên mô phỏng sự kiện rời rạc."""
-
     simulated_time_s: float
     nodes: int
     sensors: int
@@ -28,12 +44,10 @@ class SimulationResult:
     metrics: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        """Chuyển đổi đối tượng kết quả thành dictionary để hiển thị JSON hoặc lưu file."""
         return asdict(self)
 
 
 def run_smoke_simulation(network: Network, duration_s: float) -> SimulationResult:
-    """Hàm tiện ích nhanh khởi tạo và thực thi mô phỏng SimPy trong duration_s giây."""
     sim = Simulation(network, enable_traffic=False)
     sim_time = sim.run_for(duration_s)
     return SimulationResult(
@@ -45,7 +59,7 @@ def run_smoke_simulation(network: Network, duration_s: float) -> SimulationResul
 
 
 class Simulation:
-    """Quản lý toàn bộ vòng đời và tiến trình mô phỏng mạng cảm biến."""
+    '''Manage one independent WSN simulation run.'''
 
     def __init__(
         self,
@@ -55,7 +69,7 @@ class Simulation:
         current_range_m: float | None = None,
         range_m: float | None = None,
         config: SimulationConfig | None = None,
-        routing_algorithm: str = "EMHR",
+        routing_algorithm: str = 'EMHR',
         alpha_energy: float = 0.20,
         enable_traffic: bool = True,
         csv_log_path: str | Path | None = None,
@@ -65,32 +79,44 @@ class Simulation:
         self.env = env if env is not None else simpy.Environment()
         self.quiet = quiet
         self.csv_log_path = Path(csv_log_path) if csv_log_path else None
+        self.requested_duration_s = 0.0
+        self.reachability_history: list[dict[str, Any]] = []
+        self.timeseries_snapshots: list[dict[str, Any]] = []
 
         effective_range = range_m if current_range_m is None else current_range_m
-
         if isinstance(target, Network):
             self.network = target
             self.config = config if config is not None else target.config
-            if effective_range is not None and effective_range != self.network.communication_range_m:
+            if (
+                effective_range is not None
+                and effective_range != self.network.communication_range_m
+            ):
                 self.network.build_graph(effective_range)
         elif isinstance(target, SimulationConfig):
             self.config = target
-            r = effective_range if effective_range is not None else target.communication_ranges_m[0]
-            self.network = Network(self.config, communication_range_m=r)
+            selected_range = (
+                effective_range
+                if effective_range is not None
+                else target.communication_ranges_m[0]
+            )
+            self.network = Network(self.config, communication_range_m=selected_range)
         else:
-            raise TypeError(f"target must be Network or SimulationConfig, got {type(target)}")
+            raise TypeError(f'target must be Network or SimulationConfig, got {type(target)}')
 
-        self.routing_algorithm = routing_algorithm
-        self.alpha_energy = alpha_energy
+        self.routing_algorithm = routing_algorithm.upper()
+        if self.routing_algorithm not in {'MHR', 'EMHR'}:
+            raise ValueError('routing_algorithm must be MHR or EMHR')
+        self.alpha_energy = float(alpha_energy)
+        self.traffic_seed = self.config.seed if seed is None else int(seed)
 
         self.router = RoutingEngine(
             self.network,
             algorithm=self.routing_algorithm,
             alpha_energy=self.alpha_energy,
         )
-        self.radio = RadioModel()
-
+        self.radio = RadioModel(death_callback=self._on_node_death)
         self.enable_traffic = enable_traffic
+        self.traffic_gen: TrafficGenerator | None = None
         if self.enable_traffic:
             self.traffic_gen = TrafficGenerator(
                 env=self.env,
@@ -98,99 +124,160 @@ class Simulation:
                 router=self.router,
                 radio=self.radio,
                 config=self.config,
-                traffic_seed=seed,
+                traffic_seed=self.traffic_seed,
             )
             self.traffic_gen.start()
-            if self.csv_log_path is not None:
-                self.env.process(self._monitor_network())
+
+        self._record_reachability_event('initial')
+        self.timeseries_snapshots.append(self._build_snapshot('initial'))
+        if self.csv_log_path is not None:
+            self._write_timeseries_csv(self.csv_log_path, self.timeseries_snapshots)
+        if self.enable_traffic:
+            self.env.process(self._monitor_network())
+
+    def _record_reachability_event(
+        self,
+        trigger: str,
+        death_node_id: str | None = None,
+    ) -> None:
+        snapshot = self.network.physical_reachability_snapshot(float(self.env.now))
+        snapshot['trigger'] = trigger
+        snapshot['death_node_id'] = death_node_id
+        self.reachability_history.append(snapshot)
+
+    def _on_node_death(self, event: dict[str, Any]) -> None:
+        self._record_reachability_event('node_death', str(event['node_id']))
+
+    def _packet_partition(self) -> tuple[list[Any], list[Any], list[Any]]:
+        packets = list(self.traffic_gen.generated_packets) if self.traffic_gen else []
+        delivered = [
+            packet for packet in packets if packet.status is PacketStatus.DELIVERED
+        ]
+        dropped = [
+            packet
+            for packet in packets
+            if packet.status in (PacketStatus.DROPPED, PacketStatus.NO_ROUTE)
+        ]
+        pending = [
+            packet
+            for packet in packets
+            if packet.status in (PacketStatus.CREATED, PacketStatus.IN_TRANSIT)
+        ]
+        return delivered, dropped, pending
+
+    def _build_snapshot(self, snapshot_kind: str) -> dict[str, Any]:
+        packets = list(self.traffic_gen.generated_packets) if self.traffic_gen else []
+        delivered, dropped, pending = self._packet_partition()
+        unique_delivered = list(
+            {packet.packet_id: packet for packet in delivered}.values()
+        )
+        reachability = self.network.physical_reachability_snapshot(float(self.env.now))
+        alive_count = reachability['alive_sensors']
+        return {
+            'time_s': float(self.env.now),
+            'alive_sensors': alive_count,
+            'dead_sensors': len(self.network.sensors) - alive_count,
+            'total_energy_j': sum(
+                sensor.energy_j for sensor in self.network.sensors.values()
+            ),
+            'generated_packets': len(packets),
+            'delivered_packets': len(unique_delivered),
+            'dropped_packets': len(dropped),
+            'pending_packets': len(pending),
+            'reachable_sensors': reachability['reachable_sensors'],
+            'reachability_ratio': reachability['reachability_ratio'],
+            'reachability_state': reachability['state'],
+            'delivered_bytes': sum(packet.size_bytes for packet in unique_delivered),
+            'delivered_payload_bytes': sum(
+                packet.payload_size_bytes for packet in unique_delivered
+            ),
+            'snapshot_kind': snapshot_kind,
+        }
+
+    def _timeseries_for_export(self) -> list[dict[str, Any]]:
+        rows = [dict(row) for row in self.timeseries_snapshots]
+        final = self._build_snapshot('final')
+        if rows and rows[-1]['time_s'] == final['time_s']:
+            rows[-1] = final
         else:
-            self.traffic_gen = None
+            rows.append(final)
+        return rows
+
+    @staticmethod
+    def _write_rows(
+        path: Path,
+        fieldnames: Sequence[str],
+        rows: Sequence[Mapping[str, Any]],
+    ) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open('w', newline='', encoding='utf-8') as file_handle:
+            writer = csv.DictWriter(file_handle, fieldnames=fieldnames)
+            writer.writeheader()
+            for row in rows:
+                writer.writerow({name: row.get(name) for name in fieldnames})
+
+    def _write_timeseries_csv(
+        self,
+        path: Path,
+        rows: Sequence[Mapping[str, Any]],
+    ) -> None:
+        self._write_rows(path, TIMESERIES_COLUMNS, rows)
 
     def smoke_process(self, timeout_s: float) -> Generator[simpy.Event, None, None]:
-        """Tiến trình mẫu sinh sự kiện chờ timeout trong hàng đợi của SimPy."""
         if timeout_s <= 0:
-            raise ValueError("timeout_s must be greater than zero")
+            raise ValueError('timeout_s must be greater than zero')
         yield self.env.timeout(timeout_s)
 
     def run_for(self, duration_s: float) -> float:
-        """Tua nhanh mô phỏng thêm một khoảng thời gian duration_s."""
         if duration_s <= 0:
-            raise ValueError("duration_s must be greater than zero")
-
+            raise ValueError('duration_s must be greater than zero')
+        self.requested_duration_s += float(duration_s)
         target_time = self.env.now + duration_s
         self.env.process(self.smoke_process(duration_s))
         self.env.run(until=target_time)
-
+        if self.csv_log_path is not None:
+            self._write_timeseries_csv(
+                self.csv_log_path,
+                self._timeseries_for_export(),
+            )
         if not self.quiet and self.enable_traffic:
             self._print_summary()
-
         return float(self.env.now)
 
     def _monitor_network(self) -> Generator[simpy.Event, None, None]:
-        """Tiến trình giám sát: Ghi log chỉ số định kỳ ra file CSV."""
-        if self.csv_log_path is None:
-            return
-
-        self.csv_log_path.parent.mkdir(parents=True, exist_ok=True)
-        with self.csv_log_path.open(mode="w", newline="", encoding="utf-8") as file:
-            writer = csv.writer(file)
-            writer.writerow([
-                "Time_s", "Alive_Nodes", "Total_Energy_J",
-                "Generated_Packets", "Delivered_Packets", "Dropped_Packets"
-            ])
-
-            while True:
-                alive_nodes = len([s for s in self.network.sensors.values() if s.is_alive])
-                total_energy = sum(s.energy_j for s in self.network.sensors.values())
-
-                gen_count = len(self.traffic_gen.generated_packets) if self.traffic_gen else 0
-                deliv_count = len(self.traffic_gen.delivered_packets) if self.traffic_gen else 0
-                drop_count = len(self.traffic_gen.dropped_packets) if self.traffic_gen else 0
-
-                if not self.quiet:
-                    print(
-                        f"[{self.env.now:05.1f}s] Sống: {alive_nodes:3d} | "
-                        f"Gửi: {gen_count} | Tới: {deliv_count} | Rớt: {drop_count}"
-                    )
-
-                writer.writerow([
-                    round(self.env.now, 1),
-                    alive_nodes,
-                    round(total_energy, 4),
-                    gen_count,
-                    deliv_count,
-                    drop_count,
-                ])
-                file.flush()
-
-                if alive_nodes == 0:
-                    break
-
-                yield self.env.timeout(10.0)
+        while True:
+            yield self.env.timeout(10.0)
+            snapshot = self._build_snapshot('periodic')
+            self.timeseries_snapshots.append(snapshot)
+            if self.csv_log_path is not None:
+                self._write_timeseries_csv(
+                    self.csv_log_path,
+                    self.timeseries_snapshots,
+                )
+            if snapshot['alive_sensors'] == 0:
+                return
 
     def _print_summary(self) -> None:
-        """In báo cáo khi mô phỏng tạm dừng."""
-        if not self.traffic_gen:
-            return
-        total_generated = len(self.traffic_gen.generated_packets)
-        alive_nodes = len([s for s in self.network.sensors.values() if s.is_alive])
-
-        print("-" * 40)
-        print(f"[TẠM DỪNG] Tại giây thứ {self.env.now:.1f}")
-        print(f" -> Cảm biến còn sống : {alive_nodes}/{self.config.num_sensors}")
-        print(f" -> Gói tin đã sinh   : {total_generated}")
-        print("-" * 40)
+        metrics = self.get_metrics()
+        print('-' * 40)
+        print(f'[PAUSED] Simulation time: {self.env.now:.6f} s')
+        print(
+            f'Alive sensors: {metrics["alive_sensors"]}/{metrics["total_sensors"]}; '
+            f'generated={metrics["generated_packets"]}; '
+            f'delivered={metrics["delivered_packets"]}'
+        )
+        print('-' * 40)
 
     def get_metrics(self) -> dict[str, Any]:
-        """Tính toán và trả về toàn bộ bộ chỉ số của mô phỏng."""
         from wsn_sim.metrics import calculate_simulation_metrics
 
         if not self.traffic_gen:
             return {
-                "simulated_time_s": float(self.env.now),
-                "nodes": self.network.graph.number_of_nodes(),
-                "sensors": len(self.network.sensors),
-                "sinks": len(self.network.sinks),
+                'simulated_time_s': float(self.env.now),
+                'measurement_duration_s': float(self.env.now),
+                'nodes': self.network.graph.number_of_nodes(),
+                'sensors': len(self.network.sensors),
+                'sinks': len(self.network.sinks),
             }
         return calculate_simulation_metrics(
             network=self.network,
@@ -198,91 +285,221 @@ class Simulation:
             radio=self.radio,
             sim_time_s=float(self.env.now),
             router=self.router,
+            reachability_history=self.reachability_history,
         )
 
     def export_results(self, output_dir: str | Path) -> dict[str, Path]:
-        """Xuất toàn bộ dữ liệu raw CSV và JSON ra thư mục độc lập."""
         from wsn_sim.storage import create_run_manifest, save_json
 
         out_path = Path(output_dir)
         out_path.mkdir(parents=True, exist_ok=True)
         saved_files: dict[str, Path] = {}
 
-        cfg_path = out_path / "config.json"
-        save_json(self.config.to_dict(), cfg_path)
-        saved_files["config"] = cfg_path
+        config_path = out_path / 'config.json'
+        save_json(self.config.to_dict(), config_path)
+        saved_files['config'] = config_path
 
-        metrics = self.get_metrics()
-        metrics_path = out_path / "metrics.json"
-        save_json(metrics, metrics_path)
-        saved_files["metrics"] = metrics_path
+        metrics_path = out_path / 'metrics.json'
+        save_json(self.get_metrics(), metrics_path)
+        saved_files['metrics'] = metrics_path
 
-        nodes_csv_path = out_path / "nodes.csv"
-        with nodes_csv_path.open("w", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            writer.writerow([
-                "node_id", "type", "x", "y", "initial_energy_j", "energy_j",
-                "is_alive", "generated_packets", "received_packets",
-                "forwarded_packets", "dropped_packets", "tx_energy_total_j", "rx_energy_total_j"
-            ])
-            for s in self.network.sensors.values():
-                writer.writerow([
-                    s.node_id, "sensor", s.x, s.y, s.initial_energy_j, s.energy_j,
-                    s.is_alive, s.generated_packets, s.received_packets,
-                    s.forwarded_packets, s.dropped_packets, s.tx_energy_total_j, s.rx_energy_total_j
-                ])
-            for k in self.network.sinks.values():
-                writer.writerow([
-                    k.node_id, "sink", k.x, k.y, "unlimited", "unlimited",
-                    True, 0, k.received_packet_count, 0, 0, 0.0, 0.0
-                ])
-        saved_files["nodes"] = nodes_csv_path
+        nodes_path = out_path / 'nodes.csv'
+        node_fields = [
+            'node_id',
+            'type',
+            'x',
+            'y',
+            'initial_energy_j',
+            'energy_j',
+            'is_alive',
+            'death_time_s',
+            'generated_packets',
+            'received_packets',
+            'forwarded_packets',
+            'dropped_packets',
+            'tx_energy_total_j',
+            'rx_energy_total_j',
+        ]
+        node_rows: list[dict[str, Any]] = []
+        for sensor in self.network.sensors.values():
+            node_rows.append(
+                {
+                    'node_id': sensor.node_id,
+                    'type': 'sensor',
+                    'x': sensor.x,
+                    'y': sensor.y,
+                    'initial_energy_j': sensor.initial_energy_j,
+                    'energy_j': sensor.energy_j,
+                    'is_alive': sensor.is_alive,
+                    'death_time_s': sensor.death_time_s,
+                    'generated_packets': sensor.generated_packets,
+                    'received_packets': sensor.received_packets,
+                    'forwarded_packets': sensor.forwarded_packets,
+                    'dropped_packets': sensor.dropped_packets,
+                    'tx_energy_total_j': sensor.tx_energy_total_j,
+                    'rx_energy_total_j': sensor.rx_energy_total_j,
+                }
+            )
+        for sink in self.network.sinks.values():
+            node_rows.append(
+                {
+                    'node_id': sink.node_id,
+                    'type': 'sink',
+                    'x': sink.x,
+                    'y': sink.y,
+                    'initial_energy_j': 'unlimited',
+                    'energy_j': 'unlimited',
+                    'is_alive': True,
+                    'death_time_s': None,
+                    'generated_packets': 0,
+                    'received_packets': sink.received_packet_count,
+                    'forwarded_packets': 0,
+                    'dropped_packets': 0,
+                    'tx_energy_total_j': 0.0,
+                    'rx_energy_total_j': 0.0,
+                }
+            )
+        self._write_rows(nodes_path, node_fields, node_rows)
+        saved_files['nodes'] = nodes_path
 
-        packets_csv_path = out_path / "packets.csv"
-        with packets_csv_path.open("w", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            writer.writerow([
-                "packet_id", "sequence_number", "source_id", "sink_id",
-                "created_at", "delivered_at", "latency_s", "hop_count",
-                "status", "drop_reason", "drop_node_id", "route", "path"
-            ])
-            all_pkts = []
-            if self.traffic_gen:
-                all_pkts = list(self.traffic_gen.generated_packets)
-            all_pkts.sort(key=lambda p: (p.source_id, p.sequence_number, p.created_at))
-            for p in all_pkts:
-                writer.writerow([
-                    p.packet_id, p.sequence_number, p.source_id, p.sink_id or "",
-                    p.created_at, p.delivered_at if p.delivered_at is not None else "",
-                    p.latency_s if p.latency_s is not None else "",
-                    p.hop_count, p.status.value, p.drop_reason or "",
-                    p.drop_node_id or "", "->".join(p.route), "->".join(p.path)
-                ])
-        saved_files["packets"] = packets_csv_path
+        packets_path = out_path / 'packets.csv'
+        packet_fields = [
+            'packet_id',
+            'source_id',
+            'sink_id',
+            'sequence_number',
+            'size_bytes',
+            'payload_size_bytes',
+            'created_at',
+            'delivered_at',
+            'latency_s',
+            'hop_count',
+            'status',
+            'drop_reason',
+            'drop_node_id',
+            'route',
+            'path',
+        ]
+        packet_rows: list[dict[str, Any]] = []
+        packets = list(self.traffic_gen.generated_packets) if self.traffic_gen else []
+        packets.sort(key=lambda packet: (packet.source_id, packet.sequence_number))
+        for packet in packets:
+            packet_rows.append(
+                {
+                    'packet_id': packet.packet_id,
+                    'source_id': packet.source_id,
+                    'sink_id': packet.sink_id,
+                    'sequence_number': packet.sequence_number,
+                    'size_bytes': packet.size_bytes,
+                    'payload_size_bytes': packet.payload_size_bytes,
+                    'created_at': packet.created_at,
+                    'delivered_at': packet.delivered_at,
+                    'latency_s': packet.latency_s,
+                    'hop_count': len(packet.path) - 1,
+                    'status': packet.status.value,
+                    'drop_reason': packet.drop_reason,
+                    'drop_node_id': packet.drop_node_id,
+                    'route': '->'.join(packet.route),
+                    'path': '->'.join(packet.path),
+                }
+            )
+        self._write_rows(packets_path, packet_fields, packet_rows)
+        saved_files['packets'] = packets_path
 
-        ledger_path = out_path / "energy_ledger.csv"
-        with ledger_path.open("w", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            writer.writerow([
-                "time_s", "packet_id", "sender_id", "receiver_id", "distance_m",
-                "tx_energy_j", "rx_energy_j", "success", "reason"
-            ])
-            for entry in self.radio.energy_ledger:
-                writer.writerow([
-                    entry.get("time_s"), entry.get("packet_id"), entry.get("sender_id"),
-                    entry.get("receiver_id"), entry.get("distance_m"),
-                    entry.get("tx_energy_j"), entry.get("rx_energy_j"),
-                    entry.get("success"), entry.get("reason")
-                ])
-        saved_files["energy_ledger"] = ledger_path
+        ledger_path = out_path / 'energy_ledger.csv'
+        ledger_fields = [
+            'time_s',
+            'packet_id',
+            'sender_id',
+            'receiver_id',
+            'distance_m',
+            'tx_energy_j',
+            'rx_energy_j',
+            'success',
+            'reason',
+            'sender_energy_before',
+            'sender_energy_after',
+            'receiver_energy_before',
+            'receiver_energy_after',
+        ]
+        self._write_rows(ledger_path, ledger_fields, self.radio.energy_ledger)
+        saved_files['energy_ledger'] = ledger_path
 
-        manifest_path = out_path / "run_manifest.json"
+        deaths_path = out_path / 'node_deaths.csv'
+        death_fields = [
+            'node_id',
+            'death_time_s',
+            'energy_before_j',
+            'energy_after_j',
+            'cause',
+        ]
+        self._write_rows(deaths_path, death_fields, self.radio.death_events)
+        saved_files['node_deaths'] = deaths_path
+
+        reachability_path = out_path / 'reachability_events.csv'
+        reachability_fields = [
+            'time_s',
+            'alive_sensors',
+            'reachable_sensors',
+            'reachability_ratio',
+            'state',
+            'trigger',
+            'death_node_id',
+        ]
+        self._write_rows(
+            reachability_path,
+            reachability_fields,
+            self.reachability_history,
+        )
+        saved_files['reachability_events'] = reachability_path
+
+        timeseries_path = out_path / 'timeseries.csv'
+        self._write_timeseries_csv(timeseries_path, self._timeseries_for_export())
+        saved_files['timeseries'] = timeseries_path
+
+        manifest_path = out_path / 'run_manifest.json'
+        output_names = [path.name for path in saved_files.values()]
+        output_names.append(manifest_path.name)
         manifest = create_run_manifest(
             self.config,
-            [p.name for p in saved_files.values()],
+            output_names,
             Path.cwd(),
+            run_metadata={
+                'routing_algorithm': self.routing_algorithm,
+                'communication_range_m': self.network.communication_range_m,
+                'topology_seed': self.config.seed,
+                'traffic_seed': self.traffic_seed,
+                'requested_duration_s': self.requested_duration_s,
+                'actual_duration_s': float(self.env.now),
+                'bandwidth_bps': (
+                    self.traffic_gen.bandwidth_bps if self.traffic_gen else None
+                ),
+                'queue_capacity_packets': (
+                    self.traffic_gen.queue_capacity if self.traffic_gen else None
+                ),
+                'alpha_energy': self.alpha_energy,
+                'payload_convention': (
+                    'payload_size_bytes defaults to packet_size_bytes; '
+                    'no protocol overhead is modeled'
+                ),
+                'time_convention': (
+                    'SimPy time; t0=0; metrics cover [0,T); events exactly at '
+                    'the run_for stop boundary execute on a later continuation'
+                ),
+                'lifetime_convention': (
+                    'sensor alive-to-dead transitions at energy debit time; '
+                    'FND=1st, HND=ceil(N_initial/2), LND=N_initial'
+                ),
+                'reachability_convention': (
+                    'physical graph induced by alive sensors and all sinks; '
+                    'functional death is first ratio below 0.5 while alive>0'
+                ),
+                'timeseries_snapshot_order': (
+                    'initial at t=0; periodic monitor after packet generators '
+                    'already scheduled at the same time; final after all events in [0,T)'
+                ),
+            },
         )
         save_json(manifest, manifest_path)
-        saved_files["manifest"] = manifest_path
-
+        saved_files['manifest'] = manifest_path
         return saved_files

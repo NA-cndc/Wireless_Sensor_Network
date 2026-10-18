@@ -58,15 +58,18 @@ class Network:
         Đảm bảo tính tái lập (Reproducibility): Cùng một random seed (ví dụ: seed=42)
         sẽ luôn sinh ra đúng một bộ tọa độ giống hệt nhau trên mọi máy tính.
         """
+        # Khởi tạo bộ sinh số ngẫu nhiên NumPy Generator với hạt giống xác định (seed)
         rng = np.random.default_rng(self.config.seed)
         node_count = self.config.num_sensors + self.config.num_sinks
 
+        # Rải tọa độ đều (Uniform Distribution) trong hình chữ nhật [0, area_width] x [0, area_height] (đơn vị: mét)
         coordinates = rng.uniform(
             low=(0.0, 0.0),
             high=(self.config.area_width_m, self.config.area_height_m),
             size=(node_count, 2),
         )
 
+        # Cắt mảng tọa độ: num_sensors phần tử đầu tiên dành cho các nút cảm biến (Sensor)
         for index, (x, y) in enumerate(coordinates[: self.config.num_sensors]):
             node_id = f"sensor_{index:03d}"
             self.sensors[node_id] = Sensor(
@@ -76,6 +79,7 @@ class Network:
                 initial_energy_j=self.config.initial_energy_j,
             )
 
+        # Các phần tử còn lại dành cho các trạm thu thập (Sink), tọa độ cố định theo seed
         for index, (x, y) in enumerate(coordinates[self.config.num_sensors :]):
             node_id = f"sink_{index:02d}"
             self.sinks[node_id] = Sink(node_id=node_id, x=float(x), y=float(y))
@@ -101,6 +105,7 @@ class Network:
         Returns:
             Đối tượng đồ thị vô hướng networkx.Graph mới.
         """
+        # Hỗ trợ truyền bán kính bằng tham số vị trí hoặc từ khóa range_m
         effective_range = (
             range_m if communication_range_m is None else communication_range_m
         )
@@ -113,8 +118,10 @@ class Network:
 
         communication_range_m = effective_range
 
+        # Khởi tạo đồ thị vô hướng rỗng mới để xây dựng lại liên kết theo R
         graph = nx.Graph()
 
+        # Nạp tất cả sensor vào đồ thị với các thuộc tính tọa độ (mét) và năng lượng pin (Joule)
         for sensor in self.sensors.values():
             graph.add_node(
                 sensor.node_id,
@@ -124,6 +131,7 @@ class Network:
                 energy_j=sensor.energy_j,
             )
 
+        # Nạp tất cả sink vào đồ thị (sink không giới hạn năng lượng)
         for sink in self.sinks.values():
             graph.add_node(
                 sink.node_id,
@@ -135,13 +143,16 @@ class Network:
         sensor_nodes = list(self.sensors.values())
         sink_nodes = list(self.sinks.values())
 
+        # Thiết lập cạnh giữa Sensor - Sensor: Nếu d(u, v) <= R thì tạo cạnh 2 chiều vô hướng
         for left_index, left in enumerate(sensor_nodes):
             for right in sensor_nodes[left_index + 1 :]:
                 self._add_edge_if_in_range(graph, left, right, communication_range_m)
 
+            # Thiết lập cạnh giữa Sensor - Sink: Cho phép cảm biến truyền trực tiếp tới Sink nếu trong tầm sóng
             for sink in sink_nodes:
                 self._add_edge_if_in_range(graph, left, sink, communication_range_m)
 
+        # Cập nhật đồ thị và ghi nhận bán kính truyền thông hiện hành của mạng
         self.graph = graph
         self.communication_range_m = float(communication_range_m)
         return graph
@@ -154,7 +165,10 @@ class Network:
         communication_range_m: float,
     ) -> None:
         """Kiểm tra khoảng cách Euclid và tạo cạnh liên kết nếu khoảng cách <= R."""
+        # Tính khoảng cách hình học Euclid giữa hai node theo tọa độ Descartes (mét)
         distance_m = hypot(left.x - right.x, left.y - right.y)
+
+        # Nếu hai nút nằm trong bán kính phủ sóng vô tuyến R, tạo liên kết mạng vô tuyến
         if distance_m <= communication_range_m:
             graph.add_edge(
                 left.node_id,
@@ -186,6 +200,34 @@ class Network:
             if component & sink_ids:
                 routable.update(component & self.sensors.keys())
         return sorted(routable)
+
+    def physical_reachability_snapshot(self, time_s: float) -> dict[str, Any]:
+        # Read-only reachability on the physical graph after removing dead sensors.
+        alive_ids = {node_id for node_id, sensor in self.sensors.items() if sensor.is_alive}
+        active_nodes = alive_ids | set(self.sinks)
+        active_graph = self.graph.subgraph(active_nodes)
+        reachable_ids: set[str] = set()
+        sink_ids = set(self.sinks)
+        for component in nx.connected_components(active_graph):
+            if component & sink_ids:
+                reachable_ids.update(component & alive_ids)
+
+        alive_count = len(alive_ids)
+        reachable_count = len(reachable_ids)
+        ratio = (reachable_count / alive_count) if alive_count else None
+        if alive_count == 0:
+            state = 'all_dead'
+        elif ratio is not None and ratio < 0.5:
+            state = 'below_threshold'
+        else:
+            state = 'operational'
+        return {
+            'time_s': float(time_s),
+            'alive_sensors': alive_count,
+            'reachable_sensors': reachable_count,
+            'reachability_ratio': ratio,
+            'state': state,
+        }
 
     def topology_summary(self) -> dict[str, int | float]:
         """Tổng hợp các chỉ số thống kê cơ bản của mạng ở bán kính truyền hiện tại."""

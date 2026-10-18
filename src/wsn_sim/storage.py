@@ -33,7 +33,7 @@ def save_json(data: dict[str, Any], path: str | Path) -> Path:
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w", encoding="utf-8") as file_handle:
-        json.dump(data, file_handle, ensure_ascii=False, indent=2)
+        json.dump(data, file_handle, ensure_ascii=False, indent=2, allow_nan=False)
         file_handle.write("\n")
     return output_path
 
@@ -66,6 +66,7 @@ def create_run_manifest(
     config: SimulationConfig,
     generated_files: Iterable[str | Path],
     repository_root: str | Path,
+    run_metadata: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Create runtime, dependency, Git, and output reproducibility metadata.
 
@@ -79,7 +80,7 @@ def create_run_manifest(
     """
     root = Path(repository_root).resolve()
     status = _git_output(root, "status", "--porcelain")
-    return {
+    manifest = {
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "seed": config.seed,
         "configuration": config.to_dict(),
@@ -88,5 +89,9 @@ def create_run_manifest(
         "git_commit": _git_output(root, "rev-parse", "HEAD"),
         "git_branch": _git_output(root, "branch", "--show-current"),
         "working_tree_clean": status == "" if status is not None else None,
+        "working_tree_changes": status.splitlines() if status else [],
         "generated_files": [str(Path(path)) for path in generated_files],
     }
+    if run_metadata:
+        manifest.update(run_metadata)
+    return manifest

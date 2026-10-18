@@ -45,9 +45,11 @@ class Sink:
         Returns:
             True nếu gói tin được nhận mới thành công; False nếu là gói trùng lặp.
         """
+        # Bước 1: Khử trùng lặp (Deduplication) - nếu gói đã được nhận trước đó thì bỏ qua
         if packet.packet_id in self.received_packet_ids:
             return False
 
+        # Bước 2: Ghi nhận gói mới đến sink thành công, cập nhật trạng thái DELIVERED và timestamp (giây)
         packet.mark_delivered(received_at, sink_id=self.node_id)
         self.received_packet_ids.add(packet.packet_id)
         self.delivered_packets.append(packet)
@@ -56,14 +58,15 @@ class Sink:
     @property
     def received_packet_count(self) -> int:
         """Trả về tổng số lượng gói tin độc nhất (không trùng lặp) đã đến sink thành công."""
+        # Số lượng ID phân biệt trong tập đã nhận
         return len(self.received_packet_ids)
 
     @property
     def total_received_bytes(self) -> int:
-        """Tổng số bytes dữ liệu hợp lệ nhận được tại sink."""
+        """Tổng số bytes dữ liệu hợp lệ nhận được tại sink (đơn vị: bytes)."""
         return sum(p.size_bytes for p in self.delivered_packets)
 
     @property
     def total_received_bits(self) -> int:
-        """Tổng số bits dữ liệu hợp lệ nhận được tại sink."""
+        """Tổng số bits dữ liệu hợp lệ nhận được tại sink (1 byte = 8 bits)."""
         return self.total_received_bytes * 8
