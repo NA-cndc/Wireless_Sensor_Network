@@ -1,0 +1,70 @@
+{
+  "timestamp_utc": "2026-10-18T07:16:43.196390+00:00",
+  "seed": 42,
+  "configuration": {
+    "area_width_m": 3000,
+    "area_height_m": 3000,
+    "num_sensors": 450,
+    "num_sinks": 7,
+    "initial_energy_j": 5.0,
+    "packet_size_bytes": 128,
+    "packet_interval_s": 10,
+    "communication_ranges_m": [
+      250,
+      300,
+      350
+    ],
+    "seed": 42,
+    "payload_size_bytes": 128
+  },
+  "python_version": "3.14.6",
+  "library_versions": {
+    "networkx": "3.6.1",
+    "simpy": "4.1.2",
+    "numpy": "2.5.3",
+    "pandas": "3.0.5",
+    "matplotlib": "3.11.1"
+  },
+  "git_commit": "f923958284a7e98c01ebf7701a1728cb5891b959",
+  "git_branch": "XB",
+  "working_tree_clean": false,
+  "working_tree_changes": [
+    "M scripts/plot_metrics.py",
+    " M scripts/run_metrics_pilot.py",
+    " M scripts/validate_metrics.py",
+    " M src/wsn_sim/simulation.py",
+    "?? .test-artifacts/",
+    "?? results/baseline_metrics/",
+    "?? results/metrics_pilot_seed42_101s_integrity_verified/",
+    "?? tests/test_metrics_integrity_regressions.py"
+  ],
+  "generated_files": [
+    "config.json",
+    "metrics.json",
+    "nodes.csv",
+    "topology_edges.csv",
+    "packets.csv",
+    "energy_ledger.csv",
+    "node_deaths.csv",
+    "reachability_events.csv",
+    "timeseries.csv",
+    "run_manifest.json",
+    "validation.json"
+  ],
+  "export_schema_version": 2,
+  "routing_algorithm": "EMHR",
+  "communication_range_m": 250.0,
+  "topology_seed": 42,
+  "traffic_seed": 42,
+  "requested_duration_s": 101.0,
+  "actual_duration_s": 101.0,
+  "bandwidth_bps": 250000.0,
+  "queue_capacity_packets": 50,
+  "alpha_energy": 0.2,
+  "payload_convention": "payload_size_bytes defaults to packet_size_bytes; no protocol overhead is modeled",
+  "time_convention": "SimPy time; t0=0; metrics cover [0,T); events exactly at the run_for stop boundary execute on a later continuation",
+  "lifetime_convention": "sensor alive-to-dead transitions at energy debit time; FND=1st, HND=ceil(N_initial/2), LND=N_initial",
+  "reachability_convention": "physical graph induced by alive sensors and all sinks; functional death is first ratio below 0.5 while alive>0",
+  "timeseries_snapshot_order": "initial at t=0; periodic monitor after packet generators already scheduled at the same time; final after all events in [0,T)",
+  "validation_passed": true
+}

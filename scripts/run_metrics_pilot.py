@@ -178,7 +178,7 @@ def main() -> int:
                                 metrics['functional_network_death_s']
                             ),
                             'validation_passed': validation['passed'],
-                            'output_dir': str(run_dir),
+                            'output_dir': scenario,
                         }
                     )
                     fairness_rows.append(
@@ -247,9 +247,14 @@ def main() -> int:
                 (sensor.energy_j - controlled_simulation.radio.e_elec * bits)
                 / (controlled_simulation.radio.e_mp * bits)
             ) ** 0.25
+            receiver = (
+                controlled_network.sinks['sink_00']
+                if node_id == 'relay'
+                else controlled_network.sensors['relay']
+            )
             controlled_simulation.radio.attempt_transmission(
                 sensor,
-                controlled_network.sinks['sink_00'],
+                receiver,
                 controlled_config.packet_size_bytes,
                 distance,
                 sim_time_s=float(controlled_simulation.env.now),
@@ -260,7 +265,6 @@ def main() -> int:
     controlled_simulation.env.process(scheduled_deaths())
     controlled_simulation.run_for(9.0)
     controlled_simulation.export_results(controlled_dir)
-    controlled_validation = validate_run(controlled_dir)
     controlled_manifest_path = controlled_dir / 'run_manifest.json'
     controlled_manifest = json.loads(
         controlled_manifest_path.read_text(encoding='utf-8')
@@ -268,8 +272,27 @@ def main() -> int:
     controlled_manifest['data_classification'] = (
         'controlled_test_fixture_not_450_sensor_pilot'
     )
+    controlled_manifest['controlled_event_type'] = (
+        'synthetic_battery_depletion_via_radio_model_for_lifetime_validation'
+    )
+    controlled_manifest['controlled_event_description'] = (
+        'Scheduled test-only transmissions use the radio model to exhaust each '
+        'sensor exactly; these are not generated application packets.'
+    )
+    controlled_manifest_path.write_text(
+        json.dumps(
+            controlled_manifest,
+            ensure_ascii=False,
+            indent=2,
+            allow_nan=False,
+        )
+        + '\n',
+        encoding='utf-8',
+    )
+    controlled_validation = validate_run(controlled_dir)
     controlled_manifest['validation_passed'] = controlled_validation['passed']
-    controlled_manifest['generated_files'].append('validation.json')
+    if 'validation.json' not in controlled_manifest['generated_files']:
+        controlled_manifest['generated_files'].append('validation.json')
     controlled_manifest_path.write_text(
         json.dumps(
             controlled_manifest,
@@ -296,7 +319,7 @@ def main() -> int:
     controlled_result.update({
         'data_classification': 'controlled_test_fixture_not_450_sensor_pilot',
         'observation_end_s': 9.0,
-        'run_directory': str(controlled_dir),
+        'run_directory': 'controlled_lifetime_run',
         'validation_passed': controlled_validation['passed'],
     })
     (root / 'controlled_lifetime_metrics.json').write_text(
@@ -313,7 +336,7 @@ def main() -> int:
         'ranges_m': ranges,
         'duration_s': args.duration,
         'minimum_main_experiment_seeds_per_configuration': 30,
-        'controlled_lifetime_run': str(controlled_dir),
+        'controlled_lifetime_run': 'controlled_lifetime_run',
         'controlled_lifetime_validation_passed': controlled_validation['passed'],
         'failures': failures,
     }

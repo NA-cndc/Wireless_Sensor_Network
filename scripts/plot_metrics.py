@@ -5,8 +5,9 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import sys
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any
 
 import matplotlib
@@ -14,14 +15,44 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
+try:
+    from scripts.validate_metrics import ABSOLUTE_TOLERANCE, validate_run
+except ModuleNotFoundError:  # Direct execution: python scripts/plot_metrics.py
+    from validate_metrics import ABSOLUTE_TOLERANCE, validate_run
+
+
+SUMMARY_FIELDS = {
+    'scenario', 'algorithm', 'range_m', 'seed', 'requested_duration_s',
+    'actual_duration_s', 'generated_packets', 'delivered_packets',
+    'dropped_packets', 'pending_packets', 'pdr_percent', 'throughput_bps',
+    'goodput_bps', 'average_hops', 'average_end_to_end_delay_s', 'fnd_s',
+    'hnd_s', 'lnd_s', 'functional_network_death_s', 'validation_passed',
+    'output_dir',
+}
+
+SUMMARY_METRICS = (
+    'actual_duration_s', 'generated_packets', 'delivered_packets',
+    'dropped_packets', 'pending_packets', 'pdr_percent', 'throughput_bps',
+    'goodput_bps', 'average_hops', 'average_end_to_end_delay_s', 'fnd_s',
+    'hnd_s', 'lnd_s', 'functional_network_death_s',
+)
+
 
 def _read_csv(path: Path) -> list[dict[str, str]]:
     with path.open('r', newline='', encoding='utf-8') as file_handle:
-        return list(csv.DictReader(file_handle))
+        reader = csv.DictReader(file_handle)
+        if reader.fieldnames is None:
+            raise ValueError(f'{path}: missing CSV header')
+        return list(reader)
 
 
-def _optional_float(value: str) -> float | None:
-    return None if value == '' else float(value)
+def _optional_float(value: Any) -> float | None:
+    if value is None or value == '':
+        return None
+    result = float(value)
+    if not math.isfinite(result):
+        raise ValueError(f'non-finite numeric value: {value!r}')
+    return result
 
 
 def _write_csv(path: Path, rows: list[dict[str, Any]], fields: list[str]) -> None:
@@ -41,14 +72,123 @@ def _save_figure(figure, path: Path) -> None:
     plt.close(figure)
 
 
-def _validated_summary(root: Path) -> list[dict[str, str]]:
+def _resolve_run_path(root: Path, row: dict[str, str]) -> Path:
+    scenario = row['scenario'].strip()
+    declared = row['output_dir'].strip()
+    if not scenario or not declared:
+        raise ValueError('summary scenario and output_dir must not be empty')
+    declared_name = PureWindowsPath(declared.replace('/', '\\')).name
+    if declared_name != scenario:
+        raise ValueError(
+            f'{scenario}: output_dir basename {declared_name!r} does not match scenario'
+        )
+    run_path = root / scenario
+    if not run_path.is_dir():
+        raise ValueError(f'{scenario}: run directory not found under pilot root: {run_path}')
+    return run_path
+
+
+def _same_optional_number(left: Any, right: Any) -> bool:
+    parsed_left = _optional_float(left)
+    parsed_right = _optional_float(right)
+    if parsed_left is None or parsed_right is None:
+        return parsed_left is None and parsed_right is None
+    return math.isclose(
+        parsed_left, parsed_right, rel_tol=0.0, abs_tol=ABSOLUTE_TOLERANCE
+    )
+
+
+def _check_summary_row(
+    row: dict[str, Any], metrics: dict[str, Any], manifest: dict[str, Any]
+) -> None:
+    scenario = row['scenario']
+    metadata_pairs = {
+        'algorithm': manifest['routing_algorithm'],
+        'range_m': manifest['communication_range_m'],
+        'seed': manifest['topology_seed'],
+        'requested_duration_s': manifest['requested_duration_s'],
+    }
+    metric_pairs = {
+        'actual_duration_s': metrics['measurement_duration_s'],
+        **{name: metrics[name] for name in SUMMARY_METRICS if name != 'actual_duration_s'},
+    }
+    mismatches: list[str] = []
+    if row['algorithm'] != str(metadata_pairs['algorithm']):
+        mismatches.append('algorithm')
+    for name in ('range_m', 'seed', 'requested_duration_s'):
+        if not _same_optional_number(row[name], metadata_pairs[name]):
+            mismatches.append(name)
+    for name, expected in metric_pairs.items():
+        if not _same_optional_number(row[name], expected):
+            mismatches.append(name)
+    if row['validation_passed'].strip().lower() != 'true':
+        mismatches.append('validation_passed')
+    if mismatches:
+        raise ValueError(
+            f'{scenario}: pilot_summary.csv does not match current run data for '
+            f'{sorted(set(mismatches))}'
+        )
+
+
+def _validated_summary(root: Path) -> list[dict[str, Any]]:
     rows = _read_csv(root / 'pilot_summary.csv')
+    if not rows:
+        raise ValueError('pilot_summary.csv contains no requested runs')
+    missing = sorted(SUMMARY_FIELDS - set(rows[0]))
+    if missing:
+        raise ValueError(f'pilot_summary.csv missing columns {missing}')
+    scenarios = [row['scenario'] for row in rows]
+    if len(scenarios) != len(set(scenarios)):
+        raise ValueError('pilot_summary.csv contains duplicate scenarios')
+
+    pilot_manifest_path = root / 'pilot_manifest.json'
+    if pilot_manifest_path.exists():
+        pilot_manifest = json.loads(pilot_manifest_path.read_text(encoding='utf-8'))
+        requested = int(pilot_manifest['requested_scenarios'])
+        completed = int(pilot_manifest['completed_scenarios'])
+        if len(rows) != requested or completed != requested:
+            raise ValueError(
+                f'pilot run list incomplete: summary={len(rows)}, completed={completed}, '
+                f'requested={requested}'
+            )
+
     for row in rows:
-        validation_path = Path(row['output_dir']) / 'validation.json'
-        validation = json.loads(validation_path.read_text(encoding='utf-8'))
-        if not validation.get('passed'):
-            raise ValueError(f'unvalidated scenario: {row["scenario"]}')
+        run_path = _resolve_run_path(root, row)
+        validation = validate_run(run_path, write_report=False)
+        if not validation['passed']:
+            failed = [
+                check['metric'] for check in validation['checks'] if not check['passed']
+            ]
+            raise ValueError(
+                f'{row["scenario"]}: current raw data failed validation checks {failed}'
+            )
+        metrics = json.loads((run_path / 'metrics.json').read_text(encoding='utf-8'))
+        manifest = json.loads((run_path / 'run_manifest.json').read_text(encoding='utf-8'))
+        _check_summary_row(row, metrics, manifest)
+        row['_run_path'] = run_path
+        row['_metrics'] = metrics
+        row['_manifest'] = manifest
     return rows
+
+
+def _validated_controlled_run(root: Path) -> tuple[list[dict[str, str]], dict[str, Any]] | None:
+    run_path = root / 'controlled_lifetime_run'
+    if not run_path.exists():
+        return None
+    if not (run_path / 'topology_edges.csv').exists():
+        print(
+            'PLOT WARNING: legacy controlled_lifetime_run has no exported topology; '
+            'skipping the controlled-only figure',
+            file=sys.stderr,
+        )
+        return None
+    validation = validate_run(run_path, write_report=False)
+    if not validation['passed']:
+        failed = [check['metric'] for check in validation['checks'] if not check['passed']]
+        raise ValueError(f'controlled_lifetime_run failed validation checks {failed}')
+    deaths = _read_csv(run_path / 'node_deaths.csv')
+    metrics = json.loads((run_path / 'metrics.json').read_text(encoding='utf-8'))
+    return deaths, metrics
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -60,22 +200,30 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
-    root = args.pilot_dir
+    root = args.pilot_dir.resolve()
     output = args.output_dir or root / 'figures'
-    output.mkdir(parents=True, exist_ok=True)
     try:
         summary = _validated_summary(root)
-    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        controlled_data = _validated_controlled_run(root)
+    except (OSError, ValueError, KeyError, json.JSONDecodeError) as exc:
         print(f'PLOT ERROR: {exc}', file=sys.stderr)
         return 1
+    output.mkdir(parents=True, exist_ok=True)
     seeds = sorted({int(row['seed']) for row in summary})
-    subtitle = f'450-sensor pilot; seeds={seeds}; runs={len(summary)}'
+    sensor_counts = sorted({int(row['_metrics']['total_sensors']) for row in summary})
+    durations = sorted({float(row['_metrics']['measurement_duration_s']) for row in summary})
+    sensors_label = '/'.join(str(value) for value in sensor_counts)
+    duration_label = '/'.join(f'{value:g}' for value in durations)
+    subtitle = (
+        f'{sensors_label}-sensor pilot; T={duration_label}s; '
+        f'seeds={seeds}; runs={len(summary)}'
+    )
     colors = {'MHR': 'tab:blue', 'EMHR': 'tab:orange'}
 
     alive_source: list[dict[str, Any]] = []
     figure, axis = plt.subplots(figsize=(9, 5))
     for row in summary:
-        samples = _read_csv(Path(row['output_dir']) / 'timeseries.csv')
+        samples = _read_csv(row['_run_path'] / 'timeseries.csv')
         x = [float(sample['time_s']) for sample in samples]
         y = [int(sample['alive_sensors']) for sample in samples]
         label = f'{row["algorithm"]} R={float(row["range_m"]):g} seed={row["seed"]}'
@@ -120,8 +268,12 @@ def main() -> int:
     ) -> None:
         source_rows: list[dict[str, Any]] = []
         figure, axis = plt.subplots(figsize=(8, 5))
-        for algorithm in sorted({row['algorithm'] for row in summary}):
-            selected = [row for row in summary if row['algorithm'] == algorithm]
+        groups = sorted({(row['algorithm'], int(row['seed'])) for row in summary})
+        for algorithm, seed in groups:
+            selected = [
+                row for row in summary
+                if row['algorithm'] == algorithm and int(row['seed']) == seed
+            ]
             selected.sort(key=lambda row: float(row['range_m']))
             for key, display in metrics:
                 points = [
@@ -134,7 +286,7 @@ def main() -> int:
                         [point[0] for point in observed],
                         [point[1] for point in observed],
                         marker='o',
-                        label=f'{algorithm} {display}',
+                        label=f'{algorithm} {display} seed={seed}',
                         color=colors.get(algorithm),
                         linestyle='-' if key == metrics[0][0] else '--',
                     )
@@ -206,23 +358,8 @@ def main() -> int:
         'Simulation time (s)',
     )
 
-    controlled_path = root / 'controlled_lifetime_run' / 'node_deaths.csv'
-    controlled_validation_path = (
-        root / 'controlled_lifetime_run' / 'validation.json'
-    )
-    if controlled_path.exists():
-        controlled_validation = json.loads(
-            controlled_validation_path.read_text(encoding='utf-8')
-        )
-        if not controlled_validation.get('passed'):
-            print('PLOT ERROR: controlled lifetime run did not validate', file=sys.stderr)
-            return 1
-        controlled = _read_csv(controlled_path)
-        controlled_metrics = json.loads(
-            (root / 'controlled_lifetime_run' / 'metrics.json').read_text(
-                encoding='utf-8'
-            )
-        )
+    if controlled_data is not None:
+        controlled, controlled_metrics = controlled_data
         figure, axis = plt.subplots(figsize=(7, 4))
         x = [float(row['death_time_s']) for row in controlled]
         y = list(range(1, len(controlled) + 1))
@@ -278,7 +415,7 @@ def main() -> int:
         )
 
     manifest = {
-        'pilot_directory': str(root),
+        'pilot_directory': '.',
         'validated_runs': len(summary),
         'seeds': seeds,
         'classification': 'pilot_not_main_experiment',

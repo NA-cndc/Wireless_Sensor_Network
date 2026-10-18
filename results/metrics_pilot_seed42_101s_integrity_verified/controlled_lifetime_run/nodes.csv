@@ -1,0 +1,6 @@
+node_id,type,x,y,initial_energy_j,energy_j,is_alive,death_time_s,generated_packets,received_packets,forwarded_packets,dropped_packets,tx_energy_total_j,rx_energy_total_j
+relay,sensor,100.0,0.0,5.0,0.0,False,2.0,0,0,0,0,5.0,0.0
+sensor_1,sensor,200.0,50.0,5.0,0.0,False,4.0,0,0,0,0,5.0,0.0
+sensor_2,sensor,200.0,0.0,5.0,0.0,False,6.0,0,0,0,0,5.0,0.0
+sensor_3,sensor,200.0,-50.0,5.0,0.0,False,8.0,0,0,0,0,5.0,0.0
+sink_00,sink,0.0,0.0,unlimited,unlimited,True,,0,0,0,0,0.0,0.0

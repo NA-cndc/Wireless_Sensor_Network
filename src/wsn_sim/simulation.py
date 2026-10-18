@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import math
 from collections.abc import Generator, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -362,6 +363,33 @@ class Simulation:
         self._write_rows(nodes_path, node_fields, node_rows)
         saved_files['nodes'] = nodes_path
 
+        topology_path = out_path / 'topology_edges.csv'
+        topology_fields = ['source_id', 'target_id', 'distance_m']
+        topology_rows: list[dict[str, Any]] = []
+        ordered_edges = sorted(
+            self.network.graph.edges(data=True),
+            key=lambda edge: tuple(sorted((str(edge[0]), str(edge[1])))),
+        )
+        for left_id, right_id, attributes in ordered_edges:
+            source_id, target_id = sorted((str(left_id), str(right_id)))
+            distance_m = attributes.get('distance_m')
+            if distance_m is None:
+                left = self.network.graph.nodes[left_id]
+                right = self.network.graph.nodes[right_id]
+                distance_m = math.hypot(
+                    float(left['x']) - float(right['x']),
+                    float(left['y']) - float(right['y']),
+                )
+            topology_rows.append(
+                {
+                    'source_id': source_id,
+                    'target_id': target_id,
+                    'distance_m': distance_m,
+                }
+            )
+        self._write_rows(topology_path, topology_fields, topology_rows)
+        saved_files['topology_edges'] = topology_path
+
         packets_path = out_path / 'packets.csv'
         packet_fields = [
             'packet_id',
@@ -465,6 +493,7 @@ class Simulation:
             output_names,
             Path.cwd(),
             run_metadata={
+                'export_schema_version': 2,
                 'routing_algorithm': self.routing_algorithm,
                 'communication_range_m': self.network.communication_range_m,
                 'topology_seed': self.config.seed,
