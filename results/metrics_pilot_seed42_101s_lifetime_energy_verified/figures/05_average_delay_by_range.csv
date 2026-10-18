@@ -1,0 +1,7 @@
+scenario,algorithm,range_m,seed,measurement_duration_s,average_end_to_end_delay_ms,status
+EMHR_R250m_seed42,EMHR,250.0,42,101.0,50.09863111112211,observed
+EMHR_R300m_seed42,EMHR,300.0,42,101.0,32.47672888889601,observed
+EMHR_R350m_seed42,EMHR,350.0,42,101.0,27.534779087881798,observed
+MHR_R250m_seed42,MHR,250.0,42,101.0,50.09863111112211,observed
+MHR_R300m_seed42,MHR,300.0,42,101.0,32.47672888889601,observed
+MHR_R350m_seed42,MHR,350.0,42,101.0,27.07000888889483,observed

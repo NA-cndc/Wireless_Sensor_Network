@@ -1,0 +1,22 @@
+{
+  "data_classification": "pilot_not_main_experiment",
+  "requested_scenarios": 6,
+  "completed_scenarios": 6,
+  "seeds": [
+    42
+  ],
+  "algorithms": [
+    "MHR",
+    "EMHR"
+  ],
+  "ranges_m": [
+    250.0,
+    300.0,
+    350.0
+  ],
+  "duration_s": 101.0,
+  "minimum_main_experiment_seeds_per_configuration": 30,
+  "controlled_lifetime_run": "controlled_lifetime_run",
+  "controlled_lifetime_validation_passed": true,
+  "failures": []
+}

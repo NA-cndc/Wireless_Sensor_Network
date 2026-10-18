@@ -507,6 +507,13 @@ class Simulation:
                     self.traffic_gen.queue_capacity if self.traffic_gen else None
                 ),
                 'alpha_energy': self.alpha_energy,
+                'radio_model': {
+                    'e_elec_j_bit': self.radio.e_elec,
+                    'e_fs_j_bit_m2': self.radio.e_fs,
+                    'e_mp_j_bit_m4': self.radio.e_mp,
+                    'e_da_j_bit': self.radio.e_da,
+                    'd0_m': self.radio.d0,
+                },
                 'payload_convention': (
                     'payload_size_bytes defaults to packet_size_bytes; '
                     'no protocol overhead is modeled'
@@ -521,7 +528,14 @@ class Simulation:
                 ),
                 'reachability_convention': (
                     'physical graph induced by alive sensors and all sinks; '
-                    'functional death is first ratio below 0.5 while alive>0'
+                    'network lifetime is the first alive-sensor reachability '
+                    'ratio below 0.5 or the first state with no alive sensors; '
+                    'the ratio denominator remains the currently alive sensors'
+                ),
+                'energy_feasibility_convention': (
+                    'read-only independent one-packet snapshot using current '
+                    'TX/RX energy and MHR/EMHR relay rules; not a guarantee of '
+                    'concurrent or future delivery; no idle/sensing energy is modeled'
                 ),
                 'timeseries_snapshot_order': (
                     'initial at t=0; periodic monitor after packet generators '

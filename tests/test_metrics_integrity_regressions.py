@@ -381,7 +381,7 @@ def test_plotter_valid_run_has_zero_exit_and_creates_figures(tmp_path: Path):
     assert len(list((pilot / 'figures').glob('*.png'))) == 6
 
 
-def test_plotter_resolves_legacy_windows_path_under_current_root(tmp_path: Path):
+def test_plotter_rejects_legacy_run_without_exported_topology(tmp_path: Path):
     pilot = _make_pilot(tmp_path / 'pilot')
     _mutate_summary(
         pilot,
@@ -396,7 +396,43 @@ def test_plotter_resolves_legacy_windows_path_under_current_root(tmp_path: Path)
     manifest['generated_files'].remove('topology_edges.csv')
     manifest_path.write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
     completed = _run_plotter(pilot)
+    assert completed.returncode != 0
+    assert 'actual topology_edges.csv is required' in completed.stderr
+
+
+def test_plotter_lifetime_status_delay_units_and_managed_outputs(tmp_path: Path):
+    pilot = _make_pilot(tmp_path / 'pilot')
+    output = pilot / 'figures'
+    output.mkdir()
+    (output / '07_controlled_lifetime_fixture.png').write_bytes(b'stale')
+    (output / '07_controlled_lifetime_fixture.csv').write_text('stale\n')
+    (output / 'user_notes.csv').write_text('keep\n')
+
+    completed = _run_plotter(pilot)
     assert completed.returncode == 0, completed.stderr
+    lifetime = list(csv.DictReader(
+        (output / '06_pilot_lifetime_milestones.csv').open(encoding='utf-8')
+    ))
+    assert lifetime
+    assert {row['status'] for row in lifetime} == {'not_observed'}
+    assert {row['time_s'] for row in lifetime} == {''}
+    assert {row['observation_interval'] for row in lifetime} == {'[0,11 s)'}
+
+    delay = list(csv.DictReader(
+        (output / '05_average_delay_by_range.csv').open(encoding='utf-8')
+    ))
+    metrics = json.loads(
+        (pilot / 'MHR_R250m_seed42' / 'metrics.json').read_text(encoding='utf-8')
+    )
+    assert float(delay[0]['average_end_to_end_delay_ms']) == pytest.approx(
+        metrics['average_end_to_end_delay_s'] * 1000.0
+    )
+    assert not (output / '07_controlled_lifetime_fixture.png').exists()
+    assert not (output / '07_controlled_lifetime_fixture.csv').exists()
+    assert (output / 'user_notes.csv').read_text() == 'keep\n'
+    plot_manifest = json.loads((output / 'plot_manifest.json').read_text())
+    assert '07_controlled_lifetime_fixture.png' not in plot_manifest['figures']
+    assert 'user_notes.csv' not in plot_manifest['source_tables']
 
 
 def test_copied_pilot_plots_from_different_cwd(tmp_path: Path):
@@ -458,3 +494,12 @@ def test_runner_writes_portable_relative_output_paths(tmp_path: Path):
     assert summary[0]['output_dir'] == 'MHR_R250m_seed42'
     pilot_manifest = json.loads((output / 'pilot_manifest.json').read_text())
     assert pilot_manifest['controlled_lifetime_run'] == 'controlled_lifetime_run'
+    plotted = _run_plotter(output)
+    assert plotted.returncode == 0, plotted.stderr
+    controlled_source = list(csv.DictReader(
+        (output / 'figures' / '07_controlled_lifetime_fixture.csv').open(encoding='utf-8')
+    ))
+    assert controlled_source[0]['label'] == 'initial'
+    assert controlled_source[0]['time_s'] == '0.0'
+    assert controlled_source[0]['cumulative_dead_sensors'] == '0'
+    assert any(row['label'] == 'observation_end' for row in controlled_source)

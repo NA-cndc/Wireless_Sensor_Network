@@ -7,12 +7,17 @@ import csv
 import json
 import math
 import sys
-from collections import Counter
+from collections import Counter, deque
 from pathlib import Path
 from typing import Any
 
 ABSOLUTE_TOLERANCE = 1e-9
 DEATH_ENERGY_TOLERANCE_J = 1e-14
+ENERGY_COMPARISON_TOLERANCE_J = 1e-15
+NETWORK_LIFETIME_DEFINITION = (
+    'time_to_first_physical_reachability_ratio_below_0.5_'
+    'among_alive_sensors_or_no_alive_sensors'
+)
 
 CSV_FIELDS = {
     'nodes.csv': {
@@ -57,8 +62,12 @@ METRIC_FIELDS = {
     'average_hops', 'average_end_to_end_delay_s', 'initial_total_energy_j',
     'residual_total_energy_j', 'consumed_energy_sensors_j', 'route_change_count',
     'functional_network_death_s', 'functional_network_death_status',
-    'network_lifetime_s', 'network_lifetime_definition', 'current_reachable_sensors',
+    'network_lifetime_s', 'network_lifetime_status', 'network_lifetime_definition',
+    'current_reachable_sensors',
     'current_reachability_ratio', 'current_reachability_state',
+    'current_routing_eligible_sensors', 'current_routing_eligible_ratio',
+    'current_energy_feasible_sensors', 'current_energy_feasible_ratio',
+    'current_energy_feasible_state', 'energy_feasible_reachability_definition',
     'initial_sensor_count', 'hnd_dead_sensor_count', 'fnd_s', 'fnd_status', 'hnd_s',
     'hnd_status', 'lnd_s', 'lnd_status',
 }
@@ -66,6 +75,7 @@ METRIC_FIELDS = {
 MANIFEST_FIELDS = {
     'configuration', 'generated_files', 'routing_algorithm', 'communication_range_m',
     'topology_seed', 'traffic_seed', 'requested_duration_s', 'actual_duration_s',
+    'alpha_energy', 'radio_model',
 }
 
 
@@ -200,6 +210,112 @@ def _physical_snapshot(
     return alive, reachable, ratio, state
 
 
+def _tx_energy_j(
+    packet_bits: int,
+    distance_m: float,
+    radio_model: dict[str, float],
+) -> float:
+    if distance_m < radio_model['d0_m']:
+        amplifier = radio_model['e_fs_j_bit_m2'] * packet_bits * distance_m**2
+    else:
+        amplifier = radio_model['e_mp_j_bit_m4'] * packet_bits * distance_m**4
+    return radio_model['e_elec_j_bit'] * packet_bits + amplifier
+
+
+def _transmission_feasibility_snapshot(
+    adjacency: dict[str, set[str]],
+    edge_distances: dict[frozenset[str], float],
+    sensor_ids: set[str],
+    sink_ids: set[str],
+    dead_ids: set[str],
+    energies: dict[str, float],
+    packet_size_bytes: int,
+    algorithm: str,
+    threshold_j: float,
+    radio_model: dict[str, float],
+) -> tuple[int, float | None, int, float | None, str]:
+    '''Independently replay the production one-packet snapshot diagnostic.'''
+    alive_ids = sensor_ids - dead_ids
+    packet_bits = packet_size_bytes * 8
+    rx_cost = radio_model['e_elec_j_bit'] * packet_bits
+
+    def sender_can_transmit(
+        node_id: str,
+        next_id: str,
+        *,
+        is_source: bool,
+        include_energy: bool,
+    ) -> bool:
+        if node_id not in alive_ids:
+            return False
+        energy = energies[node_id]
+        if not is_source and algorithm == 'EMHR' and (
+            energy < threshold_j - ENERGY_COMPARISON_TOLERANCE_J
+        ):
+            return False
+        if not include_energy:
+            return True
+        available = energy if is_source else energy - rx_cost
+        if not is_source and algorithm == 'EMHR' and (
+            available < threshold_j - ENERGY_COMPARISON_TOLERANCE_J
+        ):
+            return False
+        tx_cost = _tx_energy_j(
+            packet_bits,
+            edge_distances[frozenset((node_id, next_id))],
+            radio_model,
+        )
+        return available >= tx_cost - ENERGY_COMPARISON_TOLERANCE_J
+
+    def has_path(source_id: str, *, include_energy: bool) -> bool:
+        queue = deque([source_id])
+        visited = {source_id}
+        while queue:
+            current = queue.popleft()
+            for neighbor in sorted(adjacency[current]):
+                if neighbor in visited:
+                    continue
+                if not sender_can_transmit(
+                    current,
+                    neighbor,
+                    is_source=current == source_id,
+                    include_energy=include_energy,
+                ):
+                    continue
+                if neighbor in sink_ids:
+                    return True
+                if neighbor not in alive_ids:
+                    continue
+                if (
+                    include_energy
+                    and energies[neighbor]
+                    < rx_cost - ENERGY_COMPARISON_TOLERANCE_J
+                ):
+                    continue
+                visited.add(neighbor)
+                queue.append(neighbor)
+        return False
+
+    routing_count = sum(
+        has_path(source_id, include_energy=False) for source_id in alive_ids
+    )
+    feasible_count = sum(
+        has_path(source_id, include_energy=True) for source_id in alive_ids
+    )
+    alive_count = len(alive_ids)
+    routing_ratio = routing_count / alive_count if alive_count else None
+    feasible_ratio = feasible_count / alive_count if alive_count else None
+    if alive_count == 0:
+        state = 'all_dead'
+    elif feasible_count == alive_count:
+        state = 'operational'
+    elif feasible_count:
+        state = 'partially_feasible'
+    else:
+        state = 'none_feasible'
+    return routing_count, routing_ratio, feasible_count, feasible_ratio, state
+
+
 def validate_run(
     run_dir: str | Path,
     output_path: str | Path | None = None,
@@ -224,22 +340,16 @@ def validate_run(
         'run_manifest.json.export_schema_version',
         non_negative=True,
     )
-    topology_path = run_path / 'topology_edges.csv'
-    legacy_topology = (
-        schema_version < 2
-        and 'topology_edges.csv' not in generated_files
-        and not topology_path.exists()
-    )
+    if schema_version < 2:
+        raise InputDataError(
+            'run_manifest.json.export_schema_version: schema v2 with the actual '
+            'topology_edges.csv is required; legacy geometry reconstruction is '
+            'not accepted as evidence of the simulated topology'
+        )
     tables = {
         name: _read_csv(run_path / name, fields)
         for name, fields in CSV_FIELDS.items()
-        if name != 'topology_edges.csv'
     }
-    tables['topology_edges.csv'] = (
-        []
-        if legacy_topology
-        else _read_csv(topology_path, CSV_FIELDS['topology_edges.csv'])
-    )
     nodes = tables['nodes.csv']
     topology = tables['topology_edges.csv']
     packets = tables['packets.csv']
@@ -299,6 +409,56 @@ def validate_run(
 
     def metric_integer(name: str) -> int:
         return _integer(metrics[name], f'metrics.json.{name}', non_negative=True)
+
+    configuration = manifest['configuration']
+    if not isinstance(configuration, dict):
+        raise InputDataError('run_manifest.json.configuration: expected an object')
+    packet_size_bytes = _integer(
+        configuration.get('packet_size_bytes'),
+        'run_manifest.json.configuration.packet_size_bytes',
+        non_negative=True,
+    )
+    if packet_size_bytes <= 0:
+        raise InputDataError(
+            'run_manifest.json.configuration.packet_size_bytes: must be positive'
+        )
+    initial_energy_config = _number(
+        configuration.get('initial_energy_j'),
+        'run_manifest.json.configuration.initial_energy_j',
+        non_negative=True,
+    )
+    alpha_energy = _number(
+        manifest['alpha_energy'], 'run_manifest.json.alpha_energy', non_negative=True
+    )
+    routing_algorithm = str(manifest['routing_algorithm']).upper()
+    if routing_algorithm not in {'MHR', 'EMHR'}:
+        raise InputDataError(
+            'run_manifest.json.routing_algorithm: expected MHR or EMHR'
+        )
+    raw_radio_model = manifest['radio_model']
+    if not isinstance(raw_radio_model, dict):
+        raise InputDataError('run_manifest.json.radio_model: expected an object')
+    radio_model = {
+        name: float(
+            _number(
+                raw_radio_model.get(name),
+                f'run_manifest.json.radio_model.{name}',
+                non_negative=True,
+            )
+        )
+        for name in (
+            'e_elec_j_bit', 'e_fs_j_bit_m2', 'e_mp_j_bit_m4', 'd0_m'
+        )
+    }
+    expected_d0 = math.sqrt(
+        radio_model['e_fs_j_bit_m2'] / radio_model['e_mp_j_bit_m4']
+    )
+    if not math.isclose(
+        radio_model['d0_m'], expected_d0, rel_tol=0.0, abs_tol=tolerance
+    ):
+        raise InputDataError(
+            'run_manifest.json.radio_model.d0_m: inconsistent with e_fs/e_mp'
+        )
 
     actual_duration = _number(
         manifest['actual_duration_s'], 'run_manifest.json.actual_duration_s',
@@ -389,39 +549,17 @@ def validate_run(
         passed=not bool(sensor_ids & sink_ids), category='schema',
     )
 
-    communication_range = _number(
+    _number(
         manifest['communication_range_m'],
         'run_manifest.json.communication_range_m',
         non_negative=True,
     )
-    if legacy_topology:
-        sensor_rows = [node_by_id[node_id] for node_id in sorted(sensor_ids)]
-        sink_rows = [node_by_id[node_id] for node_id in sorted(sink_ids)]
-        reconstructed: list[dict[str, Any]] = []
-        for left_index, left in enumerate(sensor_rows):
-            candidates = sensor_rows[left_index + 1:] + sink_rows
-            for right in candidates:
-                distance = math.hypot(
-                    float(left['x']) - float(right['x']),
-                    float(left['y']) - float(right['y']),
-                )
-                if distance <= float(communication_range):
-                    reconstructed.append({
-                        'source_id': left['node_id'],
-                        'target_id': right['node_id'],
-                        'distance_m': distance,
-                    })
-        topology = reconstructed
     add(
         'topology_data_source',
-        'legacy_reconstruction' if legacy_topology else 'exported_edges',
-        'legacy_reconstruction' if legacy_topology else 'exported_edges',
+        'exported_edges',
+        'exported_edges',
         exact=True,
-        detail=(
-            'legacy schema: deterministically reconstructed from nodes.csv and '
-            'run_manifest.json.communication_range_m'
-            if legacy_topology else 'schema v2 topology_edges.csv'
-        ),
+        detail='schema v2 topology_edges.csv records the graph used by the run',
         category='schema',
     )
 
@@ -466,11 +604,7 @@ def validate_run(
         passed=not topology_errors, detail='; '.join(topology_errors[:10]),
         category='schema',
     )
-    required_output_names = (
-        set(CSV_FIELDS) | {'metrics.json', 'run_manifest.json'}
-    )
-    if legacy_topology:
-        required_output_names.remove('topology_edges.csv')
+    required_output_names = set(CSV_FIELDS) | {'metrics.json', 'run_manifest.json'}
     missing_manifest_outputs = sorted(required_output_names - set(generated_files))
     add(
         'manifest_generated_files', len(missing_manifest_outputs), 0,
@@ -702,6 +836,7 @@ def validate_run(
                 'cause': 'tx',
             })
 
+        receiver_before: float | None = None
         if receiver in sensor_ids:
             receiver_before = _number(
                 row['receiver_energy_before'], f'{location}.receiver_energy_before',
@@ -743,19 +878,65 @@ def validate_run(
                 ledger_errors.append(f'{location}.rx_energy_j: sink RX debit must be zero')
 
         reason = row['reason']
+        theoretical_tx = _tx_energy_j(
+            packet_size_bytes * 8,
+            float(distance),
+            radio_model,
+        )
+        theoretical_rx = (
+            radio_model['e_elec_j_bit'] * packet_size_bytes * 8
+            if receiver in sensor_ids else 0.0
+        )
         if success and reason != 'OK':
             ledger_errors.append(f'{location}.reason: successful transaction must be OK')
+        if success:
+            if not math.isclose(
+                float(tx), theoretical_tx, rel_tol=0.0, abs_tol=tolerance
+            ):
+                ledger_errors.append(
+                    f'{location}.tx_energy_j: successful TX does not match radio model'
+                )
+            if not math.isclose(
+                float(rx), theoretical_rx, rel_tol=0.0, abs_tol=tolerance
+            ):
+                ledger_errors.append(
+                    f'{location}.rx_energy_j: successful RX does not match radio model'
+                )
         if not success:
             failed_transaction_tx_debit += float(tx)
             if reason == 'TX_INSUFFICIENT_ENERGY':
                 if not math.isclose(float(tx) + float(rx), 0.0, abs_tol=tolerance):
                     ledger_errors.append(f'{location}: insufficient TX must debit zero')
+                if float(sender_before) >= (
+                    theoretical_tx - ENERGY_COMPARISON_TOLERANCE_J
+                ):
+                    ledger_errors.append(
+                        f'{location}: sender had enough energy for claimed TX failure'
+                    )
             elif reason == 'RX_INSUFFICIENT_ENERGY':
                 if receiver not in sensor_ids or not math.isclose(
                     float(rx), 0.0, abs_tol=tolerance
                 ):
                     ledger_errors.append(
                         f'{location}: insufficient RX must target sensor and debit RX zero'
+                    )
+                if not math.isclose(
+                    float(tx), theoretical_tx, rel_tol=0.0, abs_tol=tolerance
+                ):
+                    ledger_errors.append(
+                        f'{location}: sender TX debit does not match radio model'
+                    )
+                if float(sender_before) < (
+                    theoretical_tx - ENERGY_COMPARISON_TOLERANCE_J
+                ):
+                    ledger_errors.append(
+                        f'{location}: sender lacked energy before claimed RX failure'
+                    )
+                if receiver_before is not None and receiver_before >= (
+                    theoretical_rx - ENERGY_COMPARISON_TOLERANCE_J
+                ):
+                    ledger_errors.append(
+                        f'{location}: receiver had enough energy for claimed RX failure'
                     )
             else:
                 ledger_errors.append(f'{location}.reason: unsupported failure {reason!r}')
@@ -977,7 +1158,8 @@ def validate_run(
     functional_death = next(
         (
             float(item['time_s']) for item in replayed_reachability
-            if item['alive'] > 0 and item['ratio'] is not None and item['ratio'] < 0.5
+            if item['alive'] == 0
+            or (item['ratio'] is not None and item['ratio'] < 0.5)
         ),
         None,
     )
@@ -986,14 +1168,19 @@ def validate_run(
     )
     add('functional_network_death_s', functional_death, reported_functional_death)
     add('network_lifetime_s', functional_death, metric_number('network_lifetime_s', optional=True))
+    lifetime_status = 'observed' if functional_death is not None else 'not_observed'
     add(
         'functional_network_death_status',
-        'observed' if functional_death is not None else 'not_observed',
+        lifetime_status,
         metrics['functional_network_death_status'], exact=True,
     )
     add(
+        'network_lifetime_status', lifetime_status,
+        metrics['network_lifetime_status'], exact=True,
+    )
+    add(
         'network_lifetime_definition',
-        'time_to_first_physical_reachability_ratio_below_0.5',
+        NETWORK_LIFETIME_DEFINITION,
         metrics['network_lifetime_definition'], exact=True,
     )
     final_reachability = replayed_reachability[-1]
@@ -1008,6 +1195,53 @@ def validate_run(
     add(
         'current_reachability_state', final_reachability['state'],
         metrics['current_reachability_state'], exact=True,
+    )
+    threshold_j = float(alpha_energy) * float(initial_energy_config)
+    (
+        routing_eligible,
+        routing_ratio,
+        energy_feasible,
+        energy_feasible_ratio,
+        energy_feasible_state,
+    ) = _transmission_feasibility_snapshot(
+        adjacency,
+        edge_distances,
+        sensor_ids,
+        sink_ids,
+        death_id_set,
+        {node_id: float(values['final']) for node_id, values in node_values.items()},
+        packet_size_bytes,
+        routing_algorithm,
+        threshold_j,
+        radio_model,
+    )
+    add(
+        'current_routing_eligible_sensors', routing_eligible,
+        metric_integer('current_routing_eligible_sensors'), exact=True,
+    )
+    add(
+        'current_routing_eligible_ratio', routing_ratio,
+        metric_number('current_routing_eligible_ratio', optional=True),
+    )
+    add(
+        'current_energy_feasible_sensors', energy_feasible,
+        metric_integer('current_energy_feasible_sensors'), exact=True,
+    )
+    add(
+        'current_energy_feasible_ratio', energy_feasible_ratio,
+        metric_number('current_energy_feasible_ratio', optional=True),
+    )
+    add(
+        'current_energy_feasible_state', energy_feasible_state,
+        metrics['current_energy_feasible_state'], exact=True,
+    )
+    feasibility_definition = (
+        'independent_one_packet_snapshot_with_tx_rx_energy_and_'
+        f'{routing_algorithm.lower()}_relay_rules_not_future_delivery_guarantee'
+    )
+    add(
+        'energy_feasible_reachability_definition', feasibility_definition,
+        metrics['energy_feasible_reachability_definition'], exact=True,
     )
 
     timeseries_errors: list[str] = []

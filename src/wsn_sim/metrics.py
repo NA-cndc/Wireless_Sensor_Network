@@ -25,6 +25,11 @@ TOPOLOGY_SUMMARY_COLUMNS = [
     'isolated_sensors',
 ]
 
+NETWORK_LIFETIME_DEFINITION = (
+    'time_to_first_physical_reachability_ratio_below_0.5_'
+    'among_alive_sensors_or_no_alive_sensors'
+)
+
 
 def topology_summary_frame(
     summaries: Iterable[Mapping[str, int | float]],
@@ -148,9 +153,11 @@ def calculate_simulation_metrics(
         (
             float(item['time_s'])
             for item in history
-            if item.get('alive_sensors', 0) > 0
-            and item.get('reachability_ratio') is not None
-            and float(item['reachability_ratio']) < 0.5
+            if item.get('alive_sensors', 0) == 0
+            or (
+                item.get('reachability_ratio') is not None
+                and float(item['reachability_ratio']) < 0.5
+            )
         ),
         None,
     )
@@ -159,6 +166,24 @@ def calculate_simulation_metrics(
         if history
         else network.physical_reachability_snapshot(measurement_duration_s)
     )
+    if router is not None and hasattr(router, 'transmission_feasibility_snapshot'):
+        feasibility = router.transmission_feasibility_snapshot(
+            radio,
+            int(network.config.packet_size_bytes),
+            measurement_duration_s,
+        )
+    else:
+        feasibility = {
+            'routing_eligible_sensors': None,
+            'routing_eligible_ratio': None,
+            'energy_feasible_sensors': None,
+            'energy_feasible_ratio': None,
+            'state': 'unavailable',
+            'definition': (
+                'independent_one_packet_snapshot_with_tx_rx_energy_and_'
+                'routing_relay_rules_not_future_delivery_guarantee'
+            ),
+        }
 
     result = {
         'simulated_time_s': measurement_duration_s,
@@ -196,12 +221,19 @@ def calculate_simulation_metrics(
             'observed' if functional_death_s is not None else 'not_observed'
         ),
         'network_lifetime_s': functional_death_s,
-        'network_lifetime_definition': (
-            'time_to_first_physical_reachability_ratio_below_0.5'
+        'network_lifetime_status': (
+            'observed' if functional_death_s is not None else 'not_observed'
         ),
+        'network_lifetime_definition': NETWORK_LIFETIME_DEFINITION,
         'current_reachable_sensors': current_reachability['reachable_sensors'],
         'current_reachability_ratio': current_reachability['reachability_ratio'],
         'current_reachability_state': current_reachability['state'],
+        'current_routing_eligible_sensors': feasibility['routing_eligible_sensors'],
+        'current_routing_eligible_ratio': feasibility['routing_eligible_ratio'],
+        'current_energy_feasible_sensors': feasibility['energy_feasible_sensors'],
+        'current_energy_feasible_ratio': feasibility['energy_feasible_ratio'],
+        'current_energy_feasible_state': feasibility['state'],
+        'energy_feasible_reachability_definition': feasibility['definition'],
     }
     result.update(lifetime)
     return result

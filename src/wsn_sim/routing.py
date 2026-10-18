@@ -2,9 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections import deque
+from typing import TYPE_CHECKING, Any, Sequence
 
 from wsn_sim.network import Network
+
+if TYPE_CHECKING:
+    from wsn_sim.energy import RadioModel
+
+
+ENERGY_EPSILON_J = 1e-15
 
 
 class RoutingEngine:
@@ -262,3 +269,129 @@ class RoutingEngine:
         if route and not avoid and is_source:
             self._route_cache[source_id] = list(route)
         return route
+
+    def transmission_feasibility_snapshot(
+        self,
+        radio: RadioModel,
+        packet_size_bytes: int,
+        time_s: float,
+    ) -> dict[str, Any]:
+        """Evaluate one-packet reachability without mutating routing or batteries.
+
+        ``routing_eligible`` applies the current MHR/EMHR relay rule, but does not
+        debit energy. ``energy_feasible`` additionally requires enough energy for
+        every TX and RX on one path.  Each source is evaluated independently at
+        this snapshot, so the result is diagnostic and is not a promise that all
+        listed sources can deliver concurrently or in the future.
+        """
+        if packet_size_bytes <= 0:
+            raise ValueError('packet_size_bytes must be greater than zero')
+
+        alive_ids = {
+            node_id
+            for node_id, sensor in self.network.sensors.items()
+            if sensor.is_alive
+        }
+        sink_ids = set(self.network.sinks)
+        packet_bits = packet_size_bytes * 8
+        rx_cost = radio.compute_rx_energy(packet_bits)
+        threshold = self.threshold_j
+
+        def sender_can_transmit(
+            node_id: str,
+            next_id: str,
+            *,
+            is_source: bool,
+            include_energy: bool,
+        ) -> bool:
+            sensor = self.network.sensors[node_id]
+            if not sensor.is_alive:
+                return False
+            if (
+                not is_source
+                and self.algorithm == 'EMHR'
+                and not sensor.can_forward(threshold)
+            ):
+                return False
+            if not include_energy:
+                return True
+            distance = float(
+                self.network.graph[node_id][next_id].get('distance_m', 0.0)
+            )
+            tx_cost = radio.compute_tx_energy(packet_bits, distance)
+            available = sensor.energy_j if is_source else sensor.energy_j - rx_cost
+            if (
+                not is_source
+                and self.algorithm == 'EMHR'
+                and available < threshold - ENERGY_EPSILON_J
+            ):
+                return False
+            return available >= tx_cost - ENERGY_EPSILON_J
+
+        def has_path(source_id: str, *, include_energy: bool) -> bool:
+            queue = deque([source_id])
+            visited = {source_id}
+            while queue:
+                current = queue.popleft()
+                for neighbor in sorted(self.network.graph.neighbors(current)):
+                    if neighbor in visited:
+                        continue
+                    if not sender_can_transmit(
+                        current,
+                        neighbor,
+                        is_source=current == source_id,
+                        include_energy=include_energy,
+                    ):
+                        continue
+                    if neighbor in sink_ids:
+                        return True
+                    receiver = self.network.sensors.get(neighbor)
+                    if receiver is None or not receiver.is_alive:
+                        continue
+                    if (
+                        include_energy
+                        and receiver.energy_j < rx_cost - ENERGY_EPSILON_J
+                    ):
+                        continue
+                    visited.add(neighbor)
+                    queue.append(neighbor)
+            return False
+
+        routing_ids = {
+            source_id
+            for source_id in alive_ids
+            if has_path(source_id, include_energy=False)
+        }
+        feasible_ids = {
+            source_id
+            for source_id in alive_ids
+            if has_path(source_id, include_energy=True)
+        }
+        alive_count = len(alive_ids)
+
+        def ratio(count: int) -> float | None:
+            return count / alive_count if alive_count else None
+
+        return {
+            'time_s': float(time_s),
+            'alive_sensors': alive_count,
+            'routing_eligible_sensors': len(routing_ids),
+            'routing_eligible_ratio': ratio(len(routing_ids)),
+            'energy_feasible_sensors': len(feasible_ids),
+            'energy_feasible_ratio': ratio(len(feasible_ids)),
+            'routing_eligible_sensor_ids': sorted(routing_ids),
+            'energy_feasible_sensor_ids': sorted(feasible_ids),
+            'state': (
+                'all_dead'
+                if alive_count == 0
+                else 'operational'
+                if len(feasible_ids) == alive_count
+                else 'partially_feasible'
+                if feasible_ids
+                else 'none_feasible'
+            ),
+            'definition': (
+                'independent_one_packet_snapshot_with_tx_rx_energy_and_'
+                f'{self.algorithm.lower()}_relay_rules_not_future_delivery_guarantee'
+            ),
+        }

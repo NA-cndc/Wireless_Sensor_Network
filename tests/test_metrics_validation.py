@@ -303,6 +303,120 @@ def test_functional_death_at_zero_and_all_dead_ratio_is_none():
     assert simulation.reachability_history[-1]['reachability_ratio'] is None
 
 
+def _metrics_without_packets(simulation: Simulation, duration_s: float):
+    traffic = SimpleNamespace(generated_packets=[])
+    return calculate_simulation_metrics(
+        simulation.network,
+        traffic,
+        simulation.radio,
+        duration_s,
+        simulation.router,
+        simulation.reachability_history,
+    )
+
+
+def test_one_sensor_death_sets_all_lifetime_milestones_and_network_lifetime():
+    config = replace(
+        SimulationConfig.from_json('configs/default.json'),
+        num_sensors=1,
+        num_sinks=1,
+    )
+    network = Network(config, communication_range_m=250.0)
+    sensor = Sensor('sensor_0', 100.0, 0.0, 5.0)
+    sink = Sink('sink_00', 0.0, 0.0)
+    network.sensors = {'sensor_0': sensor}
+    network.sinks = {'sink_00': sink}
+    network.graph = nx.Graph()
+    network.graph.add_node('sensor_0', node_type='sensor', x=100.0, y=0.0)
+    network.graph.add_node('sink_00', node_type='sink', x=0.0, y=0.0)
+    network.graph.add_edge('sensor_0', 'sink_00', distance_m=100.0, weight=100.0)
+    simulation = Simulation(network, enable_traffic=False, routing_algorithm='MHR')
+
+    def die_at_two():
+        yield simulation.env.timeout(2.0)
+        simulation.radio._debit_sensor(sensor, sensor.energy_j, 2.0, 'tx')
+
+    simulation.env.process(die_at_two())
+    simulation.run_for(3.0)
+    metrics = _metrics_without_packets(simulation, 3.0)
+    assert metrics['fnd_s'] == 2.0
+    assert metrics['hnd_s'] == 2.0
+    assert metrics['lnd_s'] == 2.0
+    assert metrics['network_lifetime_s'] == 2.0
+    assert metrics['network_lifetime_status'] == 'observed'
+    assert metrics['current_reachability_ratio'] is None
+
+
+def test_network_lifetime_known_answers_for_relay_initial_failure_and_survival():
+    relay_network = _controlled_network()
+    relay_simulation = Simulation(relay_network, enable_traffic=False)
+    relay = relay_network.sensors['relay']
+
+    def relay_dies_at_two():
+        yield relay_simulation.env.timeout(2.0)
+        relay_simulation.radio._debit_sensor(relay, relay.energy_j, 2.0, 'tx')
+
+    relay_simulation.env.process(relay_dies_at_two())
+    relay_simulation.run_for(3.0)
+    relay_metrics = _metrics_without_packets(relay_simulation, 3.0)
+    assert relay_metrics['network_lifetime_s'] == 2.0
+
+    initial_network = _controlled_network()
+    initial_network.graph.remove_edges_from(list(initial_network.graph.edges()))
+    initial_simulation = Simulation(initial_network, enable_traffic=False)
+    initial_metrics = _metrics_without_packets(initial_simulation, 3.0)
+    assert initial_metrics['network_lifetime_s'] == 0.0
+
+    alive_simulation = Simulation(_controlled_network(), enable_traffic=False)
+    alive_simulation.run_for(3.0)
+    alive_metrics = _metrics_without_packets(alive_simulation, 3.0)
+    assert alive_metrics['network_lifetime_s'] is None
+    assert alive_metrics['network_lifetime_status'] == 'not_observed'
+
+
+def test_positive_battery_can_be_physically_reachable_but_energy_infeasible():
+    config = replace(
+        SimulationConfig.from_json('configs/default.json'),
+        num_sensors=1,
+        num_sinks=1,
+        initial_energy_j=1e-6,
+    )
+    network = Network(config, communication_range_m=250.0)
+    sensor = Sensor('sensor_0', 100.0, 0.0, 1e-6)
+    sink = Sink('sink_00', 0.0, 0.0)
+    network.sensors = {'sensor_0': sensor}
+    network.sinks = {'sink_00': sink}
+    network.graph = nx.Graph()
+    network.graph.add_node('sensor_0', node_type='sensor', x=100.0, y=0.0)
+    network.graph.add_node('sink_00', node_type='sink', x=0.0, y=0.0)
+    network.graph.add_edge('sensor_0', 'sink_00', distance_m=100.0, weight=100.0)
+    simulation = Simulation(network, routing_algorithm='MHR', quiet=True)
+    simulation.run_for(31.0)
+    metrics = simulation.get_metrics()
+    assert metrics['generated_packets'] == 3
+    assert metrics['dropped_packets'] == 3
+    assert metrics['drop_reasons'] == {'energy_depletion': 3}
+    assert sensor.energy_j == 1e-6
+    assert sensor.is_alive is True
+    assert simulation.radio.death_events == []
+    assert metrics['current_reachable_sensors'] == 1
+    assert metrics['current_routing_eligible_sensors'] == 1
+    assert metrics['current_energy_feasible_sensors'] == 0
+
+
+def test_emhr_alive_relay_below_threshold_is_not_a_physical_death():
+    network = _controlled_network()
+    network.sensors['relay'].energy_j = 0.5
+    simulation = Simulation(network, enable_traffic=False, routing_algorithm='EMHR')
+    metrics = _metrics_without_packets(simulation, 1.0)
+    assert metrics['alive_sensors'] == 3
+    assert metrics['dead_sensors'] == 0
+    assert metrics['current_reachable_sensors'] == 3
+    assert metrics['current_routing_eligible_sensors'] == 1
+    assert network.sensors['relay'].is_alive is True
+    assert metrics['fnd_s'] is None
+
+
 def test_simpy_stop_boundary_and_repeated_run_for():
     config = SimulationConfig.from_json('configs/default.json')
     simulation = Simulation(config, current_range_m=300.0, quiet=True)
