@@ -18,6 +18,24 @@ NETWORK_LIFETIME_DEFINITION = (
     'time_to_first_physical_reachability_ratio_below_0.5_'
     'among_alive_sensors_or_no_alive_sensors'
 )
+ENERGY_SERVICE_LIFETIME_DEFINITION = (
+    'first_sample_where_fewer_than_0.5_of_alive_sensors_have_an_'
+    'energy_feasible_path_to_a_sink_or_no_alive_sensors'
+)
+DROP_CATEGORY_BY_DETAIL = {
+    'unreachable': 'unreachable',
+    'energy_depletion': 'energy_depletion',
+    'energy depleted': 'energy_depletion',
+    'TX_INSUFFICIENT_ENERGY': 'energy_depletion',
+    'RX_INSUFFICIENT_ENERGY': 'energy_depletion',
+    'node_dead_mid_flight': 'energy_depletion',
+    'receiver_depleted_after_rx': 'energy_depletion',
+    'node_dead_queue_flush': 'energy_depletion',
+    'queue_drop': 'queue_drop',
+    'relay_below_threshold': 'routing_policy',
+    'natural_link_loss': 'natural_link_loss',
+    'selective_forwarding': 'selective_forwarding',
+}
 
 CSV_FIELDS = {
     'nodes.csv': {
@@ -31,7 +49,8 @@ CSV_FIELDS = {
         'payload_size_bytes', 'created_at', 'created_event_seq',
         'delivered_at', 'delivered_event_seq', 'dropped_at', 'dropped_event_seq',
         'latency_s', 'hop_count',
-        'status', 'drop_reason', 'drop_node_id', 'route', 'path',
+        'status', 'drop_reason', 'drop_category', 'drop_detail', 'drop_node_id',
+        'route', 'path',
     },
     'route_events.csv': {
         'time_s', 'event_seq', 'source_id', 'packet_id', 'current_node_id', 'old_route', 'new_route',
@@ -57,13 +76,19 @@ CSV_FIELDS = {
         'energy_feasible_sensors', 'energy_feasible_ratio',
         'delivered_bytes', 'delivered_payload_bytes', 'snapshot_kind',
     },
+    'serviceability_snapshots.csv': {
+        'time_s', 'event_seq', 'alive_sensors', 'reachable_sensors',
+        'reachability_ratio', 'routing_eligible_sensors', 'routing_eligible_ratio',
+        'energy_feasible_sensors', 'energy_feasible_ratio', 'sample_kind',
+    },
 }
 
 METRIC_FIELDS = {
     'simulated_time_s', 'measurement_duration_s', 'measurement_interval',
     'total_sensors', 'total_sinks', 'alive_sensors', 'dead_sensors',
     'generated_packets', 'delivered_packets', 'dropped_packets', 'pending_packets',
-    'packet_conservation_holds', 'drop_reasons', 'total_delivered_bytes',
+    'packet_conservation_holds', 'drop_reasons', 'drop_categories',
+    'total_delivered_bytes',
     'total_delivered_bits', 'total_delivered_payload_bytes',
     'total_delivered_payload_bits', 'total_hops_delivered',
     'total_end_to_end_delay_s', 'throughput_bps', 'goodput_bps', 'offered_rate_bps',
@@ -74,6 +99,8 @@ METRIC_FIELDS = {
     'relay_jain_fairness', 'delivered_bits_at_fnd', 'delivered_bits_at_hnd', 'delivered_bits_at_lnd',
     'functional_network_death_s', 'functional_network_death_status',
     'network_lifetime_s', 'network_lifetime_status', 'network_lifetime_definition',
+    'energy_service_lifetime_sampled_s', 'energy_service_lifetime_status',
+    'energy_service_lifetime_definition', 'serviceability_sample_interval_s',
     'current_reachable_sensors',
     'current_reachability_ratio', 'current_reachability_state',
     'current_routing_eligible_sensors', 'current_routing_eligible_ratio',
@@ -387,11 +414,10 @@ def validate_run(
         'run_manifest.json.export_schema_version',
         non_negative=True,
     )
-    if schema_version < 3:
+    if schema_version < 4:
         raise InputDataError(
-            'run_manifest.json.export_schema_version: schema v3 with packet '
-            'lifecycle event sequences and the actual topology_edges.csv is '
-            'required'
+            'run_manifest.json.export_schema_version: schema v4 with serviceability '
+            'snapshots and canonical packet drop categories is required'
         )
     tables = {
         name: _read_csv(run_path / name, fields)
@@ -404,6 +430,7 @@ def validate_run(
     deaths = tables['node_deaths.csv']
     reachability = tables['reachability_events.csv']
     timeseries = tables['timeseries.csv']
+    serviceability = tables['serviceability_snapshots.csv']
     route_events = tables['route_events.csv']
     if not nodes:
         raise InputDataError('nodes.csv: at least one node is required')
@@ -411,6 +438,8 @@ def validate_run(
         raise InputDataError('timeseries.csv: at least one snapshot is required')
     if not reachability:
         raise InputDataError('reachability_events.csv: initial snapshot is required')
+    if not serviceability:
+        raise InputDataError('serviceability_snapshots.csv: at least one sample is required')
 
     checks: list[dict[str, Any]] = []
 
@@ -672,6 +701,7 @@ def validate_run(
     total_bytes = 0
     total_payload_bytes = 0
     drop_reasons: Counter[str] = Counter()
+    drop_categories: Counter[str] = Counter()
     for index, row in enumerate(packets, start=2):
         location = f'packets.csv:{index}'
         packet_id = row['packet_id'].strip()
@@ -774,9 +804,27 @@ def validate_run(
             total_delay += calculated_delay or 0.0
             total_bytes += size
             total_payload_bytes += payload
+            if row['drop_reason'] or row['drop_category'] or row['drop_detail']:
+                packet_errors.append(f'{location}: delivered packet has drop fields')
         elif status in {'DROPPED', 'NO_ROUTE'}:
             dropped_rows.append(row)
-            drop_reasons[row['drop_reason'] or 'unspecified'] += 1
+            drop_reason = row['drop_reason'].strip()
+            drop_category = row['drop_category'].strip()
+            drop_detail = row['drop_detail'].strip()
+            drop_reasons[drop_reason or 'unspecified'] += 1
+            drop_categories[drop_category or 'unspecified'] += 1
+            expected_category = DROP_CATEGORY_BY_DETAIL.get(drop_detail, 'unspecified')
+            if not drop_reason or not drop_detail or not drop_category:
+                packet_errors.append(f'{location}: dropped packet requires all drop fields')
+            if drop_category != expected_category:
+                packet_errors.append(
+                    f'{location}.drop_category: {drop_category!r} != '
+                    f'category {expected_category!r} for detail {drop_detail!r}'
+                )
+            if drop_reason not in {drop_detail, drop_category}:
+                packet_errors.append(
+                    f'{location}.drop_reason: must match drop_detail or drop_category'
+                )
             if delivered_at is not None or latency is not None or delivered_seq is not None:
                 packet_errors.append(f'{location}: dropped packet has delivery fields')
             if dropped_seq is None:
@@ -793,6 +841,8 @@ def validate_run(
                 packet_errors.append(f'{location}: pending packet has delivery fields')
             if dropped_at is not None or dropped_seq is not None:
                 packet_errors.append(f'{location}: pending packet has dropped_at')
+            if row['drop_reason'] or row['drop_category'] or row['drop_detail']:
+                packet_errors.append(f'{location}: pending packet has drop fields')
     duplicate_packet_ids = sorted(
         packet_id for packet_id, count in Counter(packet_ids).items() if count > 1
     )
@@ -979,6 +1029,21 @@ def validate_run(
         for key, value in metrics['drop_reasons'].items()
     }
     add('drop_reasons', dict(drop_reasons), reported_drop_reasons, exact=True)
+    if not isinstance(metrics['drop_categories'], dict):
+        raise InputDataError('metrics.json.drop_categories: expected an object')
+    reported_drop_categories = {
+        str(key): _integer(
+            value, f'metrics.json.drop_categories.{key}', non_negative=True
+        )
+        for key, value in metrics['drop_categories'].items()
+    }
+    add(
+        'drop_categories', dict(drop_categories), reported_drop_categories, exact=True
+    )
+    add(
+        'drop_category_conservation', sum(drop_categories.values()),
+        len(dropped_rows), exact=True,
+    )
 
     add('total_hops_delivered', total_hops, metric_integer('total_hops_delivered'), exact=True)
     add('total_end_to_end_delay_s', total_delay, metric_number('total_end_to_end_delay_s'))
@@ -1922,6 +1987,134 @@ def validate_run(
     add(
         'timeseries_integrity', len(timeseries_errors), 0,
         passed=not timeseries_errors, detail='; '.join(timeseries_errors[:10]),
+    )
+
+    serviceability_errors: list[str] = []
+    service_failure: float | None = None
+    previous_service_time = -math.inf
+    sample_interval = metric_number('serviceability_sample_interval_s')
+    for offset, row in enumerate(serviceability):
+        index = offset + 2
+        location = f'serviceability_snapshots.csv:{index}'
+        time_s = _number(row['time_s'], f'{location}.time_s', non_negative=True)
+        event_seq = _integer(
+            row['event_seq'], f'{location}.event_seq', non_negative=True
+        )
+        is_initial = offset == 0
+        is_final = offset == len(serviceability) - 1
+        expected_kind = 'initial' if is_initial else ('final' if is_final else 'periodic')
+        if row['sample_kind'] != expected_kind:
+            serviceability_errors.append(
+                f'{location}.sample_kind: {row["sample_kind"]!r} != {expected_kind!r}'
+            )
+        if is_initial and time_s != 0.0:
+            serviceability_errors.append(f'{location}.time_s: initial sample must be 0')
+        elif is_final and not _same_number(time_s, actual_duration, tolerance)[1]:
+            serviceability_errors.append(f'{location}.time_s: final sample must be T')
+        elif not is_initial and not is_final:
+            quotient = float(time_s) / float(sample_interval)
+            if not math.isclose(quotient, round(quotient), abs_tol=tolerance):
+                serviceability_errors.append(
+                    f'{location}.time_s: periodic sample is off the published interval'
+                )
+        if float(time_s) < previous_service_time:
+            serviceability_errors.append(f'{location}.time_s: samples are not chronological')
+        previous_service_time = float(time_s)
+
+        counters = {
+            field: _integer(row[field], f'{location}.{field}', non_negative=True)
+            for field in (
+                'alive_sensors', 'reachable_sensors', 'routing_eligible_sensors',
+                'energy_feasible_sensors',
+            )
+        }
+        reported_ratios = {
+            field: _number(
+                row[field], f'{location}.{field}', optional=True, non_negative=True
+            )
+            for field in (
+                'reachability_ratio', 'routing_eligible_ratio',
+                'energy_feasible_ratio',
+            )
+        }
+        sample_key = (float(time_s), int(event_seq))
+        dead_at_sample = {
+            str(death['node_id'])
+            for death in deaths
+            if (float(death['death_time_s']), int(death['event_seq'])) <= sample_key
+        }
+        energies_at_sample = {
+            node_id: float(values['initial']) for node_id, values in node_values.items()
+        }
+        for entry in ledger:
+            if (float(entry['time_s']), int(entry['event_seq'])) > sample_key:
+                continue
+            sender = entry['sender_id']
+            receiver = entry['receiver_id']
+            if sender in energies_at_sample:
+                energies_at_sample[sender] = max(
+                    0.0, energies_at_sample[sender] - float(entry['tx_energy_j'])
+                )
+            if receiver in energies_at_sample:
+                energies_at_sample[receiver] = max(
+                    0.0, energies_at_sample[receiver] - float(entry['rx_energy_j'])
+                )
+        expected_alive, expected_reachable, expected_reach_ratio, _ = (
+            _physical_snapshot(adjacency, sensor_ids, sink_ids, dead_at_sample)
+        )
+        (
+            expected_routing, expected_routing_ratio,
+            expected_feasible, expected_feasible_ratio, _,
+        ) = _transmission_feasibility_snapshot(
+            adjacency, edge_distances, sensor_ids, sink_ids, dead_at_sample,
+            energies_at_sample, packet_size_bytes, routing_algorithm, threshold_j,
+            radio_model,
+        )
+        expected_counts = {
+            'alive_sensors': expected_alive,
+            'reachable_sensors': expected_reachable,
+            'routing_eligible_sensors': expected_routing,
+            'energy_feasible_sensors': expected_feasible,
+        }
+        expected_ratios = {
+            'reachability_ratio': expected_reach_ratio,
+            'routing_eligible_ratio': expected_routing_ratio,
+            'energy_feasible_ratio': expected_feasible_ratio,
+        }
+        for field, expected in expected_counts.items():
+            if counters[field] != expected:
+                serviceability_errors.append(
+                    f'{location}.{field}: {counters[field]} != replay {expected}'
+                )
+        for field, expected in expected_ratios.items():
+            if not _same_number(reported_ratios[field], expected, tolerance)[1]:
+                serviceability_errors.append(
+                    f'{location}.{field}: {reported_ratios[field]} != replay {expected}'
+                )
+        feasible_ratio = expected_ratios['energy_feasible_ratio']
+        if service_failure is None and (
+            expected_alive == 0
+            or (feasible_ratio is not None and feasible_ratio < 0.5)
+        ):
+            service_failure = float(time_s)
+
+    add(
+        'serviceability_snapshot_integrity', len(serviceability_errors), 0,
+        passed=not serviceability_errors,
+        detail='; '.join(serviceability_errors[:10]),
+    )
+    add(
+        'energy_service_lifetime_sampled_s', service_failure,
+        metric_number('energy_service_lifetime_sampled_s', optional=True),
+    )
+    service_status = 'observed' if service_failure is not None else 'not_observed'
+    add(
+        'energy_service_lifetime_status', service_status,
+        metrics['energy_service_lifetime_status'], exact=True,
+    )
+    add(
+        'energy_service_lifetime_definition', ENERGY_SERVICE_LIFETIME_DEFINITION,
+        metrics['energy_service_lifetime_definition'], exact=True,
     )
 
     event_sequence_records: list[tuple[int, float, str]] = []

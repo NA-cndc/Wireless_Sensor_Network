@@ -1,0 +1,7 @@
+scenario,algorithm,range_m,seed,measurement_duration_s,energy_per_delivered_bit_j,denominator_definition,status
+EMHR_R250m_seed42,EMHR,250.0,42,101.0,9.012073852488318e-06,delivered_full_packet_bits,observed
+EMHR_R300m_seed42,EMHR,300.0,42,101.0,1.4192441358937578e-05,delivered_full_packet_bits,observed
+EMHR_R350m_seed42,EMHR,350.0,42,101.0,2.1645427565956212e-05,delivered_full_packet_bits,observed
+MHR_R250m_seed42,MHR,250.0,42,101.0,9.012073852488318e-06,delivered_full_packet_bits,observed
+MHR_R300m_seed42,MHR,300.0,42,101.0,1.4192441358937578e-05,delivered_full_packet_bits,observed
+MHR_R350m_seed42,MHR,350.0,42,101.0,2.1632701887466095e-05,delivered_full_packet_bits,observed

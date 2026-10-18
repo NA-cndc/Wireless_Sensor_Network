@@ -1,0 +1,13 @@
+scenario,algorithm,range_m,seed,measurement_duration_s,time_s,alive_sensors,sample_source,final_dead_sensors,fnd_status,hnd_status,lnd_status
+MHR_R250m_seed42,MHR,250.0,42,101.0,0.0,450,reachability_event_or_end,0,not_observed,not_observed,not_observed
+MHR_R250m_seed42,MHR,250.0,42,101.0,101.0,450,reachability_event_or_end,0,not_observed,not_observed,not_observed
+MHR_R300m_seed42,MHR,300.0,42,101.0,0.0,450,reachability_event_or_end,0,not_observed,not_observed,not_observed
+MHR_R300m_seed42,MHR,300.0,42,101.0,101.0,450,reachability_event_or_end,0,not_observed,not_observed,not_observed
+MHR_R350m_seed42,MHR,350.0,42,101.0,0.0,450,reachability_event_or_end,0,not_observed,not_observed,not_observed
+MHR_R350m_seed42,MHR,350.0,42,101.0,101.0,450,reachability_event_or_end,0,not_observed,not_observed,not_observed
+EMHR_R250m_seed42,EMHR,250.0,42,101.0,0.0,450,reachability_event_or_end,0,not_observed,not_observed,not_observed
+EMHR_R250m_seed42,EMHR,250.0,42,101.0,101.0,450,reachability_event_or_end,0,not_observed,not_observed,not_observed
+EMHR_R300m_seed42,EMHR,300.0,42,101.0,0.0,450,reachability_event_or_end,0,not_observed,not_observed,not_observed
+EMHR_R300m_seed42,EMHR,300.0,42,101.0,101.0,450,reachability_event_or_end,0,not_observed,not_observed,not_observed
+EMHR_R350m_seed42,EMHR,350.0,42,101.0,0.0,450,reachability_event_or_end,0,not_observed,not_observed,not_observed
+EMHR_R350m_seed42,EMHR,350.0,42,101.0,101.0,450,reachability_event_or_end,0,not_observed,not_observed,not_observed

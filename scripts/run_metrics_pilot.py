@@ -144,11 +144,35 @@ def main() -> int:
                                 metrics['average_end_to_end_delay_s']
                             ),
                             'fnd_s': metrics['fnd_s'],
+                            'fnd_status': metrics['fnd_status'],
                             'hnd_s': metrics['hnd_s'],
+                            'hnd_status': metrics['hnd_status'],
                             'lnd_s': metrics['lnd_s'],
+                            'lnd_status': metrics['lnd_status'],
                             'functional_network_death_s': (
                                 metrics['functional_network_death_s']
                             ),
+                            'functional_network_death_status': (
+                                metrics['functional_network_death_status']
+                            ),
+                            'network_lifetime_s': metrics['network_lifetime_s'],
+                            'network_lifetime_status': metrics['network_lifetime_status'],
+                            'network_lifetime_definition': (
+                                metrics['network_lifetime_definition']
+                            ),
+                            'energy_service_lifetime_sampled_s': (
+                                metrics['energy_service_lifetime_sampled_s']
+                            ),
+                            'energy_service_lifetime_status': (
+                                metrics['energy_service_lifetime_status']
+                            ),
+                            'energy_service_lifetime_definition': (
+                                metrics['energy_service_lifetime_definition']
+                            ),
+                            'serviceability_sample_interval_s': (
+                                metrics['serviceability_sample_interval_s']
+                            ),
+                            'measurement_interval': metrics['measurement_interval'],
                             'delivered_bits_at_fnd': metrics['delivered_bits_at_fnd'],
                             'delivered_bits_at_hnd': metrics['delivered_bits_at_hnd'],
                             'delivered_bits_at_lnd': metrics['delivered_bits_at_lnd'],

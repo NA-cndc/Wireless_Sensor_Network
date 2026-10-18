@@ -29,6 +29,23 @@ NETWORK_LIFETIME_DEFINITION = (
     'time_to_first_physical_reachability_ratio_below_0.5_'
     'among_alive_sensors_or_no_alive_sensors'
 )
+ENERGY_SERVICE_LIFETIME_DEFINITION = (
+    'first_sample_where_fewer_than_0.5_of_alive_sensors_have_an_'
+    'energy_feasible_path_to_a_sink_or_no_alive_sensors'
+)
+
+
+def first_sampled_service_failure(
+    history: Sequence[Mapping[str, Any]],
+) -> float | None:
+    '''Return the first sampled time at which data service falls below 50%.'''
+    for sample in history:
+        if int(sample['alive_sensors']) == 0:
+            return float(sample['time_s'])
+        ratio = sample.get('energy_feasible_ratio')
+        if ratio is not None and float(ratio) < 0.5:
+            return float(sample['time_s'])
+    return None
 
 
 def topology_summary_frame(
@@ -83,6 +100,8 @@ def calculate_simulation_metrics(
     sim_time_s: float,
     router: RoutingEngine | None = None,
     reachability_history: Sequence[Mapping[str, Any]] | None = None,
+    serviceability_history: Sequence[Mapping[str, Any]] | None = None,
+    serviceability_sample_interval_s: float = 10.0,
 ) -> dict[str, Any]:
     '''Calculate sink, lifetime, energy and packet metrics without mutation.'''
     total_sensors = len(network.sensors)
@@ -114,9 +133,12 @@ def calculate_simulation_metrics(
     pending_count = len(pending)
 
     drop_reasons: dict[str, int] = {}
+    drop_categories: dict[str, int] = {}
     for packet in dropped:
         reason = packet.drop_reason or 'unspecified'
         drop_reasons[reason] = drop_reasons.get(reason, 0) + 1
+        category = packet.drop_category or 'unspecified'
+        drop_categories[category] = drop_categories.get(category, 0) + 1
 
     total_delivered_bytes = sum(packet.size_bytes for packet in delivered)
     total_delivered_payload_bytes = sum(packet.payload_size_bytes for packet in delivered)
@@ -221,6 +243,8 @@ def calculate_simulation_metrics(
         if history
         else network.physical_reachability_snapshot(measurement_duration_s)
     )
+    sampled_serviceability = list(serviceability_history or [])
+    energy_service_lifetime = first_sampled_service_failure(sampled_serviceability)
     if router is not None and hasattr(router, 'transmission_feasibility_snapshot'):
         feasibility = router.transmission_feasibility_snapshot(
             radio,
@@ -256,6 +280,7 @@ def calculate_simulation_metrics(
             generated_count == delivered_count + dropped_count + pending_count
         ),
         'drop_reasons': drop_reasons,
+        'drop_categories': drop_categories,
         'total_delivered_bytes': total_delivered_bytes,
         'total_delivered_bits': total_delivered_bits,
         'total_delivered_payload_bytes': total_delivered_payload_bytes,
@@ -289,6 +314,12 @@ def calculate_simulation_metrics(
             'observed' if functional_death_s is not None else 'not_observed'
         ),
         'network_lifetime_definition': NETWORK_LIFETIME_DEFINITION,
+        'energy_service_lifetime_sampled_s': energy_service_lifetime,
+        'energy_service_lifetime_status': (
+            'observed' if energy_service_lifetime is not None else 'not_observed'
+        ),
+        'energy_service_lifetime_definition': ENERGY_SERVICE_LIFETIME_DEFINITION,
+        'serviceability_sample_interval_s': float(serviceability_sample_interval_s),
         'current_reachable_sensors': current_reachability['reachable_sensors'],
         'current_reachability_ratio': current_reachability['reachability_ratio'],
         'current_reachability_state': current_reachability['state'],

@@ -63,6 +63,8 @@ class TrafficGenerator:
         node_id: str,
         no_route: bool = False,
         counter_sensor: Sensor | None = None,
+        drop_category: str | None = None,
+        drop_detail: str | None = None,
     ) -> None:
         """Hàm chung để hủy gói tin, cập nhật dropped_at, bộ đếm và danh sách dropped_packets."""
         now = float(self.env.now)
@@ -72,6 +74,8 @@ class TrafficGenerator:
             no_route=no_route,
             sim_time_s=now,
             event_seq=self._next_event_seq(),
+            drop_category=drop_category,
+            drop_detail=drop_detail,
         )
         self.dropped_packets.append(packet)
         target = counter_sensor or self.network.sensors.get(node_id)
@@ -281,7 +285,14 @@ class TrafficGenerator:
             # Nếu giao dịch thất bại do không đủ năng lượng TX hoặc RX
             if not ledger_entry["success"]:
                 fail_node = sensor_id if ledger_entry["reason"] == "TX_INSUFFICIENT_ENERGY" else next_hop_id
-                self._drop_packet(packet, "energy_depletion", node_id=fail_node, counter_sensor=sensor)
+                self._drop_packet(
+                    packet,
+                    "energy_depletion",
+                    node_id=fail_node,
+                    counter_sensor=sensor,
+                    drop_category="energy_depletion",
+                    drop_detail=str(ledger_entry["reason"]),
+                )
                 continue
 
             # Ghi nhận chặng nhảy thành công vào lịch sử đường đi của gói tin
@@ -307,7 +318,14 @@ class TrafficGenerator:
                 receiver.received_packets += 1
                 # Nếu receiver cạn kiệt năng lượng sau khi tốn chi phí RX -> Hủy gói tại receiver
                 if not receiver.is_alive:
-                    self._drop_packet(packet, "energy_depletion", node_id=receiver.node_id, counter_sensor=receiver)
+                    self._drop_packet(
+                        packet,
+                        "energy_depletion",
+                        node_id=receiver.node_id,
+                        counter_sensor=receiver,
+                        drop_category="energy_depletion",
+                        drop_detail="receiver_depleted_after_rx",
+                    )
                     if receiver.node_id in self.tx_events and not self.tx_events[receiver.node_id].triggered:
                         self.tx_events[receiver.node_id].succeed()
                     continue
@@ -326,4 +344,11 @@ class TrafficGenerator:
         # Khi cảm biến chết (hết pin): Toàn bộ gói tin còn tồn đọng trong hàng đợi bị loại do energy_depletion
         while self.queues[sensor_id]:
             pkt = self.queues[sensor_id].pop(0)
-            self._drop_packet(pkt, "energy_depletion", node_id=sensor_id, counter_sensor=sensor)
+            self._drop_packet(
+                pkt,
+                "energy_depletion",
+                node_id=sensor_id,
+                counter_sensor=sensor,
+                drop_category="energy_depletion",
+                drop_detail="node_dead_queue_flush",
+            )

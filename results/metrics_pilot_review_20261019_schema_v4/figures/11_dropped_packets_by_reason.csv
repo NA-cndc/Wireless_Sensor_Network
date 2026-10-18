@@ -1,0 +1,7 @@
+scenario,algorithm,range_m,seed,drop_category,drop_detail,dropped_packets,scenario_dropped_total
+MHR_R250m_seed42,MHR,250.0,42,none,none,0,0
+MHR_R300m_seed42,MHR,300.0,42,none,none,0,0
+MHR_R350m_seed42,MHR,350.0,42,none,none,0,0
+EMHR_R250m_seed42,EMHR,250.0,42,none,none,0,0
+EMHR_R300m_seed42,EMHR,300.0,42,none,none,0,0
+EMHR_R350m_seed42,EMHR,350.0,42,routing_policy,relay_below_threshold,5,5

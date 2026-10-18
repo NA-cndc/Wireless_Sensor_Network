@@ -29,6 +29,12 @@ SUMMARY_FIELDS = {
     'goodput_bps', 'offered_rate_bps', 'configured_rate_bps',
     'energy_per_delivered_bit_j', 'average_hops', 'average_end_to_end_delay_s',
     'fnd_s', 'hnd_s', 'lnd_s', 'functional_network_death_s',
+    'fnd_status', 'hnd_status', 'lnd_status',
+    'functional_network_death_status', 'network_lifetime_s',
+    'network_lifetime_status', 'network_lifetime_definition',
+    'energy_service_lifetime_sampled_s', 'energy_service_lifetime_status',
+    'energy_service_lifetime_definition', 'serviceability_sample_interval_s',
+    'measurement_interval',
     'delivered_bits_at_fnd', 'delivered_bits_at_hnd', 'delivered_bits_at_lnd',
     'relay_jain_fairness', 'route_recompute_count', 'route_change_count',
     'route_failure_count', 'validation_passed', 'output_dir',
@@ -40,9 +46,18 @@ SUMMARY_METRICS = (
     'goodput_bps', 'offered_rate_bps', 'configured_rate_bps',
     'energy_per_delivered_bit_j', 'average_hops', 'average_end_to_end_delay_s',
     'fnd_s', 'hnd_s', 'lnd_s', 'functional_network_death_s',
+    'network_lifetime_s', 'energy_service_lifetime_sampled_s',
+    'serviceability_sample_interval_s',
     'delivered_bits_at_fnd', 'delivered_bits_at_hnd', 'delivered_bits_at_lnd',
     'relay_jain_fairness', 'route_recompute_count', 'route_change_count',
     'route_failure_count',
+)
+
+SUMMARY_TEXT_METRICS = (
+    'fnd_status', 'hnd_status', 'lnd_status',
+    'functional_network_death_status', 'network_lifetime_status',
+    'network_lifetime_definition', 'energy_service_lifetime_status',
+    'energy_service_lifetime_definition', 'measurement_interval',
 )
 
 FIGURE_BASENAMES = [
@@ -58,6 +73,8 @@ FIGURE_BASENAMES = [
     '10_cumulative_delivered_bits_over_time',
     '11_dropped_packets_by_reason',
     '12_energy_per_delivered_bit_by_range',
+    '13_throughput_goodput_over_time',
+    '14_delivered_bits_at_lifetime_milestones',
 ]
 
 
@@ -164,6 +181,118 @@ def _cumulative_delivery_points(
     return points
 
 
+def _percentile(values: list[float], percentile: float) -> float | None:
+    if not values:
+        return None
+    ordered = sorted(values)
+    position = (len(ordered) - 1) * percentile
+    lower = math.floor(position)
+    upper = math.ceil(position)
+    if lower == upper:
+        return ordered[lower]
+    fraction = position - lower
+    return ordered[lower] * (1.0 - fraction) + ordered[upper] * fraction
+
+
+def _windowed_rates(
+    packets: list[dict[str, Any]],
+    measurement_duration_s: float,
+    window_size_s: float = 10.0,
+) -> list[dict[str, Any]]:
+    '''Calculate half-open offered/delivered rate windows, including a short final window.'''
+    duration = float(measurement_duration_s)
+    if duration <= 0 or window_size_s <= 0:
+        raise ValueError('duration and window size must be positive')
+    window_count = math.ceil(duration / window_size_s)
+    rows = []
+    for index in range(window_count):
+        start = index * window_size_s
+        end = min(duration, start + window_size_s)
+        rows.append({
+            'window_index': index,
+            'window_start_s': start,
+            'window_end_s': end,
+            'duration_s': end - start,
+            'offered_bytes': 0,
+            'delivered_bytes': 0,
+            'delivered_payload_bytes': 0,
+        })
+
+    def window_index(event_time: float) -> int:
+        if not 0 <= event_time < duration:
+            raise ValueError(f'packet event time {event_time} is outside [0,{duration})')
+        return min(int(event_time // window_size_s), window_count - 1)
+
+    for packet in packets:
+        created_at = float(packet['created_at'])
+        rows[window_index(created_at)]['offered_bytes'] += int(packet['size_bytes'])
+        if packet['status'] == 'DELIVERED':
+            delivered_at = float(packet['delivered_at'])
+            bucket = rows[window_index(delivered_at)]
+            bucket['delivered_bytes'] += int(packet['size_bytes'])
+            bucket['delivered_payload_bytes'] += int(packet['payload_size_bytes'])
+    for row in rows:
+        duration_s = row['duration_s']
+        row['offered_rate_bps'] = 8.0 * row['offered_bytes'] / duration_s
+        row['throughput_bps'] = 8.0 * row['delivered_bytes'] / duration_s
+        row['goodput_bps'] = 8.0 * row['delivered_payload_bytes'] / duration_s
+    return rows
+
+
+def _energy_ledger_points(
+    nodes: list[dict[str, Any]],
+    ledger: list[dict[str, Any]],
+    measurement_duration_s: float,
+) -> list[dict[str, Any]]:
+    initial = sum(
+        float(node['initial_energy_j']) for node in nodes if node['type'] == 'sensor'
+    )
+    points = [{
+        'time_s': 0.0, 'event_seq': None, 'debit_j': 0.0,
+        'cumulative_debit_j': 0.0, 'residual_energy_j': initial,
+        'point_kind': 'initial',
+    }]
+    cumulative = 0.0
+    ordered = sorted(ledger, key=lambda row: (float(row['time_s']), int(row['event_seq'])))
+    for entry in ordered:
+        debit = float(entry['tx_energy_j']) + float(entry['rx_energy_j'])
+        cumulative += debit
+        points.append({
+            'time_s': float(entry['time_s']),
+            'event_seq': int(entry['event_seq']),
+            'debit_j': debit,
+            'cumulative_debit_j': cumulative,
+            'residual_energy_j': max(0.0, initial - cumulative),
+            'point_kind': 'energy_transaction',
+        })
+    points.append({
+        'time_s': float(measurement_duration_s), 'event_seq': None, 'debit_j': 0.0,
+        'cumulative_debit_j': cumulative,
+        'residual_energy_j': max(0.0, initial - cumulative),
+        'point_kind': 'observation_end',
+    })
+    return points
+
+
+def _drop_category_breakdown(
+    packets: list[dict[str, Any]],
+) -> tuple[Counter[str], Counter[tuple[str, str]], int]:
+    dropped = [
+        packet for packet in packets
+        if packet['status'] in {'DROPPED', 'NO_ROUTE'}
+    ]
+    categories: Counter[str] = Counter()
+    details: Counter[tuple[str, str]] = Counter()
+    for packet in dropped:
+        category = str(packet.get('drop_category', '')).strip() or 'unspecified'
+        detail = str(packet.get('drop_detail', '')).strip() or 'unspecified'
+        categories[category] += 1
+        details[(category, detail)] += 1
+    if sum(categories.values()) != len(dropped):
+        raise ValueError('drop category counts do not conserve dropped packets')
+    return categories, details, len(dropped)
+
+
 def _write_csv(path: Path, rows: list[dict[str, Any]], fields: list[str]) -> None:
     with path.open('w', newline='', encoding='utf-8') as file_handle:
         writer = csv.DictWriter(
@@ -229,6 +358,9 @@ def _check_summary_row(
             mismatches.append(name)
     for name, expected in metric_pairs.items():
         if not _same_optional_number(row[name], expected):
+            mismatches.append(name)
+    for name in SUMMARY_TEXT_METRICS:
+        if row[name] != str(metrics[name]):
             mismatches.append(name)
     if row['validation_passed'].strip().lower() != 'true':
         mismatches.append('validation_passed')
@@ -369,7 +501,9 @@ def main() -> int:
         range_m = float(row['range_m'])
         label = (
             f'{row["algorithm"]} R={range_m:g}m seed={row["seed"]}; '
-            f'end={points[-1][1]}'
+            f'end={points[-1][1]} alive/{int(row["_metrics"]["dead_sensors"])} dead; '
+            f'FND/HND/LND={row["fnd_status"]}/'
+            f'{row["hnd_status"]}/{row["lnd_status"]}'
         )
         axis.step(
             [point[0] for point in points],
@@ -388,6 +522,9 @@ def main() -> int:
                 'range_m': range_m, 'seed': row['seed'],
                 'measurement_duration_s': duration, 'time_s': time_s,
                 'alive_sensors': alive, 'sample_source': 'reachability_event_or_end',
+                'final_dead_sensors': row['_metrics']['dead_sensors'],
+                'fnd_status': row['fnd_status'], 'hnd_status': row['hnd_status'],
+                'lnd_status': row['lnd_status'],
             })
     overlap_counts = Counter(alive_curves)
     largest_overlap = max(overlap_counts.values(), default=1)
@@ -409,7 +546,8 @@ def main() -> int:
     save_source(
         '01_alive_sensors_over_time', alive_source,
         ['scenario', 'algorithm', 'range_m', 'seed', 'measurement_duration_s',
-         'time_s', 'alive_sensors', 'sample_source'],
+         'time_s', 'alive_sensors', 'sample_source', 'final_dead_sensors',
+         'fnd_status', 'hnd_status', 'lnd_status'],
     )
 
     groups = sorted({(row['algorithm'], int(row['seed'])) for row in summary})
@@ -614,6 +752,7 @@ def main() -> int:
                     'scenario': row['scenario'], 'algorithm': algorithm,
                     'range_m': row['range_m'], 'seed': seed,
                     'measurement_duration_s': row['actual_duration_s'],
+                    'delivered_packets': row['delivered_packets'],
                     output_field: None if value is None else value * multiplier,
                     'status': 'observed' if value is not None else 'not_observed',
                 })
@@ -631,7 +770,7 @@ def main() -> int:
         save_source(
             basename, source_rows,
             ['scenario', 'algorithm', 'range_m', 'seed', 'measurement_duration_s',
-             output_field, 'status'],
+             'delivered_packets', output_field, 'status'],
         )
 
     single_metric_plot(
@@ -639,23 +778,97 @@ def main() -> int:
         'Average actual hops of delivered packets (edges, not relays)',
         'Average actual path length (hop) [delivered packets only]', 'average_hops',
     )
-    single_metric_plot(
-        '05_average_delay_by_range', 'average_end_to_end_delay_s',
-        'Average end-to-end delay of delivered packets',
-        'Average end-to-end delay (ms) [delivered packets only]', 'average_end_to_end_delay_ms', 1000.0,
+    # Figure 05: summary statistics and the full delivered-packet delay ECDF.
+    delay_source: list[dict[str, Any]] = []
+    figure, (summary_axis, ecdf_axis) = plt.subplots(1, 2, figsize=(13, 5))
+    for row in summary:
+        packets = _read_csv(row['_run_path'] / 'packets.csv')
+        latencies_ms = sorted(
+            float(packet['latency_s']) * 1000.0
+            for packet in packets if packet['status'] == 'DELIVERED'
+        )
+        average_ms = _optional_float(row['average_end_to_end_delay_s'])
+        average_ms = None if average_ms is None else average_ms * 1000.0
+        median_ms = _percentile(latencies_ms, 0.5)
+        p95_ms = _percentile(latencies_ms, 0.95)
+        range_m = float(row['range_m'])
+        if average_ms is not None:
+            summary_axis.scatter(range_m, average_ms, marker='o',
+                                 color=algorithm_colors[row['algorithm']])
+            summary_axis.scatter(range_m, median_ms, marker='s',
+                                 color=algorithm_colors[row['algorithm']])
+            summary_axis.scatter(range_m, p95_ms, marker='^',
+                                 color=algorithm_colors[row['algorithm']])
+            probabilities = [(index + 1) / len(latencies_ms)
+                             for index in range(len(latencies_ms))]
+            ecdf_axis.step(
+                latencies_ms, probabilities, where='post',
+                color=range_colors[range_m],
+                linestyle=algorithm_lines[row['algorithm']],
+                label=f'{row["algorithm"]} R={range_m:g}m seed={row["seed"]}',
+                alpha=0.85,
+            )
+        delay_source.append({
+            'scenario': row['scenario'], 'algorithm': row['algorithm'],
+            'range_m': range_m, 'seed': row['seed'], 'record_type': 'summary',
+            'packet_id': None, 'sample_index': None,
+            'delivered_packets': len(latencies_ms), 'delay_ms': None,
+            'ecdf_probability': None, 'average_end_to_end_delay_ms': average_ms,
+            'median_delay_ms': median_ms, 'p95_delay_ms': p95_ms,
+        })
+        for index, (packet, delay_ms) in enumerate(zip(
+            sorted(
+                (packet for packet in packets if packet['status'] == 'DELIVERED'),
+                key=lambda packet: float(packet['latency_s']),
+            ),
+            latencies_ms,
+        ), start=1):
+            delay_source.append({
+                'scenario': row['scenario'], 'algorithm': row['algorithm'],
+                'range_m': range_m, 'seed': row['seed'],
+                'record_type': 'delivered_packet', 'packet_id': packet['packet_id'],
+                'sample_index': index, 'delivered_packets': len(latencies_ms),
+                'delay_ms': delay_ms,
+                'ecdf_probability': index / len(latencies_ms),
+                'average_end_to_end_delay_ms': None, 'median_delay_ms': None,
+                'p95_delay_ms': None,
+            })
+    summary_axis.set(
+        title='Delay summary by range\nmarkers: mean=o, median=s, p95=^',
+        xlabel='Communication range R (m)', ylabel='End-to-end delay (ms)',
+    )
+    summary_axis.grid(alpha=0.25)
+    ecdf_axis.set(
+        title='Delivered-packet delay ECDF', xlabel='End-to-end delay (ms)',
+        ylabel='Empirical cumulative probability', ylim=(0, 1.02),
+    )
+    ecdf_axis.grid(alpha=0.25)
+    ecdf_axis.legend(fontsize=7)
+    figure.suptitle(f'Delay distribution of delivered packets\n{subtitle}')
+    save_plot(figure, '05_average_delay_by_range')
+    save_source(
+        '05_average_delay_by_range', delay_source,
+        ['scenario', 'algorithm', 'range_m', 'seed', 'record_type', 'packet_id',
+         'sample_index', 'delivered_packets', 'delay_ms', 'ecdf_probability',
+         'average_end_to_end_delay_ms', 'median_delay_ms', 'p95_delay_ms'],
     )
 
     # Figure 06: never invent values or connect across missing observations.
     milestone_specs = [
-        ('fnd_s', 'FND'), ('hnd_s', 'HND'), ('lnd_s', 'LND'),
-        ('functional_network_death_s', 'Physical-connectivity lifetime'),
+        ('fnd_s', 'FND', 'fnd_status'),
+        ('hnd_s', 'HND', 'hnd_status'),
+        ('lnd_s', 'LND', 'lnd_status'),
+        ('functional_network_death_s', 'Physical-connectivity lifetime',
+         'functional_network_death_status'),
+        ('energy_service_lifetime_sampled_s', 'Energy-service lifetime (sampled)',
+         'energy_service_lifetime_status'),
     ]
     lifetime_source: list[dict[str, Any]] = []
     observed_points: list[tuple[dict[str, Any], str, str, float]] = []
     for row in summary:
-        for key, label in milestone_specs:
+        for key, label, status_key in milestone_specs:
             value = _optional_float(row[key])
-            status = 'observed' if value is not None else 'not_observed'
+            status = row[status_key]
             lifetime_source.append({
                 'scenario': row['scenario'], 'algorithm': row['algorithm'],
                 'range_m': row['range_m'], 'seed': row['seed'],
@@ -675,7 +888,7 @@ def main() -> int:
         )
         axis.text(
             0.5, 0.45,
-            f'FND · HND · LND · physical-connectivity lifetime\n'
+            f'FND · HND · LND · physical-connectivity · sampled energy-service lifetime\n'
             f'Not observed in {", ".join(intervals)}\n'
             f'{algorithms_label}; R={ranges_label} m; seeds={seeds}',
             ha='center', va='center', fontsize=11, transform=axis.transAxes,
@@ -684,7 +897,8 @@ def main() -> int:
         axis.set_title(f'Pilot lifetime status\n{subtitle}')
     else:
         metric_markers = {'fnd_s': 'o', 'hnd_s': 's', 'lnd_s': '^',
-                          'functional_network_death_s': 'D'}
+                          'functional_network_death_s': 'D',
+                          'energy_service_lifetime_sampled_s': 'P'}
         for row, key, label, value in observed_points:
             axis.scatter(
                 float(row['range_m']), value,
@@ -786,33 +1000,46 @@ def main() -> int:
              'algorithm', 'range_m', 'seed', 'measurement_duration_s'],
         )
 
-    # Figure 08: Residual energy over time
+    # Figure 08: exact residual energy reconstructed from every ledger debit.
     energy_source: list[dict[str, Any]] = []
     figure, axis = plt.subplots(figsize=(9, 5))
     for row in summary:
-        timeseries = _read_csv(row['_run_path'] / 'timeseries.csv')
-        points = [(float(entry['time_s']), float(entry['total_energy_j'])) for entry in timeseries]
+        nodes = _read_csv(row['_run_path'] / 'nodes.csv')
+        ledger = _read_csv(row['_run_path'] / 'energy_ledger.csv')
+        duration = float(row['_metrics']['measurement_duration_s'])
+        points = _energy_ledger_points(nodes, ledger, duration)
+        expected_final = float(row['_metrics']['residual_total_energy_j'])
+        if not math.isclose(
+            points[-1]['residual_energy_j'], expected_final,
+            rel_tol=0.0, abs_tol=ABSOLUTE_TOLERANCE,
+        ):
+            raise ValueError(
+                f'{row["scenario"]}: ledger energy curve ends at '
+                f'{points[-1]["residual_energy_j"]}, metrics reports {expected_final}'
+            )
         range_m = float(row['range_m'])
-        axis.plot(
-            [p[0] for p in points], [p[1] for p in points],
+        axis.step(
+            [p['time_s'] for p in points],
+            [p['residual_energy_j'] for p in points],
+            where='post',
             label=f'{row["algorithm"]} R={range_m:g}m seed={row["seed"]}',
             color=range_colors[range_m],
             linestyle=algorithm_lines[row['algorithm']],
             linewidth=1.5,
         )
-        for time_s, energy in points:
+        for point in points:
             energy_source.append({
                 'scenario': row['scenario'], 'algorithm': row['algorithm'],
                 'range_m': range_m, 'seed': row['seed'],
-                'time_s': time_s, 'total_energy_j': energy,
+                **point,
             })
     axis.set(
-        title=f'Residual network energy at periodic snapshots\n{subtitle}',
+        title=f'Exact residual network energy from TX/RX ledger events\n{subtitle}',
         xlabel='Simulation time (s)', ylabel='Residual energy (J)',
     )
     axis.text(
         0.02, 0.03,
-        'Sampled snapshots; connecting lines do not represent exact TX/RX event times.',
+        'Every TX+RX debit is included, including failed transactions with sender TX cost.',
         transform=axis.transAxes, fontsize=8,
         bbox={'facecolor': 'white', 'alpha': 0.8, 'edgecolor': '0.8'},
     )
@@ -821,7 +1048,8 @@ def main() -> int:
     save_plot(figure, '08_residual_energy_over_time')
     save_source(
         '08_residual_energy_over_time', energy_source,
-        ['scenario', 'algorithm', 'range_m', 'seed', 'time_s', 'total_energy_j'],
+        ['scenario', 'algorithm', 'range_m', 'seed', 'time_s', 'event_seq',
+         'debit_j', 'cumulative_debit_j', 'residual_energy_j', 'point_kind'],
     )
 
     # Figure 09: Energy feasible ratio over time
@@ -830,10 +1058,11 @@ def main() -> int:
     observed_feasibility = False
     undefined_no_alive = 0
     for row in summary:
-        timeseries = _read_csv(row['_run_path'] / 'timeseries.csv')
+        timeseries = _read_csv(row['_run_path'] / 'serviceability_snapshots.csv')
         points = []
         for entry in timeseries:
             ratio = _optional_float(entry.get('energy_feasible_ratio'))
+            physical_ratio = _optional_float(entry.get('reachability_ratio'))
             count = int(entry['energy_feasible_sensors'])
             alive = int(entry['alive_sensors'])
             status = (
@@ -852,23 +1081,31 @@ def main() -> int:
                 ratio,
                 alive,
                 status,
+                physical_ratio,
             ))
         range_m = float(row['range_m'])
         if points:
             axis.plot(
                 [p[0] for p in points], [p[1] for p in points],
-                label=f'{row["algorithm"]} R={range_m:g}m seed={row["seed"]}',
+                label=f'{row["algorithm"]} R={range_m:g}m energy-feasible',
                 color=range_colors[range_m],
                 linestyle=algorithm_lines[row['algorithm']],
                 linewidth=1.5,
             )
-        for time_s, _, count, ratio, alive, status in points:
+            axis.plot(
+                [p[0] for p in points],
+                [math.nan if p[6] is None else 100.0 * p[6] for p in points],
+                label=f'{row["algorithm"]} R={range_m:g}m physical reachability',
+                color=range_colors[range_m], linestyle=':', linewidth=1.1, alpha=0.8,
+            )
+        for time_s, _, count, ratio, alive, status, physical_ratio in points:
             feasibility_source.append({
                 'scenario': row['scenario'], 'algorithm': row['algorithm'],
                 'range_m': range_m, 'seed': row['seed'],
                 'alive_sensors': alive,
                 'time_s': time_s, 'energy_feasible_sensors': count,
                 'energy_feasible_ratio': ratio,
+                'physical_reachability_ratio': physical_ratio,
                 'status': status,
             })
     if not observed_feasibility:
@@ -884,14 +1121,14 @@ def main() -> int:
         )
     axis.text(
         0.02, 0.03,
-        'Feasibility measures independent single-packet send capability at snapshot;\n'
-        'does not guarantee concurrent transmissions succeed.',
+        'Solid/dashed: sampled energy-feasible path; dotted: physical reachability.\n'
+        'Feasibility is an independent one-packet snapshot, not a delivery guarantee.',
         transform=axis.transAxes, fontsize=8,
         bbox={'facecolor': 'white', 'alpha': 0.8, 'edgecolor': '0.8'},
     )
     axis.set(
-        title=f'Ratio of sensors with sufficient transmission energy over time\n{subtitle}',
-        xlabel='Simulation time (s)', ylabel='Feasible sensors ratio (%)',
+        title=f'Physical reachability versus sampled energy serviceability\n{subtitle}',
+        xlabel='Simulation time (s)', ylabel='Alive-sensor ratio (%)',
         ylim=(0, 105),
     )
     axis.grid(alpha=0.25)
@@ -902,7 +1139,8 @@ def main() -> int:
     save_source(
         '09_energy_feasible_ratio_over_time', feasibility_source,
         ['scenario', 'algorithm', 'range_m', 'seed', 'time_s', 'alive_sensors',
-         'energy_feasible_sensors', 'energy_feasible_ratio', 'status'],
+         'energy_feasible_sensors', 'energy_feasible_ratio',
+         'physical_reachability_ratio', 'status'],
     )
 
     # Figure 10: Cumulative delivered bits over time
@@ -928,6 +1166,19 @@ def main() -> int:
             linestyle=algorithm_lines[row['algorithm']],
             linewidth=1.5,
         )
+        for milestone_key, marker in (('fnd_s', 'o'), ('hnd_s', 's'), ('lnd_s', '^')):
+            milestone_time = _optional_float(row[milestone_key])
+            if milestone_time is None:
+                continue
+            milestone_bits = max(
+                point['delivered_bits'] for point in points
+                if point['time_s'] <= milestone_time + ABSOLUTE_TOLERANCE
+            )
+            axis.scatter(
+                [milestone_time], [milestone_bits], marker=marker,
+                color=range_colors[range_m], edgecolors='black', linewidths=0.4,
+                zorder=4,
+            )
         for point in points:
             bits_source.append({
                 'scenario': row['scenario'], 'algorithm': row['algorithm'],
@@ -948,51 +1199,53 @@ def main() -> int:
          'delivered_bits', 'point_kind', 'delivery_events'],
     )
 
-    # Figure 11: Dropped packets by reason
+    # Figure 11: one canonical category per dropped packet, rendered as stacked bars.
     dropped_source: list[dict[str, Any]] = []
-    scenario_drop_reasons: dict[str, dict[str, int]] = {}
-    all_reasons: set[str] = set()
+    scenario_drop_categories: dict[str, dict[str, int]] = {}
+    all_categories: set[str] = set()
     for row in summary:
         scenario = row['scenario']
         packets = _read_csv(row['_run_path'] / 'packets.csv')
-        reasons_counter = Counter(
-            p['drop_reason'].strip() or 'unspecified'
-            for p in packets
-            if p['status'] in {'DROPPED', 'NO_ROUTE'}
+        categories_counter, detail_counter, dropped_total = (
+            _drop_category_breakdown(packets)
         )
-        scenario_drop_reasons[scenario] = dict(reasons_counter)
-        all_reasons.update(reasons_counter.keys())
-        if not reasons_counter:
+        scenario_drop_categories[scenario] = dict(categories_counter)
+        all_categories.update(categories_counter.keys())
+        if not categories_counter:
             dropped_source.append({
                 'scenario': scenario, 'algorithm': row['algorithm'],
                 'range_m': row['range_m'], 'seed': row['seed'],
-                'drop_reason': 'none', 'dropped_packets': 0,
+                'drop_category': 'none', 'drop_detail': 'none',
+                'dropped_packets': 0, 'scenario_dropped_total': 0,
             })
         else:
-            for reason, count in sorted(reasons_counter.items()):
+            total = dropped_total
+            for (category, detail), count in sorted(detail_counter.items()):
                 dropped_source.append({
                     'scenario': scenario, 'algorithm': row['algorithm'],
                     'range_m': row['range_m'], 'seed': row['seed'],
-                    'drop_reason': reason, 'dropped_packets': count,
+                    'drop_category': category, 'drop_detail': detail,
+                    'dropped_packets': count, 'scenario_dropped_total': total,
                 })
     figure, axis = plt.subplots(figsize=(10, 5))
     scenarios_list = [row['scenario'] for row in summary]
     x_indices = list(range(len(scenarios_list)))
-    if all_reasons:
-        sorted_reasons = sorted(all_reasons)
+    if all_categories:
+        sorted_categories = sorted(all_categories)
         reason_colors = ['tab:red', 'tab:purple', 'tab:olive', 'tab:gray']
-        for idx, reason in enumerate(sorted_reasons):
-            counts = [scenario_drop_reasons[sc].get(reason, 0) for sc in scenarios_list]
-            offset = (idx - len(sorted_reasons) / 2 + 0.5) * (0.8 / len(sorted_reasons))
+        bottom = [0] * len(scenarios_list)
+        for idx, category in enumerate(sorted_categories):
+            counts = [
+                scenario_drop_categories[scenario].get(category, 0)
+                for scenario in scenarios_list
+            ]
             axis.bar(
-                [x + offset for x in x_indices], counts,
-                width=0.8 / len(sorted_reasons),
-                label=reason,
+                x_indices, counts, bottom=bottom, label=category,
                 color=reason_colors[idx % len(reason_colors)],
             )
-        axis.legend(title='Drop reason', fontsize=8)
-        totals = [sum(scenario_drop_reasons[sc].values()) for sc in scenarios_list]
-        for x_value, total in zip(x_indices, totals):
+            bottom = [previous + count for previous, count in zip(bottom, counts)]
+        axis.legend(title='Drop category', fontsize=8)
+        for x_value, total in zip(x_indices, bottom):
             axis.annotate(
                 str(total), (x_value, total), xytext=(0, 4),
                 textcoords='offset points', ha='center', va='bottom', fontsize=8,
@@ -1000,17 +1253,17 @@ def main() -> int:
     else:
         axis.text(0.5, 0.5, 'Zero packets dropped in all scenarios', ha='center', va='center', transform=axis.transAxes)
 
-    if all_reasons:
+    if all_categories:
         axis.text(
             0.02, 0.88,
-            f'Observed drop reasons: {", ".join(sorted(all_reasons))}',
+            f'Observed drop categories: {", ".join(sorted(all_categories))}',
             transform=axis.transAxes, fontsize=8,
             bbox={'facecolor': 'white', 'alpha': 0.85, 'edgecolor': '0.8'},
         )
     axis.set_xticks(x_indices)
     axis.set_xticklabels(scenarios_list, rotation=25, ha='right', fontsize=8)
     axis.set(
-        title=f'Dropped packets by drop reason\n{subtitle}',
+        title=f'Dropped packets by canonical category (stacked totals)\n{subtitle}',
         xlabel='Scenario', ylabel='Dropped packets (count)',
     )
     axis.set_ylim(bottom=0)
@@ -1018,7 +1271,8 @@ def main() -> int:
     save_plot(figure, '11_dropped_packets_by_reason')
     save_source(
         '11_dropped_packets_by_reason', dropped_source,
-        ['scenario', 'algorithm', 'range_m', 'seed', 'drop_reason', 'dropped_packets'],
+        ['scenario', 'algorithm', 'range_m', 'seed', 'drop_category',
+         'drop_detail', 'dropped_packets', 'scenario_dropped_total'],
     )
 
     # Figure 12: Energy consumed per delivered bit by range
@@ -1057,11 +1311,13 @@ def main() -> int:
                 'range_m': range_m, 'seed': seed,
                 'measurement_duration_s': row['actual_duration_s'],
                 'energy_per_delivered_bit_j': val,
+                'denominator_definition': 'delivered_full_packet_bits',
                 'status': 'observed' if val is not None else 'not_observed',
             })
     axis.set(
-        title=f'Energy consumed per delivered bit by communication range\n{subtitle}',
-        xlabel='Communication range R (m)', ylabel='Energy per delivered bit (J/bit)',
+        title=f'Energy consumed per delivered full-packet bit by range\n{subtitle}',
+        xlabel='Communication range R (m)',
+        ylabel='Energy per delivered full-packet bit (J/bit)',
     )
     axis.set_ylim(bottom=0)
     axis.grid(alpha=0.25)
@@ -1072,7 +1328,114 @@ def main() -> int:
     save_source(
         '12_energy_per_delivered_bit_by_range', energy_bit_source,
         ['scenario', 'algorithm', 'range_m', 'seed', 'measurement_duration_s',
-         'energy_per_delivered_bit_j', 'status'],
+         'energy_per_delivered_bit_j', 'denominator_definition', 'status'],
+    )
+
+    # Figure 13: delivered and payload rates in half-open time windows.
+    window_source: list[dict[str, Any]] = []
+    figure, axis = plt.subplots(figsize=(10, 5.5))
+    for row in summary:
+        packets = _read_csv(row['_run_path'] / 'packets.csv')
+        duration = float(row['_metrics']['measurement_duration_s'])
+        windows = _windowed_rates(packets, duration, window_size_s=10.0)
+        weighted_throughput = sum(
+            window['throughput_bps'] * window['duration_s'] for window in windows
+        ) / duration
+        if not math.isclose(
+            weighted_throughput, float(row['_metrics']['throughput_bps']),
+            rel_tol=0.0, abs_tol=ABSOLUTE_TOLERANCE,
+        ):
+            raise ValueError(
+                f'{row["scenario"]}: duration-weighted window throughput '
+                'does not match aggregate throughput'
+            )
+        range_m = float(row['range_m'])
+        x = [window['window_start_s'] for window in windows] + [duration]
+        for key, label, line in (
+            ('throughput_bps', 'throughput', algorithm_lines[row['algorithm']]),
+            ('goodput_bps', 'goodput', ':'),
+        ):
+            y = [window[key] for window in windows]
+            axis.step(
+                x, [*y, y[-1]], where='post',
+                color=range_colors[range_m], linestyle=line, alpha=0.82,
+                label=f'{row["algorithm"]} R={range_m:g}m {label}',
+            )
+        for window in windows:
+            window_source.append({
+                'scenario': row['scenario'], 'algorithm': row['algorithm'],
+                'range_m': range_m, 'seed': row['seed'], **window,
+            })
+    axis.set(
+        title=f'Throughput and goodput in 10-second windows\n{subtitle}',
+        xlabel='Simulation time (s)', ylabel='Rate (bit/s)',
+    )
+    axis.text(
+        0.02, 0.03,
+        'Half-open windows [start,end); events on a boundary enter the next window.\n'
+        'The final [100,101) window is divided by its actual 1-second duration.',
+        transform=axis.transAxes, fontsize=8,
+        bbox={'facecolor': 'white', 'alpha': 0.8, 'edgecolor': '0.8'},
+    )
+    axis.set_ylim(bottom=0)
+    axis.grid(alpha=0.25)
+    axis.legend(fontsize=6, ncol=3)
+    save_plot(figure, '13_throughput_goodput_over_time')
+    save_source(
+        '13_throughput_goodput_over_time', window_source,
+        ['scenario', 'algorithm', 'range_m', 'seed', 'window_index',
+         'window_start_s', 'window_end_s', 'duration_s', 'offered_bytes',
+         'delivered_bytes', 'delivered_payload_bytes', 'offered_rate_bps',
+         'throughput_bps', 'goodput_bps'],
+    )
+
+    # Figure 14: data delivered at physical node-death milestones.
+    milestone_bits_source: list[dict[str, Any]] = []
+    observed_milestone_bits: list[dict[str, Any]] = []
+    for row in summary:
+        for milestone, label in (('fnd', 'FND'), ('hnd', 'HND'), ('lnd', 'LND')):
+            time_value = _optional_float(row[f'{milestone}_s'])
+            bits_value = _optional_float(row[f'delivered_bits_at_{milestone}'])
+            status = row[f'{milestone}_status']
+            record = {
+                'scenario': row['scenario'], 'algorithm': row['algorithm'],
+                'range_m': row['range_m'], 'seed': row['seed'],
+                'milestone': label, 'milestone_time_s': time_value,
+                'delivered_bits': bits_value, 'status': status,
+                'observation_interval': f'[0,{float(row["actual_duration_s"]):g} s)',
+            }
+            milestone_bits_source.append(record)
+            if time_value is not None and bits_value is not None:
+                observed_milestone_bits.append(record)
+    figure, axis = plt.subplots(figsize=(11, 5.5))
+    if observed_milestone_bits:
+        labels = [f'{item["scenario"]}\n{item["milestone"]}'
+                  for item in observed_milestone_bits]
+        values = [item['delivered_bits'] for item in observed_milestone_bits]
+        axis.bar(range(len(values)), values, color='tab:blue')
+        axis.set_xticks(range(len(values)))
+        axis.set_xticklabels(labels, rotation=30, ha='right', fontsize=7)
+        axis.set_ylabel('Delivered full-packet bits at milestone (bit)')
+        axis.grid(alpha=0.25, axis='y')
+    else:
+        axis.axis('off')
+        axis.text(
+            0.5, 0.58, 'No FND/HND/LND milestone was observed',
+            ha='center', va='center', fontsize=15, weight='bold',
+            transform=axis.transAxes,
+        )
+        axis.text(
+            0.5, 0.42,
+            f'Delivered bits remain undefined; no zero-valued bars are drawn.\n'
+            f'Not observed in [0,{duration_label} s).',
+            ha='center', va='center', fontsize=10, transform=axis.transAxes,
+        )
+    axis.set_title(f'Data delivered at physical lifetime milestones\n{subtitle}')
+    save_plot(figure, '14_delivered_bits_at_lifetime_milestones')
+    save_source(
+        '14_delivered_bits_at_lifetime_milestones', milestone_bits_source,
+        ['scenario', 'algorithm', 'range_m', 'seed', 'milestone',
+         'milestone_time_s', 'delivered_bits', 'status', 'observation_interval'],
     )
 
     manifest = {

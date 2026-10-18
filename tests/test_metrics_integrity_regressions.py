@@ -13,7 +13,11 @@ from pathlib import Path
 import networkx as nx
 import pytest
 
-from scripts.plot_metrics import _cumulative_delivery_points
+from scripts.plot_metrics import (
+    _cumulative_delivery_points,
+    _drop_category_breakdown,
+    _windowed_rates,
+)
 from scripts.validate_metrics import InputDataError, validate_run
 from wsn_sim.config import SimulationConfig
 from wsn_sim.energy import RadioModel
@@ -608,6 +612,49 @@ def test_cumulative_delivery_points_handle_no_delivery_and_reject_duplicates():
         _cumulative_delivery_points([pending[0], dict(pending[0])], 5.0)
 
 
+def test_windowed_rates_use_actual_final_window_and_duration_weighting():
+    packets = [
+        {
+            'packet_id': 'boundary', 'status': 'DELIVERED',
+            'created_at': '10.0', 'delivered_at': '10.0',
+            'size_bytes': '100', 'payload_size_bytes': '80',
+        },
+        {
+            'packet_id': 'final', 'status': 'DELIVERED',
+            'created_at': '100.0', 'delivered_at': '100.5',
+            'size_bytes': '100', 'payload_size_bytes': '80',
+        },
+    ]
+    windows = _windowed_rates(packets, 101.0, 10.0)
+    assert windows[1]['delivered_bytes'] == 100
+    assert windows[-1]['window_start_s'] == 100.0
+    assert windows[-1]['duration_s'] == 1.0
+    assert windows[-1]['throughput_bps'] == 800.0
+    weighted = sum(
+        row['throughput_bps'] * row['duration_s'] for row in windows
+    ) / 101.0
+    assert weighted == pytest.approx(8.0 * 200 / 101.0)
+
+
+def test_multiple_drop_categories_conserve_stacked_total():
+    packets = [
+        {'status': 'DROPPED', 'drop_category': 'routing_policy',
+         'drop_detail': 'relay_below_threshold'},
+        {'status': 'NO_ROUTE', 'drop_category': 'unreachable',
+         'drop_detail': 'unreachable'},
+        {'status': 'DROPPED', 'drop_category': 'queue_drop',
+         'drop_detail': 'queue_drop'},
+        {'status': 'DELIVERED', 'drop_category': '', 'drop_detail': ''},
+    ]
+    categories, details, total = _drop_category_breakdown(packets)
+    assert total == 3
+    assert sum(categories.values()) == total
+    assert sum(details.values()) == total
+    assert categories == {
+        'routing_policy': 1, 'unreachable': 1, 'queue_drop': 1,
+    }
+
+
 def test_reference_mhr_r300_delivery_curve_known_answers():
     run_dir = (
         PROJECT_ROOT / 'results' / 'metrics_pilot_seed42_101s_schema_v3'
@@ -656,9 +703,21 @@ def _summary_row(run_dir: Path, scenario: str) -> dict[str, object]:
         'average_hops': metrics['average_hops'],
         'average_end_to_end_delay_s': metrics['average_end_to_end_delay_s'],
         'fnd_s': metrics['fnd_s'],
+        'fnd_status': metrics['fnd_status'],
         'hnd_s': metrics['hnd_s'],
+        'hnd_status': metrics['hnd_status'],
         'lnd_s': metrics['lnd_s'],
+        'lnd_status': metrics['lnd_status'],
         'functional_network_death_s': metrics['functional_network_death_s'],
+        'functional_network_death_status': metrics['functional_network_death_status'],
+        'network_lifetime_s': metrics['network_lifetime_s'],
+        'network_lifetime_status': metrics['network_lifetime_status'],
+        'network_lifetime_definition': metrics['network_lifetime_definition'],
+        'energy_service_lifetime_sampled_s': metrics['energy_service_lifetime_sampled_s'],
+        'energy_service_lifetime_status': metrics['energy_service_lifetime_status'],
+        'energy_service_lifetime_definition': metrics['energy_service_lifetime_definition'],
+        'serviceability_sample_interval_s': metrics['serviceability_sample_interval_s'],
+        'measurement_interval': metrics['measurement_interval'],
         'delivered_bits_at_fnd': metrics['delivered_bits_at_fnd'],
         'delivered_bits_at_hnd': metrics['delivered_bits_at_hnd'],
         'delivered_bits_at_lnd': metrics['delivered_bits_at_lnd'],
@@ -732,6 +791,14 @@ def test_plotter_rejects_tampered_summary(
     assert not output.exists()
 
 
+def test_plotter_rejects_tampered_lifetime_status(tmp_path: Path):
+    pilot = _make_pilot(tmp_path / 'pilot')
+    _mutate_summary(pilot, 'fnd_status', 'observed')
+    completed = _run_plotter(pilot, output=tmp_path / 'figures')
+    assert completed.returncode != 0
+    assert 'fnd_status' in completed.stderr
+
+
 def test_plotter_missing_run_has_nonzero_exit_and_no_figures(tmp_path: Path):
     pilot = _make_pilot(tmp_path / 'pilot')
     _mutate_summary(pilot, 'scenario', 'missing_scenario')
@@ -745,7 +812,7 @@ def test_plotter_valid_run_has_zero_exit_and_creates_figures(tmp_path: Path):
     pilot = _make_pilot(tmp_path / 'pilot')
     completed = _run_plotter(pilot)
     assert completed.returncode == 0, completed.stderr
-    assert len(list((pilot / 'figures').glob('*.png'))) == 11
+    assert len(list((pilot / 'figures').glob('*.png'))) == 13
     with (pilot / 'figures' / '02_pdr_by_range.csv').open(
         newline='', encoding='utf-8'
     ) as file_handle:
@@ -756,6 +823,13 @@ def test_plotter_valid_run_has_zero_exit_and_creates_figures(tmp_path: Path):
     assert 'dropped_packets' in pdr_fields
     assert 'pending_packets' in pdr_fields
     assert 'lost_packets' not in pdr_fields
+    milestone_bits = list(csv.DictReader(
+        (pilot / 'figures' / '14_delivered_bits_at_lifetime_milestones.csv').open(
+            encoding='utf-8'
+        )
+    ))
+    assert {row['status'] for row in milestone_bits} == {'not_observed'}
+    assert {row['delivered_bits'] for row in milestone_bits} == {''}
 
 
 def test_plotter_handles_all_dead_undefined_feasibility_ratio(
@@ -804,7 +878,7 @@ def test_plotter_rejects_legacy_run_without_exported_topology(tmp_path: Path):
     manifest_path.write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
     completed = _run_plotter(pilot)
     assert completed.returncode != 0
-    assert 'actual topology_edges.csv is required' in completed.stderr
+    assert 'schema v4' in completed.stderr
 
 
 def test_plotter_lifetime_status_delay_units_and_managed_outputs(tmp_path: Path):

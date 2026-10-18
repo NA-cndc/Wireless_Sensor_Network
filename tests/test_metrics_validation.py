@@ -315,6 +315,8 @@ def _metrics_without_packets(simulation: Simulation, duration_s: float):
         duration_s,
         simulation.router,
         simulation.reachability_history,
+        simulation._serviceability_for_metrics(),
+        simulation.serviceability_sample_interval_s,
     )
 
 
@@ -399,12 +401,20 @@ def test_positive_battery_can_be_physically_reachable_but_energy_infeasible():
     assert metrics['generated_packets'] == 3
     assert metrics['dropped_packets'] == 3
     assert metrics['drop_reasons'] == {'energy_depletion': 3}
+    assert metrics['drop_categories'] == {'energy_depletion': 3}
     assert sensor.energy_j == 1e-6
     assert sensor.is_alive is True
     assert simulation.radio.death_events == []
     assert metrics['current_reachable_sensors'] == 1
     assert metrics['current_routing_eligible_sensors'] == 1
     assert metrics['current_energy_feasible_sensors'] == 0
+    assert metrics['energy_service_lifetime_sampled_s'] == 0.0
+    assert metrics['energy_service_lifetime_status'] == 'observed'
+    assert all(
+        packet.drop_detail == 'TX_INSUFFICIENT_ENERGY'
+        and packet.drop_category == 'energy_depletion'
+        for packet in simulation.traffic_gen.dropped_packets
+    )
 
 
 @pytest.mark.parametrize('algorithm', ['MHR', 'EMHR'])

@@ -1,0 +1,40 @@
+{
+  "pilot_directory": ".",
+  "validated_runs": 6,
+  "seeds": [
+    42
+  ],
+  "classification": "pilot_not_main_experiment",
+  "figures": [
+    "01_alive_sensors_over_time.png",
+    "02_pdr_by_range.png",
+    "03_throughput_goodput_by_range.png",
+    "04_average_hops_by_range.png",
+    "05_average_delay_by_range.png",
+    "06_pilot_lifetime_milestones.png",
+    "07_controlled_lifetime_fixture.png",
+    "08_residual_energy_over_time.png",
+    "09_energy_feasible_ratio_over_time.png",
+    "10_cumulative_delivered_bits_over_time.png",
+    "11_dropped_packets_by_reason.png",
+    "12_energy_per_delivered_bit_by_range.png",
+    "13_throughput_goodput_over_time.png",
+    "14_delivered_bits_at_lifetime_milestones.png"
+  ],
+  "source_tables": [
+    "01_alive_sensors_over_time.csv",
+    "02_pdr_by_range.csv",
+    "03_throughput_goodput_by_range.csv",
+    "04_average_hops_by_range.csv",
+    "05_average_delay_by_range.csv",
+    "06_pilot_lifetime_milestones.csv",
+    "07_controlled_lifetime_fixture.csv",
+    "08_residual_energy_over_time.csv",
+    "09_energy_feasible_ratio_over_time.csv",
+    "10_cumulative_delivered_bits_over_time.csv",
+    "11_dropped_packets_by_reason.csv",
+    "12_energy_per_delivered_bit_by_range.csv",
+    "13_throughput_goodput_over_time.csv",
+    "14_delivered_bits_at_lifetime_milestones.csv"
+  ]
+}

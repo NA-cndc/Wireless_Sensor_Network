@@ -1,0 +1,7 @@
+time_s,event_seq,alive_sensors,reachable_sensors,reachability_ratio,routing_eligible_sensors,routing_eligible_ratio,energy_feasible_sensors,energy_feasible_ratio,sample_kind
+0.0,2,4,4,1.0,4,1.0,4,1.0,initial
+10.0,11,4,4,1.0,4,1.0,4,1.0,periodic
+20.0,28,3,3,1.0,3,1.0,3,1.0,periodic
+30.0,41,2,2,1.0,2,1.0,2,1.0,periodic
+40.0,50,1,1,1.0,1,1.0,1,1.0,periodic
+41.0,57,0,0,,0,,0,,final

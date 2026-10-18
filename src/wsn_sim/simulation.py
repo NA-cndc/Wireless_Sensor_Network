@@ -40,6 +40,19 @@ TIMESERIES_COLUMNS = [
     'snapshot_kind',
 ]
 
+SERVICEABILITY_COLUMNS = [
+    'time_s',
+    'event_seq',
+    'alive_sensors',
+    'reachable_sensors',
+    'reachability_ratio',
+    'routing_eligible_sensors',
+    'routing_eligible_ratio',
+    'energy_feasible_sensors',
+    'energy_feasible_ratio',
+    'sample_kind',
+]
+
 
 @dataclass(slots=True)
 class SimulationResult:
@@ -89,6 +102,8 @@ class Simulation:
         self.event_seq_counter: int = 0
         self.reachability_history: list[dict[str, Any]] = []
         self.timeseries_snapshots: list[dict[str, Any]] = []
+        self.serviceability_history: list[dict[str, Any]] = []
+        self.serviceability_sample_interval_s = 10.0
 
         effective_range = range_m if current_range_m is None else current_range_m
         if isinstance(target, Network):
@@ -141,11 +156,14 @@ class Simulation:
             self.traffic_gen.start()
 
         self._record_reachability_event('initial')
-        self.timeseries_snapshots.append(self._build_snapshot('initial'))
+        initial_snapshot = self._build_snapshot('initial')
+        self.timeseries_snapshots.append(initial_snapshot)
+        self.serviceability_history.append(
+            self._serviceability_sample(initial_snapshot, 'initial')
+        )
         if self.csv_log_path is not None:
             self._write_timeseries_csv(self.csv_log_path, self.timeseries_snapshots)
-        if self.enable_traffic:
-            self.env.process(self._monitor_network())
+        self.env.process(self._monitor_network())
 
     def next_event_seq(self) -> int:
         self.event_seq_counter += 1
@@ -231,6 +249,60 @@ class Simulation:
         return rows
 
     @staticmethod
+    def _serviceability_sample(
+        snapshot: Mapping[str, Any], sample_kind: str
+    ) -> dict[str, Any]:
+        return {
+            'time_s': snapshot['time_s'],
+            'event_seq': snapshot['event_seq'],
+            'alive_sensors': snapshot['alive_sensors'],
+            'reachable_sensors': snapshot['reachable_sensors'],
+            'reachability_ratio': snapshot['reachability_ratio'],
+            'routing_eligible_sensors': snapshot['routing_eligible_sensors'],
+            'routing_eligible_ratio': snapshot['routing_eligible_ratio'],
+            'energy_feasible_sensors': snapshot['energy_feasible_sensors'],
+            'energy_feasible_ratio': snapshot['energy_feasible_ratio'],
+            'sample_kind': sample_kind,
+        }
+
+    def _serviceability_for_export(self) -> list[dict[str, Any]]:
+        rows = [dict(row) for row in self.serviceability_history]
+        final_snapshot = self._build_snapshot('final')
+        final = self._serviceability_sample(final_snapshot, 'final')
+        if rows and rows[-1]['time_s'] == final['time_s']:
+            rows[-1] = final
+        else:
+            rows.append(final)
+        return rows
+
+    def _serviceability_for_metrics(self) -> list[dict[str, Any]]:
+        '''Return sampled history plus a read-only observation-end sample.'''
+        rows = [dict(row) for row in self.serviceability_history]
+        now = float(self.env.now)
+        reachability = self.network.physical_reachability_snapshot(now)
+        feasibility = self.router.transmission_feasibility_snapshot(
+            radio=self.radio,
+            packet_size_bytes=int(self.config.packet_size_bytes),
+            time_s=now,
+        )
+        final = {
+            'time_s': now,
+            'alive_sensors': reachability['alive_sensors'],
+            'reachable_sensors': reachability['reachable_sensors'],
+            'reachability_ratio': reachability['reachability_ratio'],
+            'routing_eligible_sensors': feasibility['routing_eligible_sensors'],
+            'routing_eligible_ratio': feasibility['routing_eligible_ratio'],
+            'energy_feasible_sensors': feasibility['energy_feasible_sensors'],
+            'energy_feasible_ratio': feasibility['energy_feasible_ratio'],
+            'sample_kind': 'final',
+        }
+        if rows and rows[-1]['time_s'] == now:
+            rows[-1] = final
+        else:
+            rows.append(final)
+        return rows
+
+    @staticmethod
     def _write_rows(
         path: Path,
         fieldnames: Sequence[str],
@@ -276,6 +348,9 @@ class Simulation:
             yield self.env.timeout(10.0)
             snapshot = self._build_snapshot('periodic')
             self.timeseries_snapshots.append(snapshot)
+            self.serviceability_history.append(
+                self._serviceability_sample(snapshot, 'periodic')
+            )
             if self.csv_log_path is not None:
                 self._write_timeseries_csv(
                     self.csv_log_path,
@@ -313,6 +388,8 @@ class Simulation:
             sim_time_s=float(self.env.now),
             router=self.router,
             reachability_history=self.reachability_history,
+            serviceability_history=self._serviceability_for_metrics(),
+            serviceability_sample_interval_s=self.serviceability_sample_interval_s,
         )
 
     def export_results(self, output_dir: str | Path) -> dict[str, Path]:
@@ -434,6 +511,8 @@ class Simulation:
             'hop_count',
             'status',
             'drop_reason',
+            'drop_category',
+            'drop_detail',
             'drop_node_id',
             'route',
             'path',
@@ -460,6 +539,8 @@ class Simulation:
                     'hop_count': len(packet.path) - 1,
                     'status': packet.status.value,
                     'drop_reason': packet.drop_reason,
+                    'drop_category': packet.drop_category,
+                    'drop_detail': packet.drop_detail,
                     'drop_node_id': packet.drop_node_id,
                     'route': '->'.join(packet.route),
                     'path': '->'.join(packet.path),
@@ -537,6 +618,14 @@ class Simulation:
         self._write_timeseries_csv(timeseries_path, self._timeseries_for_export())
         saved_files['timeseries'] = timeseries_path
 
+        serviceability_path = out_path / 'serviceability_snapshots.csv'
+        self._write_rows(
+            serviceability_path,
+            SERVICEABILITY_COLUMNS,
+            self._serviceability_for_export(),
+        )
+        saved_files['serviceability_snapshots'] = serviceability_path
+
         manifest_path = out_path / 'run_manifest.json'
         output_names = [path.name for path in saved_files.values()]
         output_names.append(manifest_path.name)
@@ -545,7 +634,7 @@ class Simulation:
             output_names,
             Path.cwd(),
             run_metadata={
-                'export_schema_version': 3,
+                'export_schema_version': 4,
                 'routing_algorithm': self.routing_algorithm,
                 'communication_range_m': self.network.communication_range_m,
                 'topology_seed': self.config.seed,
@@ -588,6 +677,10 @@ class Simulation:
                     'read-only independent one-packet snapshot using current '
                     'TX/RX energy and MHR/EMHR relay rules; not a guarantee of '
                     'concurrent or future delivery; no idle/sensing energy is modeled'
+                ),
+                'serviceability_sampling_convention': (
+                    'sampled at initialization, every 10 seconds, and observation end; '
+                    'energy service lifetime is not an exact event timestamp'
                 ),
                 'timeseries_snapshot_order': (
                     'initial at t=0; periodic monitor after packet generators '

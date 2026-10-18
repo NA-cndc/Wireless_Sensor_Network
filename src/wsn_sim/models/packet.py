@@ -17,6 +17,27 @@ class PacketStatus(str, Enum):
     NO_ROUTE = "NO_ROUTE"
 
 
+DROP_CATEGORY_BY_DETAIL = {
+    "unreachable": "unreachable",
+    "energy_depletion": "energy_depletion",
+    "energy depleted": "energy_depletion",
+    "TX_INSUFFICIENT_ENERGY": "energy_depletion",
+    "RX_INSUFFICIENT_ENERGY": "energy_depletion",
+    "node_dead_mid_flight": "energy_depletion",
+    "receiver_depleted_after_rx": "energy_depletion",
+    "node_dead_queue_flush": "energy_depletion",
+    "queue_drop": "queue_drop",
+    "relay_below_threshold": "routing_policy",
+    "natural_link_loss": "natural_link_loss",
+    "selective_forwarding": "selective_forwarding",
+}
+
+
+def classify_drop_detail(detail: str) -> str:
+    """Map one concrete packet-drop detail to one canonical category."""
+    return DROP_CATEGORY_BY_DETAIL.get(detail, "unspecified")
+
+
 @dataclass(slots=True)
 class Packet:
     """Đại diện cho một gói dữ liệu cảm biến và trạng thái theo dõi đường truyền.
@@ -57,6 +78,8 @@ class Packet:
     delivered_event_seq: int | None = None
     dropped_event_seq: int | None = None
     drop_reason: str | None = None
+    drop_category: str | None = None
+    drop_detail: str | None = None
     drop_node_id: str | None = None
     ttl: int | None = None
 
@@ -111,6 +134,8 @@ class Packet:
                 no_route=(self.status == PacketStatus.NO_ROUTE),
                 sim_time_s=self.dropped_at,
                 event_seq=self.dropped_event_seq,
+                drop_category=self.drop_category,
+                drop_detail=self.drop_detail,
             )
 
     @staticmethod
@@ -147,6 +172,8 @@ class Packet:
         self.delivered_event_seq = None
         self.dropped_event_seq = None
         self.drop_reason = None
+        self.drop_category = None
+        self.drop_detail = None
         self.drop_node_id = None
 
         # Trích xuất trạm sink đích nếu chặng cuối cùng của tuyến bắt đầu bằng tiền tố sink_
@@ -202,6 +229,8 @@ class Packet:
         self.dropped_event_seq = None
         self.status = PacketStatus.DELIVERED
         self.drop_reason = None
+        self.drop_category = None
+        self.drop_detail = None
         self.drop_node_id = None
 
         # Đảm bảo nút Sink đích được ghi nhận đúng vào cuối lộ trình thực tế
@@ -226,6 +255,8 @@ class Packet:
         *,
         sim_time_s: float,
         event_seq: int | None = None,
+        drop_category: str | None = None,
+        drop_detail: str | None = None,
     ) -> None:
         """Đánh dấu gói tin bị hủy trên đường truyền hoặc không tìm thấy đường đi.
 
@@ -252,5 +283,7 @@ class Packet:
         # Phân biệt rõ giữa mất do không tìm thấy đường (NO_ROUTE) và rơi gói giữa chặng (DROPPED)
         self.status = PacketStatus.NO_ROUTE if no_route else PacketStatus.DROPPED
         self.drop_reason = reason
+        self.drop_detail = drop_detail or reason
+        self.drop_category = drop_category or classify_drop_detail(self.drop_detail)
         self.drop_node_id = node_id
         self.delivered_at = None

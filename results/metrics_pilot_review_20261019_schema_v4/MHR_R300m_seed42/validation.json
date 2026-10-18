@@ -1,0 +1,760 @@
+{
+  "run_directory": "results\\metrics_pilot_review_20261019_schema_v4\\MHR_R300m_seed42",
+  "absolute_tolerance": 1e-09,
+  "death_energy_tolerance_j": 1e-14,
+  "passed": true,
+  "checks": [
+    {
+      "metric": "duration_consistency",
+      "category": "cross_check",
+      "recalculated_value": 101.0,
+      "reported_value": [
+        101.0,
+        101.0,
+        101.0,
+        101.0
+      ],
+      "difference": null,
+      "passed": true,
+      "detail": "manifest requested/actual, metrics measurement/simulated and final snapshot must match"
+    },
+    {
+      "metric": "measurement_interval",
+      "category": "cross_check",
+      "recalculated_value": "[0, T)",
+      "reported_value": "[0, T)",
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "unique_node_ids",
+      "category": "schema",
+      "recalculated_value": 457,
+      "reported_value": 457,
+      "difference": 0.0,
+      "passed": true,
+      "detail": "duplicates=[]"
+    },
+    {
+      "metric": "total_sensors",
+      "category": "cross_check",
+      "recalculated_value": 450,
+      "reported_value": 450,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "total_sinks",
+      "category": "cross_check",
+      "recalculated_value": 7,
+      "reported_value": 7,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "node_type_id_sets_disjoint",
+      "category": "schema",
+      "recalculated_value": true,
+      "reported_value": true,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "topology_data_source",
+      "category": "schema",
+      "recalculated_value": "exported_edges",
+      "reported_value": "exported_edges",
+      "difference": null,
+      "passed": true,
+      "detail": "schema v2 topology_edges.csv records the graph used by the run"
+    },
+    {
+      "metric": "topology_edge_validity",
+      "category": "schema",
+      "recalculated_value": 0,
+      "reported_value": 0,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "manifest_generated_files",
+      "category": "schema",
+      "recalculated_value": 0,
+      "reported_value": 0,
+      "difference": 0.0,
+      "passed": true,
+      "detail": "missing=[]"
+    },
+    {
+      "metric": "unique_packet_ids",
+      "category": "schema",
+      "recalculated_value": 4500,
+      "reported_value": 4500,
+      "difference": 0.0,
+      "passed": true,
+      "detail": "duplicates=[]"
+    },
+    {
+      "metric": "packet_field_and_domain_validity",
+      "category": "schema",
+      "recalculated_value": 0,
+      "reported_value": 0,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "route_event_field_and_domain_validity",
+      "category": "schema",
+      "recalculated_value": 0,
+      "reported_value": 0,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "generated_packets",
+      "category": "cross_check",
+      "recalculated_value": 4500,
+      "reported_value": 4500,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "delivered_packets",
+      "category": "cross_check",
+      "recalculated_value": 4500,
+      "reported_value": 4500,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "dropped_packets",
+      "category": "cross_check",
+      "recalculated_value": 0,
+      "reported_value": 0,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "pending_packets",
+      "category": "cross_check",
+      "recalculated_value": 0,
+      "reported_value": 0,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "packet_conservation",
+      "category": "cross_check",
+      "recalculated_value": 4500,
+      "reported_value": 4500,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "packet_conservation_holds",
+      "category": "cross_check",
+      "recalculated_value": true,
+      "reported_value": true,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "drop_reasons",
+      "category": "cross_check",
+      "recalculated_value": {},
+      "reported_value": {},
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "drop_categories",
+      "category": "cross_check",
+      "recalculated_value": {},
+      "reported_value": {},
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "drop_category_conservation",
+      "category": "cross_check",
+      "recalculated_value": 0,
+      "reported_value": 0,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "total_hops_delivered",
+      "category": "cross_check",
+      "recalculated_value": 14130,
+      "reported_value": 14130,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "total_end_to_end_delay_s",
+      "category": "cross_check",
+      "recalculated_value": 146.1452800000334,
+      "reported_value": 146.14528000003207,
+      "difference": 1.3358203432289883e-12,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "total_delivered_bytes",
+      "category": "cross_check",
+      "recalculated_value": 576000,
+      "reported_value": 576000,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "total_delivered_bits",
+      "category": "cross_check",
+      "recalculated_value": 4608000,
+      "reported_value": 4608000,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "total_delivered_payload_bytes",
+      "category": "cross_check",
+      "recalculated_value": 576000,
+      "reported_value": 576000,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "total_delivered_payload_bits",
+      "category": "cross_check",
+      "recalculated_value": 4608000,
+      "reported_value": 4608000,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "throughput_bps",
+      "category": "cross_check",
+      "recalculated_value": 45623.762376237624,
+      "reported_value": 45623.762376237624,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "goodput_bps",
+      "category": "cross_check",
+      "recalculated_value": 45623.762376237624,
+      "reported_value": 45623.762376237624,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "pdr_domain",
+      "category": "domain",
+      "recalculated_value": 100.0,
+      "reported_value": "[0, 100] or null",
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "pdr_percent",
+      "category": "cross_check",
+      "recalculated_value": 100.0,
+      "reported_value": 100.0,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "average_hops",
+      "category": "cross_check",
+      "recalculated_value": 3.14,
+      "reported_value": 3.14,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "average_end_to_end_delay_s",
+      "category": "cross_check",
+      "recalculated_value": 0.032476728888896314,
+      "reported_value": 0.032476728888896016,
+      "difference": 2.983724378680108e-16,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "energy_ledger_integrity",
+      "category": "schema",
+      "recalculated_value": 0,
+      "reported_value": 0,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "failed_transaction_tx_debit_accounted",
+      "category": "cross_check",
+      "recalculated_value": 0.0,
+      "reported_value": 0,
+      "difference": 0.0,
+      "passed": true,
+      "detail": "TX emitted before an RX failure remains part of the sender debit"
+    },
+    {
+      "metric": "sensor_energy_debit_balance",
+      "category": "cross_check",
+      "recalculated_value": 0,
+      "reported_value": 0,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "initial_total_energy_j",
+      "category": "cross_check",
+      "recalculated_value": 2250.0,
+      "reported_value": 2250.0,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "residual_total_energy_j",
+      "category": "cross_check",
+      "recalculated_value": 2184.6012302180156,
+      "reported_value": 2184.6012302180156,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "consumed_energy_sensors_j",
+      "category": "cross_check",
+      "recalculated_value": 65.39876978198436,
+      "reported_value": 65.39876978198436,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "node_death_event_integrity",
+      "category": "cross_check",
+      "recalculated_value": 0,
+      "reported_value": 0,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "initial_sensor_count",
+      "category": "cross_check",
+      "recalculated_value": 450,
+      "reported_value": 450,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "hnd_dead_sensor_count",
+      "category": "cross_check",
+      "recalculated_value": 225,
+      "reported_value": 225,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "fnd_s",
+      "category": "cross_check",
+      "recalculated_value": null,
+      "reported_value": null,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "fnd_s_status",
+      "category": "cross_check",
+      "recalculated_value": "not_observed",
+      "reported_value": "not_observed",
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "hnd_s",
+      "category": "cross_check",
+      "recalculated_value": null,
+      "reported_value": null,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "hnd_s_status",
+      "category": "cross_check",
+      "recalculated_value": "not_observed",
+      "reported_value": "not_observed",
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "lnd_s",
+      "category": "cross_check",
+      "recalculated_value": null,
+      "reported_value": null,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "lnd_s_status",
+      "category": "cross_check",
+      "recalculated_value": "not_observed",
+      "reported_value": "not_observed",
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "reachability_event_integrity",
+      "category": "cross_check",
+      "recalculated_value": 0,
+      "reported_value": 0,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "functional_network_death_s",
+      "category": "cross_check",
+      "recalculated_value": null,
+      "reported_value": null,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "network_lifetime_s",
+      "category": "cross_check",
+      "recalculated_value": null,
+      "reported_value": null,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "functional_network_death_status",
+      "category": "cross_check",
+      "recalculated_value": "not_observed",
+      "reported_value": "not_observed",
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "network_lifetime_status",
+      "category": "cross_check",
+      "recalculated_value": "not_observed",
+      "reported_value": "not_observed",
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "network_lifetime_definition",
+      "category": "cross_check",
+      "recalculated_value": "time_to_first_physical_reachability_ratio_below_0.5_among_alive_sensors_or_no_alive_sensors",
+      "reported_value": "time_to_first_physical_reachability_ratio_below_0.5_among_alive_sensors_or_no_alive_sensors",
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "current_reachable_sensors",
+      "category": "cross_check",
+      "recalculated_value": 450,
+      "reported_value": 450,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "current_reachability_ratio",
+      "category": "cross_check",
+      "recalculated_value": 1.0,
+      "reported_value": 1.0,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "current_reachability_state",
+      "category": "cross_check",
+      "recalculated_value": "operational",
+      "reported_value": "operational",
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "current_routing_eligible_sensors",
+      "category": "cross_check",
+      "recalculated_value": 450,
+      "reported_value": 450,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "current_routing_eligible_ratio",
+      "category": "cross_check",
+      "recalculated_value": 1.0,
+      "reported_value": 1.0,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "current_energy_feasible_sensors",
+      "category": "cross_check",
+      "recalculated_value": 450,
+      "reported_value": 450,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "current_energy_feasible_ratio",
+      "category": "cross_check",
+      "recalculated_value": 1.0,
+      "reported_value": 1.0,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "current_energy_feasible_state",
+      "category": "cross_check",
+      "recalculated_value": "operational",
+      "reported_value": "operational",
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "energy_feasible_reachability_definition",
+      "category": "cross_check",
+      "recalculated_value": "independent_one_packet_snapshot_with_tx_rx_energy_and_mhr_relay_rules_not_future_delivery_guarantee",
+      "reported_value": "independent_one_packet_snapshot_with_tx_rx_energy_and_mhr_relay_rules_not_future_delivery_guarantee",
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "route_event_semantics",
+      "category": "cross_check",
+      "recalculated_value": 0,
+      "reported_value": 0,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "timeseries_integrity",
+      "category": "cross_check",
+      "recalculated_value": 0,
+      "reported_value": 0,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "serviceability_snapshot_integrity",
+      "category": "cross_check",
+      "recalculated_value": 0,
+      "reported_value": 0,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "energy_service_lifetime_sampled_s",
+      "category": "cross_check",
+      "recalculated_value": null,
+      "reported_value": null,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "energy_service_lifetime_status",
+      "category": "cross_check",
+      "recalculated_value": "not_observed",
+      "reported_value": "not_observed",
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "energy_service_lifetime_definition",
+      "category": "cross_check",
+      "recalculated_value": "first_sample_where_fewer_than_0.5_of_alive_sensors_have_an_energy_feasible_path_to_a_sink_or_no_alive_sensors",
+      "reported_value": "first_sample_where_fewer_than_0.5_of_alive_sensors_have_an_energy_feasible_path_to_a_sink_or_no_alive_sensors",
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "event_sequence_integrity",
+      "category": "schema",
+      "recalculated_value": 0,
+      "reported_value": 0,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "final_timeseries_snapshot",
+      "category": "cross_check",
+      "recalculated_value": true,
+      "reported_value": true,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "alive_sensors",
+      "category": "cross_check",
+      "recalculated_value": 450,
+      "reported_value": 450,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "dead_sensors",
+      "category": "cross_check",
+      "recalculated_value": 0,
+      "reported_value": 0,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "offered_rate_bps",
+      "category": "cross_check",
+      "recalculated_value": 45623.762376237624,
+      "reported_value": 45623.762376237624,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "configured_rate_bps",
+      "category": "cross_check",
+      "recalculated_value": 46080.0,
+      "reported_value": 46080.0,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "energy_per_delivered_bit_j",
+      "category": "cross_check",
+      "recalculated_value": 1.4192441358937578e-05,
+      "reported_value": 1.4192441358937578e-05,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "relay_jain_fairness",
+      "category": "cross_check",
+      "recalculated_value": 0.17200734496285786,
+      "reported_value": 0.17200734496285786,
+      "difference": 0.0,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "delivered_bits_at_fnd",
+      "category": "cross_check",
+      "recalculated_value": null,
+      "reported_value": null,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "delivered_bits_at_hnd",
+      "category": "cross_check",
+      "recalculated_value": null,
+      "reported_value": null,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "delivered_bits_at_lnd",
+      "category": "cross_check",
+      "recalculated_value": null,
+      "reported_value": null,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "route_change_count",
+      "category": "cross_check",
+      "recalculated_value": 0,
+      "reported_value": 0,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "route_recompute_count",
+      "category": "cross_check",
+      "recalculated_value": 0,
+      "reported_value": 0,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "metric": "route_failure_count",
+      "category": "cross_check",
+      "recalculated_value": 0,
+      "reported_value": 0,
+      "difference": null,
+      "passed": true,
+      "detail": ""
+    }
+  ]
+}
