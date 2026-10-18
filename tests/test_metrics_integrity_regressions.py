@@ -657,7 +657,7 @@ def test_multiple_drop_categories_conserve_stacked_total():
 
 def test_reference_mhr_r300_delivery_curve_known_answers():
     run_dir = (
-        PROJECT_ROOT / 'results' / 'metrics_pilot_seed42_101s_schema_v3'
+        PROJECT_ROOT / 'results' / 'metrics_pilot_seed42_101s_schema'
         / 'MHR_R300m_seed42'
     )
     packets = list(csv.DictReader((run_dir / 'packets.csv').open(encoding='utf-8')))

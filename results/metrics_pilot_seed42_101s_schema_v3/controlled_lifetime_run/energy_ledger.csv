@@ -1,5 +1,0 @@
-time_s,event_seq,packet_id,sender_id,receiver_id,distance_m,tx_energy_j,rx_energy_j,success,reason,sender_energy_before,sender_energy_after,receiver_energy_before,receiver_energy_after
-2.0,3,controlled_death_relay,relay,sink_00,1392.1324668120533,5.0,0.0,True,OK,5.0,0.0,,
-4.0,6,controlled_death_sensor_1,sensor_1,relay,1392.1324668120533,5.0,0.0,False,RX_INSUFFICIENT_ENERGY,5.0,0.0,0.0,0.0
-6.0,9,controlled_death_sensor_2,sensor_2,relay,1392.1324668120533,5.0,0.0,False,RX_INSUFFICIENT_ENERGY,5.0,0.0,0.0,0.0
-8.0,12,controlled_death_sensor_3,sensor_3,relay,1392.1324668120533,5.0,0.0,False,RX_INSUFFICIENT_ENERGY,5.0,0.0,0.0,0.0
