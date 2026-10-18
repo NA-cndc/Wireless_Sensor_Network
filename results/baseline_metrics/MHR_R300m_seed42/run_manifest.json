@@ -1,0 +1,37 @@
+{
+  "timestamp_utc": "2026-10-18T03:41:05.430704+00:00",
+  "seed": 42,
+  "configuration": {
+    "area_width_m": 3000,
+    "area_height_m": 3000,
+    "num_sensors": 450,
+    "num_sinks": 7,
+    "initial_energy_j": 5.0,
+    "packet_size_bytes": 128,
+    "packet_interval_s": 10,
+    "communication_ranges_m": [
+      250,
+      300,
+      350
+    ],
+    "seed": 42
+  },
+  "python_version": "3.14.6",
+  "library_versions": {
+    "networkx": "3.6.1",
+    "simpy": "4.1.2",
+    "numpy": "2.5.3",
+    "pandas": "3.0.5",
+    "matplotlib": "3.11.1"
+  },
+  "git_commit": "6be7b18fa44914da3bfd9245d778b425df1b598b",
+  "git_branch": "XB",
+  "working_tree_clean": false,
+  "generated_files": [
+    "config.json",
+    "metrics.json",
+    "nodes.csv",
+    "packets.csv",
+    "energy_ledger.csv"
+  ]
+}

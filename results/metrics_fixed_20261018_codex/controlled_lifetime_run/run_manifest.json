@@ -1,0 +1,80 @@
+{
+  "timestamp_utc": "2026-10-18T09:15:14.719935+00:00",
+  "seed": 42,
+  "configuration": {
+    "area_width_m": 3000,
+    "area_height_m": 3000,
+    "num_sensors": 4,
+    "num_sinks": 1,
+    "initial_energy_j": 5.0,
+    "packet_size_bytes": 128,
+    "packet_interval_s": 10,
+    "communication_ranges_m": [
+      250,
+      300,
+      350
+    ],
+    "seed": 42,
+    "payload_size_bytes": 128
+  },
+  "python_version": "3.14.6",
+  "library_versions": {
+    "networkx": "3.6.1",
+    "simpy": "4.1.2",
+    "numpy": "2.5.3",
+    "pandas": "3.0.5",
+    "matplotlib": "3.11.1"
+  },
+  "git_commit": "2e9d66cc626fb79ca5ef06a610e3215285ea2a36",
+  "git_branch": "XB",
+  "working_tree_clean": false,
+  "working_tree_changes": [
+    "M scripts/plot_metrics.py",
+    " M src/wsn_sim/routing.py",
+    " M tests/test_metrics_integrity_regressions.py",
+    " M tests/test_metrics_validation.py",
+    "?? results/baseline_metrics/",
+    "?? results/metrics_fixed_20261018_codex/",
+    "?? results/pending_check_20261018_codex/"
+  ],
+  "generated_files": [
+    "config.json",
+    "metrics.json",
+    "nodes.csv",
+    "topology_edges.csv",
+    "packets.csv",
+    "energy_ledger.csv",
+    "node_deaths.csv",
+    "reachability_events.csv",
+    "timeseries.csv",
+    "run_manifest.json",
+    "validation.json"
+  ],
+  "export_schema_version": 2,
+  "routing_algorithm": "MHR",
+  "communication_range_m": 250.0,
+  "topology_seed": 42,
+  "traffic_seed": 42,
+  "requested_duration_s": 9.0,
+  "actual_duration_s": 9.0,
+  "bandwidth_bps": 250000.0,
+  "queue_capacity_packets": 50,
+  "alpha_energy": 0.2,
+  "radio_model": {
+    "e_elec_j_bit": 5e-08,
+    "e_fs_j_bit_m2": 1e-11,
+    "e_mp_j_bit_m4": 1.3e-15,
+    "e_da_j_bit": 0.0,
+    "d0_m": 87.70580193070292
+  },
+  "payload_convention": "payload_size_bytes defaults to packet_size_bytes; no protocol overhead is modeled",
+  "time_convention": "SimPy time; t0=0; metrics cover [0,T); events exactly at the run_for stop boundary execute on a later continuation",
+  "lifetime_convention": "sensor alive-to-dead transitions at energy debit time; FND=1st, HND=ceil(N_initial/2), LND=N_initial",
+  "reachability_convention": "physical graph induced by alive sensors and all sinks; network lifetime is the first alive-sensor reachability ratio below 0.5 or the first state with no alive sensors; the ratio denominator remains the currently alive sensors",
+  "energy_feasibility_convention": "read-only independent one-packet snapshot using current TX/RX energy and MHR/EMHR relay rules; not a guarantee of concurrent or future delivery; no idle/sensing energy is modeled",
+  "timeseries_snapshot_order": "initial at t=0; periodic monitor after packet generators already scheduled at the same time; final after all events in [0,T)",
+  "data_classification": "controlled_test_fixture_not_450_sensor_pilot",
+  "controlled_event_type": "synthetic_battery_depletion_via_radio_model_for_lifetime_validation",
+  "controlled_event_description": "Scheduled test-only transmissions use the radio model to exhaust each sensor exactly; these are not generated application packets.",
+  "validation_passed": true
+}

@@ -1,0 +1,24 @@
+{
+  "simulated_time_s": 101.0,
+  "total_sensors": 450,
+  "total_sinks": 7,
+  "alive_sensors": 450,
+  "dead_sensors": 0,
+  "generated_packets": 4500,
+  "delivered_packets": 4500,
+  "dropped_packets": 0,
+  "pending_packets": 0,
+  "drop_reasons": {
+    "energy_depletion": 0,
+    "queue_drop": 0,
+    "unreachable": 0,
+    "node_dead_mid_flight": 0,
+    "relay_below_threshold": 0
+  },
+  "total_delivered_bytes": 576000,
+  "total_delivered_bits": 4608000,
+  "initial_total_energy_j": 2250.0,
+  "residual_total_energy_j": 2184.6012,
+  "consumed_energy_sensors_j": 65.3988,
+  "route_change_count": 0
+}
