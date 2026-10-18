@@ -52,8 +52,33 @@ class RoutingEngine:
         valid_outcomes = {'initial_route', 'unchanged', 'changed', 'failed'}
         if outcome not in valid_outcomes:
             raise ValueError(f'unsupported route outcome: {outcome!r}')
-        old_str = "->".join(old_route) if isinstance(old_route, list) else (old_route or "")
-        new_str = "->".join(new_route) if isinstance(new_route, list) else (new_route or "")
+
+        def normalize_route(route: list[str] | str | None, name: str) -> list[str]:
+            if route is None or route == '':
+                return []
+            raw_nodes = route.split('->') if isinstance(route, str) else list(route)
+            nodes = [str(node).strip() for node in raw_nodes]
+            if not nodes or any(not node or '->' in node for node in nodes):
+                raise ValueError(f'{name} contains an empty or malformed node id')
+            return nodes
+
+        old_nodes = normalize_route(old_route, 'old_route')
+        new_nodes = normalize_route(new_route, 'new_route')
+        if outcome == 'initial_route' and (old_nodes or not new_nodes):
+            raise ValueError('initial_route requires an empty old route and a new route')
+        if outcome == 'changed' and (
+            not old_nodes or not new_nodes or old_nodes == new_nodes
+        ):
+            raise ValueError('changed requires two non-empty, different routes')
+        if outcome == 'unchanged' and (
+            not old_nodes or not new_nodes or old_nodes != new_nodes
+        ):
+            raise ValueError('unchanged requires two identical non-empty routes')
+        if outcome == 'failed' and new_nodes:
+            raise ValueError('failed requires an empty new route')
+
+        old_str = '->'.join(old_nodes)
+        new_str = '->'.join(new_nodes)
         seq = self.event_seq_provider() if self.event_seq_provider is not None else 0
         event = {
             "time_s": float(time_s),

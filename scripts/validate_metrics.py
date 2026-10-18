@@ -288,41 +288,67 @@ def _transmission_feasibility_snapshot(
         )
         return available >= tx_cost - ENERGY_COMPARISON_TOLERANCE_J
 
-    def has_path(source_id: str, *, include_energy: bool) -> bool:
-        queue = deque([source_id])
-        visited = {source_id}
-        while queue:
-            current = queue.popleft()
-            for neighbor in sorted(adjacency[current]):
-                if neighbor in visited:
-                    continue
+    def sources_with_path(*, include_energy: bool) -> set[str]:
+        # First compute which sensors can reach a sink when acting as relays.
+        # Reversing eligible directed hops avoids repeating a graph search for
+        # every possible source while preserving the source-only Eth exception.
+        predecessors: dict[str, set[str]] = {
+            node_id: set() for node_id in alive_ids
+        }
+        relay_reachable: set[str] = set()
+        for sender in alive_ids:
+            for receiver in adjacency[sender]:
                 if not sender_can_transmit(
-                    current,
-                    neighbor,
-                    is_source=current == source_id,
+                    sender,
+                    receiver,
+                    is_source=False,
                     include_energy=include_energy,
                 ):
                     continue
-                if neighbor in sink_ids:
-                    return True
-                if neighbor not in alive_ids:
+                if receiver in sink_ids:
+                    relay_reachable.add(sender)
+                elif receiver in alive_ids and (
+                    not include_energy
+                    or energies[receiver]
+                    >= rx_cost - ENERGY_COMPARISON_TOLERANCE_J
+                ):
+                    predecessors[receiver].add(sender)
+
+        queue = deque(relay_reachable)
+        while queue:
+            receiver = queue.popleft()
+            for sender in predecessors[receiver]:
+                if sender not in relay_reachable:
+                    relay_reachable.add(sender)
+                    queue.append(sender)
+
+        source_reachable: set[str] = set()
+        for source in alive_ids:
+            for receiver in adjacency[source]:
+                if not sender_can_transmit(
+                    source,
+                    receiver,
+                    is_source=True,
+                    include_energy=include_energy,
+                ):
+                    continue
+                if receiver in sink_ids:
+                    source_reachable.add(source)
+                    break
+                if receiver not in relay_reachable:
                     continue
                 if (
                     include_energy
-                    and energies[neighbor]
+                    and energies[receiver]
                     < rx_cost - ENERGY_COMPARISON_TOLERANCE_J
                 ):
                     continue
-                visited.add(neighbor)
-                queue.append(neighbor)
-        return False
+                source_reachable.add(source)
+                break
+        return source_reachable
 
-    routing_count = sum(
-        has_path(source_id, include_energy=False) for source_id in alive_ids
-    )
-    feasible_count = sum(
-        has_path(source_id, include_energy=True) for source_id in alive_ids
-    )
+    routing_count = len(sources_with_path(include_energy=False))
+    feasible_count = len(sources_with_path(include_energy=True))
     alive_count = len(alive_ids)
     routing_ratio = routing_count / alive_count if alive_count else None
     feasible_ratio = feasible_count / alive_count if alive_count else None
@@ -780,6 +806,47 @@ def validate_run(
         passed=not packet_errors, detail='; '.join(packet_errors[:10]), category='schema',
     )
 
+    packet_by_id = {row['packet_id']: row for row in packets}
+
+    def parse_route(value: str, location: str) -> list[str] | None:
+        if value == '':
+            return []
+        raw_nodes = value.split('->')
+        nodes = [node.strip() for node in raw_nodes]
+        if any(not node for node in nodes):
+            route_event_errors.append(
+                f'{location}: route contains an empty node token'
+            )
+            return None
+        if any(node != raw for node, raw in zip(nodes, raw_nodes)):
+            route_event_errors.append(
+                f'{location}: route node ids must not have surrounding whitespace'
+            )
+            return None
+        return nodes
+
+    def route_structure_errors(
+        route: list[str], source_id: str, location: str
+    ) -> list[str]:
+        errors: list[str] = []
+        if len(route) < 2:
+            return [f'{location}: complete route must contain at least two nodes']
+        unknown = [node for node in route if node not in node_ids]
+        if unknown:
+            errors.append(f'{location}: unknown nodes {unknown}')
+        if route[0] != source_id:
+            errors.append(f'{location}: route does not start at packet source')
+        if route[-1] not in sink_ids:
+            errors.append(f'{location}: route does not end at a sink')
+        if any(node in sink_ids for node in route[:-1]):
+            errors.append(f'{location}: sink used as an intermediate relay')
+        if len(route) != len(set(route)):
+            errors.append(f'{location}: route repeats a node')
+        for left, right in zip(route, route[1:]):
+            if left in node_ids and right in node_ids and right not in adjacency[left]:
+                errors.append(f'{location}: missing topology edge {left!r}->{right!r}')
+        return errors
+
     route_event_errors: list[str] = []
     valid_route_outcomes = {'initial_route', 'unchanged', 'changed', 'failed'}
     for index, row in enumerate(route_events, start=2):
@@ -804,8 +871,13 @@ def validate_run(
             route_event_errors.append(f'{location}.source_id: unknown sensor')
         if row['current_node_id'] not in sensor_ids:
             route_event_errors.append(f'{location}.current_node_id: unknown sensor')
-        if row['packet_id'] not in set(packet_ids):
+        packet = packet_by_id.get(row['packet_id'])
+        if packet is None:
             route_event_errors.append(f'{location}.packet_id: unknown packet')
+        elif row['source_id'] != packet['source_id']:
+            route_event_errors.append(
+                f'{location}.source_id: does not match packet source'
+            )
         if outcome not in valid_route_outcomes:
             route_event_errors.append(
                 f'{location}.outcome: unsupported value {outcome!r}'
@@ -820,10 +892,62 @@ def validate_run(
             route_event_errors.append(
                 f'{location}: route_invalid cannot have initial_route outcome'
             )
-        if outcome == 'failed' and row['new_route'].strip():
+        old_route = parse_route(row['old_route'], f'{location}.old_route')
+        new_route = parse_route(row['new_route'], f'{location}.new_route')
+        if old_route is None or new_route is None:
+            continue
+        if outcome == 'initial_route' and (old_route or not new_route):
+            route_event_errors.append(
+                f'{location}: initial_route requires empty old_route and valid new_route'
+            )
+        elif outcome == 'changed' and (
+            not old_route or not new_route or old_route == new_route
+        ):
+            route_event_errors.append(
+                f'{location}: changed requires different non-empty routes'
+            )
+        elif outcome == 'unchanged' and (
+            not old_route or not new_route or old_route != new_route
+        ):
+            route_event_errors.append(
+                f'{location}: unchanged requires identical non-empty routes'
+            )
+        elif outcome == 'failed' and new_route:
             route_event_errors.append(f'{location}: failed event has a new_route')
-        if outcome != 'failed' and not row['new_route'].strip():
-            route_event_errors.append(f'{location}: successful event has no new_route')
+        if packet is not None:
+            if old_route:
+                route_event_errors.extend(route_structure_errors(
+                    old_route, packet['source_id'], f'{location}.old_route'
+                ))
+            if new_route:
+                route_event_errors.extend(route_structure_errors(
+                    new_route, packet['source_id'], f'{location}.new_route'
+                ))
+            route_key = (float(route_time), int(row['event_seq']))
+            created_key = (
+                float(packet['created_at']), int(packet['created_event_seq'])
+            )
+            if route_key <= created_key:
+                route_event_errors.append(
+                    f'{location}: route event must follow packet creation'
+                )
+            if packet['status'] == 'DELIVERED':
+                terminal_key = (
+                    float(packet['delivered_at']),
+                    int(packet['delivered_event_seq']),
+                )
+                if route_key >= terminal_key:
+                    route_event_errors.append(
+                        f'{location}: route event must precede packet delivery'
+                    )
+            elif packet['status'] in {'DROPPED', 'NO_ROUTE'}:
+                terminal_key = (
+                    float(packet['dropped_at']), int(packet['dropped_event_seq'])
+                )
+                if route_key >= terminal_key:
+                    route_event_errors.append(
+                        f'{location}: route event must precede packet drop'
+                    )
     add(
         'route_event_field_and_domain_validity',
         len(route_event_errors),
@@ -1362,6 +1486,177 @@ def validate_run(
         metrics['energy_feasible_reachability_definition'], exact=True,
     )
 
+    route_semantic_errors: list[str] = []
+
+    def validate_active_route(
+        route: list[str],
+        prefix: list[str],
+        packet: dict[str, Any],
+        dead_before: set[str],
+        energies: dict[str, float],
+        location: str,
+    ) -> None:
+        if len(route) < len(prefix) or route[:len(prefix)] != prefix:
+            route_semantic_errors.append(
+                f'{location}: route does not preserve the successfully traversed prefix '
+                f'{prefix}'
+            )
+            return
+        current_index = len(prefix) - 1
+        for position, node_id in enumerate(
+            route[current_index:-1], start=current_index
+        ):
+            if node_id not in sensor_ids or node_id in dead_before:
+                route_semantic_errors.append(
+                    f'{location}: remaining route uses dead/non-sensor sender {node_id!r}'
+                )
+                continue
+            source_exception = (
+                position == current_index and node_id == packet['source_id']
+            )
+            if (
+                routing_algorithm == 'EMHR'
+                and not source_exception
+                and energies[node_id]
+                < threshold_j - ENERGY_COMPARISON_TOLERANCE_J
+            ):
+                route_semantic_errors.append(
+                    f'{location}: EMHR relay {node_id!r} is below Eth at the event'
+                )
+
+    route_history: dict[str, list[str]] = {}
+    packet_has_event: set[str] = set()
+    traversed_prefixes: dict[str, list[str]] = {
+        packet_id: [packet['source_id']]
+        for packet_id, packet in packet_by_id.items()
+    }
+    replay_energies = {
+        node_id: float(values['initial'])
+        for node_id, values in node_values.items()
+    }
+    replay_dead: set[str] = set()
+    ordered_ledger = sorted(
+        ledger,
+        key=lambda entry: (float(entry['time_s']), int(entry['event_seq'])),
+    )
+    ordered_death_events = sorted(
+        deaths,
+        key=lambda entry: (
+            float(entry['death_time_s']), int(entry['event_seq'])
+        ),
+    )
+    ledger_cursor = 0
+    death_cursor = 0
+    ordered_route_events = sorted(
+        enumerate(route_events, start=2),
+        key=lambda item: (float(item[1]['time_s']), int(item[1]['event_seq'])),
+    )
+    for csv_index, row in ordered_route_events:
+        location = f'route_events.csv:{csv_index}'
+        packet = packet_by_id.get(row['packet_id'])
+        if packet is None:
+            continue
+        old_route = row['old_route'].split('->') if row['old_route'] else []
+        new_route = row['new_route'].split('->') if row['new_route'] else []
+        if any(not node for node in old_route + new_route):
+            continue
+        event_key = (float(row['time_s']), int(row['event_seq']))
+        while ledger_cursor < len(ordered_ledger):
+            entry = ordered_ledger[ledger_cursor]
+            ledger_key = (float(entry['time_s']), int(entry['event_seq']))
+            if ledger_key >= event_key:
+                break
+            sender = entry['sender_id']
+            receiver = entry['receiver_id']
+            if sender in replay_energies:
+                replay_energies[sender] = max(
+                    0.0,
+                    replay_energies[sender] - float(entry['tx_energy_j']),
+                )
+            if receiver in replay_energies:
+                replay_energies[receiver] = max(
+                    0.0,
+                    replay_energies[receiver] - float(entry['rx_energy_j']),
+                )
+            packet_for_hop = packet_by_id.get(entry['packet_id'])
+            if (
+                packet_for_hop is not None
+                and entry['success'].strip().lower() == 'true'
+            ):
+                hop_prefix = traversed_prefixes[entry['packet_id']]
+                if entry['sender_id'] != hop_prefix[-1]:
+                    route_semantic_errors.append(
+                        f'energy_ledger.csv event {entry["event_seq"]}: successful '
+                        f'hop history for {entry["packet_id"]!r} is not contiguous'
+                    )
+                else:
+                    hop_prefix.append(entry['receiver_id'])
+            ledger_cursor += 1
+        while death_cursor < len(ordered_death_events):
+            death = ordered_death_events[death_cursor]
+            death_key = (
+                float(death['death_time_s']), int(death['event_seq'])
+            )
+            if death_key >= event_key:
+                break
+            replay_dead.add(death['node_id'])
+            death_cursor += 1
+        prefix = list(traversed_prefixes[packet['packet_id']])
+        current = row['current_node_id']
+        if current != prefix[-1]:
+            route_semantic_errors.append(
+                f'{location}.current_node_id: {current!r} != traversed prefix tail '
+                f'{prefix[-1]!r}'
+            )
+        previous_route = route_history.get(packet['packet_id'])
+        if row['reason'] == 'initial_route':
+            if packet['packet_id'] in packet_has_event:
+                route_semantic_errors.append(
+                    f'{location}: duplicate initial route event for packet'
+                )
+            if old_route:
+                route_semantic_errors.append(
+                    f'{location}: initial route event has a non-empty old route'
+                )
+        else:
+            if previous_route is None:
+                route_semantic_errors.append(
+                    f'{location}: reroute has no preceding assigned route'
+                )
+            elif old_route != previous_route:
+                route_semantic_errors.append(
+                    f'{location}.old_route: does not match prior assigned route'
+                )
+            if old_route and (
+                len(old_route) < len(prefix) or old_route[:len(prefix)] != prefix
+            ):
+                route_semantic_errors.append(
+                    f'{location}.old_route: does not contain the traversed prefix {prefix}'
+                )
+        if new_route:
+            validate_active_route(
+                new_route, prefix, packet, replay_dead, replay_energies,
+                f'{location}.new_route'
+            )
+            route_history[packet['packet_id']] = new_route
+        elif row['outcome'] == 'failed' and previous_route is None:
+            route_history[packet['packet_id']] = []
+        packet_has_event.add(packet['packet_id'])
+
+    for packet_id in packet_has_event:
+        packet = packet_by_id[packet_id]
+        final_route = packet['route'].split('->') if packet['route'] else []
+        if final_route != route_history.get(packet_id, []):
+            route_semantic_errors.append(
+                f'packets.csv packet {packet_id!r}: final route does not match route history'
+            )
+    add(
+        'route_event_semantics', len(route_semantic_errors), 0,
+        passed=not route_semantic_errors,
+        detail='; '.join(route_semantic_errors[:10]),
+        category='cross_check',
+    )
+
     timeseries_errors: list[str] = []
     previous_snapshot_time = -math.inf
     for offset, row in enumerate(timeseries):
@@ -1392,6 +1687,7 @@ def validate_run(
                 'alive_sensors', 'dead_sensors', 'generated_packets',
                 'delivered_packets', 'dropped_packets', 'pending_packets',
                 'reachable_sensors', 'delivered_bytes', 'delivered_payload_bytes',
+                'routing_eligible_sensors', 'energy_feasible_sensors',
             )
         }
         energy_val = _number(row['total_energy_j'], f'{location}.total_energy_j', non_negative=True)
@@ -1399,11 +1695,49 @@ def validate_run(
             row['reachability_ratio'], f'{location}.reachability_ratio', optional=True,
             non_negative=True,
         )
+        routing_eligible_ratio = _number(
+            row['routing_eligible_ratio'],
+            f'{location}.routing_eligible_ratio',
+            optional=True,
+            non_negative=True,
+        )
+        energy_feasible_ratio_value = _number(
+            row['energy_feasible_ratio'],
+            f'{location}.energy_feasible_ratio',
+            optional=True,
+            non_negative=True,
+        )
 
         if counters['alive_sensors'] + counters['dead_sensors'] != initial_count:
             timeseries_errors.append(f'{location}: alive + dead does not equal sensor count')
         if counters['reachable_sensors'] > counters['alive_sensors']:
             timeseries_errors.append(f'{location}: reachable exceeds alive')
+        for count_field, ratio_field, ratio_value in (
+            (
+                'routing_eligible_sensors', 'routing_eligible_ratio',
+                routing_eligible_ratio,
+            ),
+            (
+                'energy_feasible_sensors', 'energy_feasible_ratio',
+                energy_feasible_ratio_value,
+            ),
+        ):
+            count_value = counters[count_field]
+            alive_value = counters['alive_sensors']
+            if count_value > alive_value:
+                timeseries_errors.append(
+                    f'{location}.{count_field}: {count_value} exceeds alive={alive_value}'
+                )
+            if alive_value == 0:
+                if count_value != 0 or ratio_value is not None:
+                    timeseries_errors.append(
+                        f'{location}.{ratio_field}: all-dead snapshot requires count=0 '
+                        'and an undefined ratio'
+                    )
+            elif ratio_value is None or not 0 <= ratio_value <= 1:
+                timeseries_errors.append(
+                    f'{location}.{ratio_field}: alive snapshot requires ratio in [0,1]'
+                )
         if (
             counters['delivered_packets'] + counters['dropped_packets']
             + counters['pending_packets'] != counters['generated_packets']
@@ -1448,6 +1782,71 @@ def validate_run(
             timeseries_errors.append(f'{location}.reachability_ratio: {ratio} != replay {expected_ratio}')
         if row['reachability_state'] != expected_state:
             timeseries_errors.append(f'{location}.reachability_state: {row["reachability_state"]!r} != replay {expected_state!r}')
+
+        energies_at_snapshot = {
+            node_id: float(values['initial'])
+            for node_id, values in node_values.items()
+        }
+        for entry in ledger:
+            ledger_key = (float(entry['time_s']), int(entry['event_seq']))
+            if ledger_key > (snap_time, snap_seq):
+                continue
+            sender = entry['sender_id']
+            receiver = entry['receiver_id']
+            if sender in energies_at_snapshot:
+                energies_at_snapshot[sender] = max(
+                    0.0,
+                    energies_at_snapshot[sender] - float(entry['tx_energy_j']),
+                )
+            if receiver in energies_at_snapshot:
+                energies_at_snapshot[receiver] = max(
+                    0.0,
+                    energies_at_snapshot[receiver] - float(entry['rx_energy_j']),
+                )
+        (
+            expected_routing_count,
+            expected_routing_ratio,
+            expected_feasible_count,
+            expected_feasible_ratio,
+            _,
+        ) = _transmission_feasibility_snapshot(
+            adjacency,
+            edge_distances,
+            sensor_ids,
+            sink_ids,
+            dead_at_snapshot,
+            energies_at_snapshot,
+            packet_size_bytes,
+            routing_algorithm,
+            threshold_j,
+            radio_model,
+        )
+        if counters['routing_eligible_sensors'] != expected_routing_count:
+            timeseries_errors.append(
+                f'{location}.routing_eligible_sensors: '
+                f'{counters["routing_eligible_sensors"]} != replay '
+                f'{expected_routing_count}'
+            )
+        if not _same_number(
+            routing_eligible_ratio, expected_routing_ratio, tolerance
+        )[1]:
+            timeseries_errors.append(
+                f'{location}.routing_eligible_ratio: {routing_eligible_ratio} '
+                f'!= replay {expected_routing_ratio}'
+            )
+        if counters['energy_feasible_sensors'] != expected_feasible_count:
+            timeseries_errors.append(
+                f'{location}.energy_feasible_sensors: '
+                f'{counters["energy_feasible_sensors"]} != replay '
+                f'{expected_feasible_count}'
+            )
+        if not _same_number(
+            energy_feasible_ratio_value, expected_feasible_ratio, tolerance
+        )[1]:
+            timeseries_errors.append(
+                f'{location}.energy_feasible_ratio: {energy_feasible_ratio_value} '
+                f'!= replay {expected_feasible_ratio}'
+            )
 
         # Recompute total energy before snapshot: initial - (TX + RX)
         initial_total_energy_all = sum(node_values[s]['initial'] for s in sensor_ids)

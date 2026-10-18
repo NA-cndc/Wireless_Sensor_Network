@@ -90,6 +90,80 @@ def _optional_float(value: Any) -> float | None:
     return result
 
 
+def _cumulative_delivery_points(
+    packets: list[dict[str, Any]], measurement_duration_s: float
+) -> list[dict[str, Any]]:
+    '''Build the sink-bit step series from actual packet delivery events.'''
+    duration = float(measurement_duration_s)
+    if not math.isfinite(duration) or duration < 0:
+        raise ValueError('measurement duration must be finite and non-negative')
+
+    packet_ids: set[str] = set()
+    deliveries: list[tuple[float, int, int, str]] = []
+    for index, packet in enumerate(packets, start=2):
+        packet_id = str(packet.get('packet_id', '')).strip()
+        if not packet_id:
+            raise ValueError(f'packets.csv:{index}: packet_id must not be empty')
+        if packet_id in packet_ids:
+            raise ValueError(f'packets.csv:{index}: duplicate packet_id {packet_id!r}')
+        packet_ids.add(packet_id)
+        if packet.get('status') != 'DELIVERED':
+            continue
+        try:
+            delivered_at = float(packet['delivered_at'])
+            delivered_seq = int(packet['delivered_event_seq'])
+            size_bytes = int(packet['size_bytes'])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(
+                f'packets.csv:{index}: invalid delivered event fields'
+            ) from exc
+        if (
+            not math.isfinite(delivered_at)
+            or not 0 <= delivered_at < duration
+            or delivered_seq < 0
+            or size_bytes < 0
+        ):
+            raise ValueError(
+                f'packets.csv:{index}: delivered event is outside the valid domain'
+            )
+        deliveries.append((delivered_at, delivered_seq, size_bytes, packet_id))
+
+    deliveries.sort(key=lambda item: (item[0], item[1]))
+    points: list[dict[str, Any]] = [{
+        'time_s': 0.0,
+        'delivered_bytes': 0,
+        'delivered_bits': 0,
+        'point_kind': 'initial',
+        'delivery_events': 0,
+    }]
+    total_bytes = 0
+    for delivered_at, _, size_bytes, _ in deliveries:
+        total_bytes += size_bytes
+        if points[-1]['point_kind'] == 'delivery' and points[-1]['time_s'] == delivered_at:
+            points[-1].update({
+                'delivered_bytes': total_bytes,
+                'delivered_bits': total_bytes * 8,
+                'delivery_events': points[-1]['delivery_events'] + 1,
+            })
+        else:
+            points.append({
+                'time_s': delivered_at,
+                'delivered_bytes': total_bytes,
+                'delivered_bits': total_bytes * 8,
+                'point_kind': 'delivery',
+                'delivery_events': 1,
+            })
+    if points[-1]['time_s'] < duration:
+        points.append({
+            'time_s': duration,
+            'delivered_bytes': total_bytes,
+            'delivered_bits': total_bytes * 8,
+            'point_kind': 'observation_end',
+            'delivery_events': 0,
+        })
+    return points
+
+
 def _write_csv(path: Path, rows: list[dict[str, Any]], fields: list[str]) -> None:
     with path.open('w', newline='', encoding='utf-8') as file_handle:
         writer = csv.DictWriter(
@@ -668,7 +742,7 @@ def main() -> int:
                 )
         axis.set(
             title='Controlled 4-sensor lifetime test (not the 450-sensor pilot)\n'
-                  'Intentional battery-depletion schedule validates milestone logic\n'
+                  'Real periodic traffic with test-sized batteries validates milestones\n'
                   f'{controlled_algorithm}; R={controlled_range:g}m; '
                   f'seed={controlled_seed}; interval [0,{controlled_duration:g}s)',
             xlabel='Simulation time (s)', ylabel='Cumulative dead sensors (count)',
@@ -733,8 +807,14 @@ def main() -> int:
                 'time_s': time_s, 'total_energy_j': energy,
             })
     axis.set(
-        title=f'Residual network energy over simulation time\n{subtitle}',
+        title=f'Residual network energy at periodic snapshots\n{subtitle}',
         xlabel='Simulation time (s)', ylabel='Residual energy (J)',
+    )
+    axis.text(
+        0.02, 0.03,
+        'Sampled snapshots; connecting lines do not represent exact TX/RX event times.',
+        transform=axis.transAxes, fontsize=8,
+        bbox={'facecolor': 'white', 'alpha': 0.8, 'edgecolor': '0.8'},
     )
     axis.grid(alpha=0.25)
     axis.legend(fontsize=7, ncol=2)
@@ -747,12 +827,32 @@ def main() -> int:
     # Figure 09: Energy feasible ratio over time
     feasibility_source: list[dict[str, Any]] = []
     figure, axis = plt.subplots(figsize=(9, 5))
+    observed_feasibility = False
+    undefined_no_alive = 0
     for row in summary:
         timeseries = _read_csv(row['_run_path'] / 'timeseries.csv')
-        points = [
-            (float(entry['time_s']), float(entry['energy_feasible_ratio']) * 100.0, int(entry['energy_feasible_sensors']))
-            for entry in timeseries if 'energy_feasible_ratio' in entry
-        ]
+        points = []
+        for entry in timeseries:
+            ratio = _optional_float(entry.get('energy_feasible_ratio'))
+            count = int(entry['energy_feasible_sensors'])
+            alive = int(entry['alive_sensors'])
+            status = (
+                'undefined_no_alive_sensors'
+                if ratio is None and alive == 0
+                else 'observed'
+                if ratio is not None
+                else 'undefined'
+            )
+            observed_feasibility = observed_feasibility or ratio is not None
+            undefined_no_alive += status == 'undefined_no_alive_sensors'
+            points.append((
+                float(entry['time_s']),
+                math.nan if ratio is None else 100.0 * ratio,
+                count,
+                ratio,
+                alive,
+                status,
+            ))
         range_m = float(row['range_m'])
         if points:
             axis.plot(
@@ -762,13 +862,26 @@ def main() -> int:
                 linestyle=algorithm_lines[row['algorithm']],
                 linewidth=1.5,
             )
-        for time_s, ratio, count in points:
+        for time_s, _, count, ratio, alive, status in points:
             feasibility_source.append({
                 'scenario': row['scenario'], 'algorithm': row['algorithm'],
                 'range_m': range_m, 'seed': row['seed'],
+                'alive_sensors': alive,
                 'time_s': time_s, 'energy_feasible_sensors': count,
-                'energy_feasible_ratio': ratio / 100.0,
+                'energy_feasible_ratio': ratio,
+                'status': status,
             })
+    if not observed_feasibility:
+        axis.text(
+            0.5, 0.55, 'Feasibility ratio undefined: no alive sensors',
+            ha='center', va='center', transform=axis.transAxes,
+        )
+    elif undefined_no_alive:
+        axis.text(
+            0.98, 0.97,
+            f'{undefined_no_alive} all-dead snapshot(s): ratio undefined; line interrupted',
+            ha='right', va='top', transform=axis.transAxes, fontsize=8,
+        )
     axis.text(
         0.02, 0.03,
         'Feasibility measures independent single-packet send capability at snapshot;\n'
@@ -782,33 +895,44 @@ def main() -> int:
         ylim=(0, 105),
     )
     axis.grid(alpha=0.25)
-    axis.legend(fontsize=7, ncol=2)
+    handles, labels = axis.get_legend_handles_labels()
+    if handles:
+        axis.legend(fontsize=7, ncol=2)
     save_plot(figure, '09_energy_feasible_ratio_over_time')
     save_source(
         '09_energy_feasible_ratio_over_time', feasibility_source,
-        ['scenario', 'algorithm', 'range_m', 'seed', 'time_s', 'energy_feasible_sensors', 'energy_feasible_ratio'],
+        ['scenario', 'algorithm', 'range_m', 'seed', 'time_s', 'alive_sensors',
+         'energy_feasible_sensors', 'energy_feasible_ratio', 'status'],
     )
 
     # Figure 10: Cumulative delivered bits over time
     bits_source: list[dict[str, Any]] = []
     figure, axis = plt.subplots(figsize=(9, 5))
     for row in summary:
-        timeseries = _read_csv(row['_run_path'] / 'timeseries.csv')
-        points = [(float(entry['time_s']), int(entry['delivered_bytes']) * 8) for entry in timeseries]
+        packets = _read_csv(row['_run_path'] / 'packets.csv')
+        duration = float(row['_metrics']['measurement_duration_s'])
+        points = _cumulative_delivery_points(packets, duration)
+        final_bits = points[-1]['delivered_bits']
+        expected_bits = int(row['_metrics']['total_delivered_bits'])
+        if final_bits != expected_bits:
+            raise ValueError(
+                f'{row["scenario"]}: delivery-event series ends at {final_bits} bit, '
+                f'metrics reports {expected_bits} bit'
+            )
         range_m = float(row['range_m'])
         axis.step(
-            [p[0] for p in points], [p[1] for p in points],
+            [p['time_s'] for p in points], [p['delivered_bits'] for p in points],
             where='post',
             label=f'{row["algorithm"]} R={range_m:g}m seed={row["seed"]}',
             color=range_colors[range_m],
             linestyle=algorithm_lines[row['algorithm']],
             linewidth=1.5,
         )
-        for time_s, bits in points:
+        for point in points:
             bits_source.append({
                 'scenario': row['scenario'], 'algorithm': row['algorithm'],
                 'range_m': range_m, 'seed': row['seed'],
-                'time_s': time_s, 'delivered_bytes': bits // 8, 'delivered_bits': bits,
+                **point,
             })
     axis.set(
         title=f'Cumulative delivered bits to sink over simulation time\n{subtitle}',
@@ -820,7 +944,8 @@ def main() -> int:
     save_plot(figure, '10_cumulative_delivered_bits_over_time')
     save_source(
         '10_cumulative_delivered_bits_over_time', bits_source,
-        ['scenario', 'algorithm', 'range_m', 'seed', 'time_s', 'delivered_bytes', 'delivered_bits'],
+        ['scenario', 'algorithm', 'range_m', 'seed', 'time_s', 'delivered_bytes',
+         'delivered_bits', 'point_kind', 'delivery_events'],
     )
 
     # Figure 11: Dropped packets by reason
@@ -831,9 +956,9 @@ def main() -> int:
         scenario = row['scenario']
         packets = _read_csv(row['_run_path'] / 'packets.csv')
         reasons_counter = Counter(
-            p['drop_reason'].strip()
+            p['drop_reason'].strip() or 'unspecified'
             for p in packets
-            if p['status'] == 'dropped' or p['drop_reason'].strip()
+            if p['status'] in {'DROPPED', 'NO_ROUTE'}
         )
         scenario_drop_reasons[scenario] = dict(reasons_counter)
         all_reasons.update(reasons_counter.keys())
@@ -866,16 +991,22 @@ def main() -> int:
                 color=reason_colors[idx % len(reason_colors)],
             )
         axis.legend(title='Drop reason', fontsize=8)
+        totals = [sum(scenario_drop_reasons[sc].values()) for sc in scenarios_list]
+        for x_value, total in zip(x_indices, totals):
+            axis.annotate(
+                str(total), (x_value, total), xytext=(0, 4),
+                textcoords='offset points', ha='center', va='bottom', fontsize=8,
+            )
     else:
         axis.text(0.5, 0.5, 'Zero packets dropped in all scenarios', ha='center', va='center', transform=axis.transAxes)
 
-    axis.text(
-        0.02, 0.88,
-        'Authentic behavior note: Drops in EMHR (e.g. at R=350m)\n'
-        'are caused by candidate relay nodes falling below threshold Eth.',
-        transform=axis.transAxes, fontsize=8,
-        bbox={'facecolor': 'white', 'alpha': 0.85, 'edgecolor': '0.8'},
-    )
+    if all_reasons:
+        axis.text(
+            0.02, 0.88,
+            f'Observed drop reasons: {", ".join(sorted(all_reasons))}',
+            transform=axis.transAxes, fontsize=8,
+            bbox={'facecolor': 'white', 'alpha': 0.85, 'edgecolor': '0.8'},
+        )
     axis.set_xticks(x_indices)
     axis.set_xticklabels(scenarios_list, rotation=25, ha='right', fontsize=8)
     axis.set(
@@ -912,9 +1043,12 @@ def main() -> int:
                 label=f'{algorithm} seed={seed}',
             )
             for r, val in observed:
+                x_offset = 24 if r == min(range_values) else (
+                    -24 if r == max(range_values) else 0
+                )
                 axis.annotate(
                     f'{val:.2e} J/bit', (r, val),
-                    xytext=(0, 10 if algorithm == 'MHR' else -15),
+                    xytext=(x_offset, 10 if algorithm == 'MHR' else -15),
                     textcoords='offset points', ha='center', fontsize=7,
                 )
         for row, (range_m, val) in zip(selected, points):

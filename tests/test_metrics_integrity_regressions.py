@@ -13,12 +13,14 @@ from pathlib import Path
 import networkx as nx
 import pytest
 
+from scripts.plot_metrics import _cumulative_delivery_points
 from scripts.validate_metrics import InputDataError, validate_run
 from wsn_sim.config import SimulationConfig
 from wsn_sim.energy import RadioModel
-from wsn_sim.models import Sensor, Sink
+from wsn_sim.models import Packet, Sensor, Sink
 from wsn_sim.network import Network
 from wsn_sim.simulation import Simulation
+from wsn_sim.validation_fixtures import build_real_traffic_lifetime_network
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PLOTTER = PROJECT_ROOT / 'scripts' / 'plot_metrics.py'
@@ -157,6 +159,164 @@ def _export_failed_rx_sender_death(run_dir: Path) -> Path:
     return run_dir
 
 
+def _export_changed_reroute(run_dir: Path) -> Path:
+    base = SimulationConfig.from_json(PROJECT_ROOT / 'configs' / 'default.json')
+    config = replace(
+        base, num_sensors=3, num_sinks=1, packet_interval_s=10.0
+    )
+    tx_cost = RadioModel().compute_tx_energy(config.packet_size_bytes * 8, 50.0)
+    network = Network(config, communication_range_m=120.0)
+    source = Sensor('S1', 0.0, 0.0, 5.0)
+    first_relay = Sensor('R1', 50.0, 0.0, tx_cost)
+    alternate = Sensor('R2', 0.0, 50.0, 5.0)
+    sink = Sink('sink_00', 100.0, 0.0)
+    network.sensors = {'S1': source, 'R1': first_relay, 'R2': alternate}
+    network.sinks = {'sink_00': sink}
+    network.graph = nx.Graph()
+    for node in (source, first_relay, alternate, sink):
+        network.graph.add_node(
+            node.node_id,
+            node_type='sink' if isinstance(node, Sink) else 'sensor',
+            x=node.x,
+            y=node.y,
+        )
+    for left, right in (
+        ('S1', 'R1'), ('R1', 'sink_00'),
+        ('S1', 'R2'), ('R2', 'sink_00'),
+    ):
+        left_node = network.sensors.get(left) or network.sinks[left]
+        right_node = network.sensors.get(right) or network.sinks[right]
+        distance = left_node.distance_to(right_node)
+        network.graph.add_edge(left, right, distance_m=distance, weight=distance)
+    network.communication_range_m = 120.0
+
+    simulation = Simulation(network, routing_algorithm='MHR', quiet=True, seed=42)
+    assert simulation.traffic_gen is not None
+    packet = Packet(
+        'reroute_packet', 'S1', created_at=0.0,
+        size_bytes=128, payload_size_bytes=128, sequence_number=1,
+        created_event_seq=simulation.next_event_seq(),
+    )
+    route = simulation.router.get_route('S1', is_source=True)
+    assert route == ['S1', 'R1', 'sink_00']
+    simulation.router.record_route_event(
+        time_s=0.0, source_id='S1', packet_id=packet.packet_id,
+        current_node_id='S1', old_route='', new_route=route,
+        reason='initial_route', outcome='initial_route',
+    )
+    packet.assign_route(route)
+    simulation.traffic_gen.generated_packets.append(packet)
+    simulation.traffic_gen.queues['S1'].append(packet)
+    source.generated_packets += 1
+
+    death = simulation.radio.attempt_transmission(
+        first_relay, sink, 128, 50.0, sim_time_s=0.0,
+        packet_id='setup_relay_death',
+    )
+    assert death['success'] is True
+    assert first_relay.is_alive is False
+    simulation.run_for(1.0)
+    simulation.export_results(run_dir)
+    assert any(
+        event['outcome'] == 'changed' for event in simulation.router.route_events
+    )
+    assert validate_run(run_dir)['passed'] is True
+    return run_dir
+
+
+def _export_real_traffic_lifetime(run_dir: Path) -> Path:
+    base = SimulationConfig.from_json(PROJECT_ROOT / 'configs' / 'default.json')
+    config = replace(
+        base,
+        num_sensors=4,
+        num_sinks=1,
+        packet_size_bytes=128,
+        payload_size_bytes=128,
+        packet_interval_s=10.0,
+    )
+    network = build_real_traffic_lifetime_network(config)
+    simulation = Simulation(
+        network, routing_algorithm='MHR', quiet=True, seed=42
+    )
+    simulation.run_for(41.0)
+    simulation.export_results(run_dir)
+    metrics = simulation.get_metrics()
+    assert metrics['fnd_s'] == pytest.approx(10.004096)
+    assert metrics['hnd_s'] == pytest.approx(20.004096)
+    assert metrics['lnd_s'] == pytest.approx(40.004096)
+    assert metrics['generated_packets'] == metrics['delivered_packets'] == 10
+    assert validate_run(run_dir)['passed'] is True
+    return run_dir
+
+
+def _export_emhr_changed_reroute(run_dir: Path) -> Path:
+    base = SimulationConfig.from_json(PROJECT_ROOT / 'configs' / 'default.json')
+    config = replace(base, num_sensors=3, num_sinks=1)
+    network = Network(config, communication_range_m=1100.0)
+    source = Sensor('S1', 0.0, 0.0, 5.0)
+    alternate = Sensor('R2', 0.0, 50.0, 5.0)
+    sink = Sink('sink_00', 1000.0, 0.0)
+    relay_distance = 950.0
+    relay_energy = RadioModel().compute_tx_energy(
+        config.packet_size_bytes * 8, relay_distance
+    )
+    assert relay_energy > config.initial_energy_j * 0.20
+    first_relay = Sensor('R1', 50.0, 0.0, relay_energy)
+    network.sensors = {'S1': source, 'R1': first_relay, 'R2': alternate}
+    network.sinks = {'sink_00': sink}
+    network.graph = nx.Graph()
+    for node in (source, first_relay, alternate, sink):
+        network.graph.add_node(
+            node.node_id,
+            node_type='sink' if isinstance(node, Sink) else 'sensor',
+            x=node.x,
+            y=node.y,
+        )
+    for left, right in (
+        ('S1', 'R1'), ('R1', 'sink_00'),
+        ('S1', 'R2'), ('R2', 'sink_00'),
+    ):
+        left_node = network.sensors.get(left) or network.sinks[left]
+        right_node = network.sensors.get(right) or network.sinks[right]
+        distance = left_node.distance_to(right_node)
+        network.graph.add_edge(left, right, distance_m=distance, weight=distance)
+    network.communication_range_m = 1100.0
+
+    simulation = Simulation(network, routing_algorithm='EMHR', quiet=True, seed=42)
+    assert simulation.traffic_gen is not None
+    packet = Packet(
+        'emhr_reroute_packet', 'S1', created_at=0.0,
+        size_bytes=128, payload_size_bytes=128, sequence_number=1,
+        created_event_seq=simulation.next_event_seq(),
+    )
+    route = simulation.router.get_route('S1', is_source=True)
+    assert route == ['S1', 'R1', 'sink_00']
+    simulation.router.record_route_event(
+        time_s=0.0, source_id='S1', packet_id=packet.packet_id,
+        current_node_id='S1', old_route='', new_route=route,
+        reason='initial_route', outcome='initial_route',
+    )
+    packet.assign_route(route)
+    simulation.traffic_gen.generated_packets.append(packet)
+    simulation.traffic_gen.queues['S1'].append(packet)
+    source.generated_packets += 1
+    death = simulation.radio.attempt_transmission(
+        first_relay, sink, 128, relay_distance, sim_time_s=0.0,
+        packet_id='setup_emhr_relay_death',
+    )
+    assert death['success'] is True
+    assert first_relay.is_alive is False
+    simulation.run_for(1.0)
+    simulation.export_results(run_dir)
+    changed = [
+        event for event in simulation.router.route_events
+        if event['outcome'] == 'changed'
+    ]
+    assert changed and changed[0]['new_route'] == 'S1->R2->sink_00'
+    assert validate_run(run_dir)['passed'] is True
+    return run_dir
+
+
 @pytest.fixture
 def valid_run(tmp_path: Path) -> Path:
     return _export_valid_run(tmp_path / 'valid_run')
@@ -165,6 +325,16 @@ def valid_run(tmp_path: Path) -> Path:
 @pytest.fixture
 def death_run(tmp_path: Path) -> Path:
     return _export_simultaneous_deaths(tmp_path / 'death_run')
+
+
+@pytest.fixture
+def changed_route_run(tmp_path: Path) -> Path:
+    return _export_changed_reroute(tmp_path / 'changed_route_run')
+
+
+@pytest.fixture
+def real_lifetime_run(tmp_path: Path) -> Path:
+    return _export_real_traffic_lifetime(tmp_path / 'real_lifetime_run')
 
 
 def test_valid_export_still_passes(valid_run: Path):
@@ -281,17 +451,197 @@ def test_payload_larger_than_packet_is_rejected(valid_run: Path):
     assert 'packet_field_and_domain_validity' in _failed_checks(valid_run)
 
 
-def _make_pilot(root: Path) -> Path:
-    root.mkdir(parents=True)
-    scenario = 'MHR_R250m_seed42'
-    run_dir = _export_valid_run(root / scenario)
+@pytest.mark.parametrize(
+    'updates',
+    [
+        {
+            'routing_eligible_sensors': '0',
+            'routing_eligible_ratio': '0.0',
+            'energy_feasible_sensors': '0',
+            'energy_feasible_ratio': '0.0',
+        },
+        {
+            'routing_eligible_sensors': '0',
+            'routing_eligible_ratio': '0.0',
+        },
+        {
+            'energy_feasible_sensors': '999',
+            'energy_feasible_ratio': '2.0',
+        },
+        {'energy_feasible_ratio': ''},
+    ],
+)
+def test_snapshot_feasibility_corruption_is_rejected(
+    valid_run: Path, updates: dict[str, str]
+):
+    _mutate_csv(
+        valid_run / 'timeseries.csv',
+        lambda rows: rows[0].update(updates),
+    )
+    assert 'timeseries_integrity' in _failed_checks(valid_run)
+
+
+def test_all_dead_snapshot_keeps_undefined_feasibility_ratio(death_run: Path):
+    rows = list(csv.DictReader((death_run / 'timeseries.csv').open(encoding='utf-8')))
+    final = rows[-1]
+    assert final['alive_sensors'] == '0'
+    assert final['energy_feasible_sensors'] == '0'
+    assert final['energy_feasible_ratio'] == ''
+    assert validate_run(death_run)['passed'] is True
+
+
+@pytest.mark.parametrize(
+    ('corruption', 'value'),
+    [
+        ('changed_same', ''),
+        ('source_mismatch', 'R2'),
+        ('unknown_node', 'S1->unknown->sink_00'),
+        ('missing_edge', 'S1->R2->R1->sink_00'),
+        ('repeated_node', 'S1->R2->S1->R1->sink_00'),
+        ('not_sink_terminated', 'S1->R2'),
+        ('unchanged_different', ''),
+        ('failed_with_route', ''),
+    ],
+)
+def test_route_event_semantic_corruption_is_rejected(
+    changed_route_run: Path, corruption: str, value: str
+):
+    def mutate(rows: list[dict[str, str]]) -> None:
+        event = next(row for row in rows if row['outcome'] == 'changed')
+        if corruption == 'changed_same':
+            event['new_route'] = event['old_route']
+        elif corruption == 'source_mismatch':
+            event['source_id'] = value
+        elif corruption in {
+            'unknown_node', 'missing_edge', 'repeated_node', 'not_sink_terminated'
+        }:
+            event['new_route'] = value
+        elif corruption == 'unchanged_different':
+            event['outcome'] = 'unchanged'
+        elif corruption == 'failed_with_route':
+            event['outcome'] = 'failed'
+
+    _mutate_csv(changed_route_run / 'route_events.csv', mutate)
+    failed = _failed_checks(changed_route_run)
+    assert failed & {
+        'route_event_field_and_domain_validity', 'route_event_semantics'
+    }
+
+
+def test_emhr_new_route_relay_below_eth_is_rejected(tmp_path: Path):
+    run_dir = _export_emhr_changed_reroute(tmp_path / 'emhr_changed_route')
+
+    def lower_alternate_relay_energy(rows: list[dict[str, str]]) -> None:
+        relay = next(row for row in rows if row['node_id'] == 'R2')
+        relay['initial_energy_j'] = '0.5'
+        relay['energy_j'] = '0.5'
+
+    _mutate_csv(run_dir / 'nodes.csv', lower_alternate_relay_energy)
+    report = validate_run(run_dir)
+    semantic = next(
+        check for check in report['checks']
+        if check['metric'] == 'route_event_semantics'
+    )
+    assert semantic['passed'] is False
+    assert "EMHR relay 'R2' is below Eth" in semantic['detail']
+
+
+@pytest.mark.parametrize(
+    ('old_route', 'new_route', 'outcome'),
+    [
+        (['S1', 'sink_00'], ['S1', 'sink_00'], 'changed'),
+        (['S1', 'sink_00'], ['S1', 'R1', 'sink_00'], 'unchanged'),
+        ('', ['S1', 'sink_00'], 'failed'),
+        (['S1', 'sink_00'], ['S1', 'R1', 'sink_00'], 'initial_route'),
+    ],
+)
+def test_record_route_event_rejects_self_contradictory_outcomes(
+    old_route, new_route, outcome
+):
+    simulation = Simulation(
+        _star_network(), routing_algorithm='MHR', quiet=True, seed=42
+    )
+    with pytest.raises(ValueError):
+        simulation.router.record_route_event(
+            time_s=0.0, source_id='S1', packet_id='p1',
+            current_node_id='S1', old_route=old_route, new_route=new_route,
+            reason='route_invalid', outcome=outcome,
+        )
+
+
+def test_cumulative_delivery_points_use_actual_delivery_events():
+    packets = [
+        {
+            'packet_id': 'p3', 'status': 'DELIVERED', 'delivered_at': '2.0',
+            'delivered_event_seq': '7', 'size_bytes': '20',
+        },
+        {
+            'packet_id': 'p1', 'status': 'DELIVERED', 'delivered_at': '1.0',
+            'delivered_event_seq': '3', 'size_bytes': '10',
+        },
+        {
+            'packet_id': 'p2', 'status': 'DELIVERED', 'delivered_at': '1.0',
+            'delivered_event_seq': '4', 'size_bytes': '15',
+        },
+        {
+            'packet_id': 'pending', 'status': 'CREATED', 'delivered_at': '',
+            'delivered_event_seq': '', 'size_bytes': '99',
+        },
+    ]
+    points = _cumulative_delivery_points(packets, 3.0)
+    assert [(p['time_s'], p['delivered_bits']) for p in points] == [
+        (0.0, 0), (1.0, 200), (2.0, 360), (3.0, 360),
+    ]
+    assert points[1]['delivery_events'] == 2
+    assert [p['point_kind'] for p in points] == [
+        'initial', 'delivery', 'delivery', 'observation_end',
+    ]
+
+
+def test_cumulative_delivery_points_handle_no_delivery_and_reject_duplicates():
+    pending = [{
+        'packet_id': 'p1', 'status': 'CREATED', 'delivered_at': '',
+        'delivered_event_seq': '', 'size_bytes': '128',
+    }]
+    assert [p['delivered_bits'] for p in _cumulative_delivery_points(pending, 5.0)] == [0, 0]
+    with pytest.raises(ValueError, match='duplicate packet_id'):
+        _cumulative_delivery_points([pending[0], dict(pending[0])], 5.0)
+
+
+def test_reference_mhr_r300_delivery_curve_known_answers():
+    run_dir = (
+        PROJECT_ROOT / 'results' / 'metrics_pilot_seed42_101s_schema_v3'
+        / 'MHR_R300m_seed42'
+    )
+    packets = list(csv.DictReader((run_dir / 'packets.csv').open(encoding='utf-8')))
+    points = _cumulative_delivery_points(packets, 101.0)
+
+    def value_at(time_s: float) -> int:
+        return max(
+            point['delivered_bits']
+            for point in points
+            if point['time_s'] <= time_s
+        )
+
+    assert value_at(15.0) == 460800
+    assert value_at(25.0) == 921600
+    assert value_at(95.0) == 4147200
+    assert points[-1]['delivered_bits'] == 4608000
+    assert all(
+        left['delivered_bits'] <= right['delivered_bits']
+        for left, right in zip(points, points[1:])
+    )
+
+
+def _summary_row(run_dir: Path, scenario: str) -> dict[str, object]:
     metrics = json.loads((run_dir / 'metrics.json').read_text(encoding='utf-8'))
-    summary = {
+    manifest = json.loads((run_dir / 'run_manifest.json').read_text(encoding='utf-8'))
+    return {
         'scenario': scenario,
-        'algorithm': 'MHR',
-        'range_m': 250.0,
-        'seed': 42,
-        'requested_duration_s': 11.0,
+        'algorithm': manifest['routing_algorithm'],
+        'range_m': manifest['communication_range_m'],
+        'seed': manifest['topology_seed'],
+        'requested_duration_s': manifest['requested_duration_s'],
         'actual_duration_s': metrics['measurement_duration_s'],
         'generated_packets': metrics['generated_packets'],
         'delivered_packets': metrics['delivered_packets'],
@@ -319,6 +669,13 @@ def _make_pilot(root: Path) -> Path:
         'validation_passed': True,
         'output_dir': scenario,
     }
+
+
+def _make_pilot(root: Path) -> Path:
+    root.mkdir(parents=True)
+    scenario = 'MHR_R250m_seed42'
+    run_dir = _export_valid_run(root / scenario)
+    summary = _summary_row(run_dir, scenario)
     _write_csv(root / 'pilot_summary.csv', [summary], list(summary))
     (root / 'pilot_manifest.json').write_text(
         json.dumps({'requested_scenarios': 1, 'completed_scenarios': 1}) + '\n',
@@ -399,6 +756,36 @@ def test_plotter_valid_run_has_zero_exit_and_creates_figures(tmp_path: Path):
     assert 'dropped_packets' in pdr_fields
     assert 'pending_packets' in pdr_fields
     assert 'lost_packets' not in pdr_fields
+
+
+def test_plotter_handles_all_dead_undefined_feasibility_ratio(
+    tmp_path: Path, real_lifetime_run: Path
+):
+    pilot = tmp_path / 'all_dead_pilot'
+    pilot.mkdir()
+    scenario = 'MHR_R250m_seed42'
+    run_dir = pilot / scenario
+    shutil.copytree(real_lifetime_run, run_dir)
+    summary = _summary_row(run_dir, scenario)
+    _write_csv(pilot / 'pilot_summary.csv', [summary], list(summary))
+    (pilot / 'pilot_manifest.json').write_text(
+        json.dumps({'requested_scenarios': 1, 'completed_scenarios': 1}) + '\n',
+        encoding='utf-8',
+    )
+
+    completed = _run_plotter(pilot)
+    assert completed.returncode == 0, completed.stderr
+    output = pilot / 'figures'
+    assert (output / '09_energy_feasible_ratio_over_time.png').exists()
+    rows = list(csv.DictReader(
+        (output / '09_energy_feasible_ratio_over_time.csv').open(encoding='utf-8')
+    ))
+    assert rows[-1]['alive_sensors'] == '0'
+    assert rows[-1]['energy_feasible_sensors'] == '0'
+    assert rows[-1]['energy_feasible_ratio'] == ''
+    assert rows[-1]['status'] == 'undefined_no_alive_sensors'
+    plot_manifest = json.loads((output / 'plot_manifest.json').read_text())
+    assert '09_energy_feasible_ratio_over_time.png' in plot_manifest['figures']
 
 
 def test_plotter_rejects_legacy_run_without_exported_topology(tmp_path: Path):

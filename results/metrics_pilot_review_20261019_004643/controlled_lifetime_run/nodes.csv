@@ -1,0 +1,6 @@
+node_id,type,x,y,initial_energy_j,energy_j,is_alive,death_time_s,generated_packets,received_packets,forwarded_packets,dropped_packets,tx_energy_total_j,rx_energy_total_j
+S1,sensor,50.0,0.0,7.68e-05,0.0,False,10.004096,1,0,0,0,7.68e-05,0.0
+S2,sensor,0.0,50.0,0.0001536,0.0,False,20.004096,2,0,0,0,0.0001536,0.0
+S3,sensor,-50.0,0.0,0.0002304,0.0,False,30.004096,3,0,0,0,0.0002304,0.0
+S4,sensor,0.0,-50.0,0.0003072,0.0,False,40.004096,4,0,0,0,0.0003072,0.0
+sink_00,sink,0.0,0.0,unlimited,unlimited,True,,0,10,0,0,0.0,0.0

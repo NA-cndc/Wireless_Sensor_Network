@@ -1,0 +1,6 @@
+time_s,event_seq,alive_sensors,reachable_sensors,reachability_ratio,state,trigger,death_node_id
+0.0,1,4,4,1.0,operational,initial,
+10.004096,14,3,3,1.0,operational,node_death,S1
+20.004096,31,2,2,1.0,operational,node_death,S2
+30.004096,44,1,1,1.0,operational,node_death,S3
+40.004096,53,0,0,,all_dead,node_death,S4

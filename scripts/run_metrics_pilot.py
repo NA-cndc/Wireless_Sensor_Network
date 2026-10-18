@@ -12,13 +12,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-import networkx as nx
 from validate_metrics import validate_run
 
 from wsn_sim.config import SimulationConfig
-from wsn_sim.models import Sensor, Sink
-from wsn_sim.network import Network
 from wsn_sim.simulation import Simulation
+from wsn_sim.validation_fixtures import build_real_traffic_lifetime_network
 
 
 def _parse_csv(value: str, cast):
@@ -52,35 +50,6 @@ def _fairness_fingerprint(simulation: Simulation) -> str:
     }
     encoded = json.dumps(state, sort_keys=True, separators=(',', ':')).encode()
     return hashlib.sha256(encoded).hexdigest()
-
-
-def _controlled_lifetime_network(config: SimulationConfig) -> Network:
-    network = Network(config, communication_range_m=250.0)
-    network.sensors = {
-        'relay': Sensor('relay', 100.0, 0.0, config.initial_energy_j),
-        'sensor_1': Sensor('sensor_1', 200.0, 50.0, config.initial_energy_j),
-        'sensor_2': Sensor('sensor_2', 200.0, 0.0, config.initial_energy_j),
-        'sensor_3': Sensor('sensor_3', 200.0, -50.0, config.initial_energy_j),
-    }
-    network.sinks = {'sink_00': Sink('sink_00', 0.0, 0.0)}
-    network.graph = nx.Graph()
-    for sensor in network.sensors.values():
-        network.graph.add_node(
-            sensor.node_id,
-            node_type='sensor',
-            x=sensor.x,
-            y=sensor.y,
-        )
-    network.graph.add_node('sink_00', node_type='sink', x=0.0, y=0.0)
-    network.graph.add_edges_from(
-        [
-            ('sink_00', 'relay'),
-            ('relay', 'sensor_1'),
-            ('relay', 'sensor_2'),
-            ('relay', 'sensor_3'),
-        ]
-    )
-    return network
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -231,9 +200,12 @@ def main() -> int:
         base_config,
         num_sensors=4,
         num_sinks=1,
+        packet_size_bytes=128,
+        payload_size_bytes=128,
+        packet_interval_s=10.0,
         seed=42,
     )
-    controlled_network = _controlled_lifetime_network(controlled_config)
+    controlled_network = build_real_traffic_lifetime_network(controlled_config)
     controlled_simulation = Simulation(
         controlled_network,
         routing_algorithm='MHR',
@@ -242,38 +214,7 @@ def main() -> int:
         seed=42,
     )
 
-    def scheduled_deaths():
-        previous_time = 0.0
-        for death_time, node_id in [
-            (2.0, 'relay'),
-            (4.0, 'sensor_1'),
-            (6.0, 'sensor_2'),
-            (8.0, 'sensor_3'),
-        ]:
-            yield controlled_simulation.env.timeout(death_time - previous_time)
-            sensor = controlled_network.sensors[node_id]
-            bits = controlled_config.packet_size_bytes * 8
-            distance = (
-                (sensor.energy_j - controlled_simulation.radio.e_elec * bits)
-                / (controlled_simulation.radio.e_mp * bits)
-            ) ** 0.25
-            receiver = (
-                controlled_network.sinks['sink_00']
-                if node_id == 'relay'
-                else controlled_network.sensors['relay']
-            )
-            controlled_simulation.radio.attempt_transmission(
-                sensor,
-                receiver,
-                controlled_config.packet_size_bytes,
-                distance,
-                sim_time_s=float(controlled_simulation.env.now),
-                packet_id=f'controlled_death_{node_id}',
-            )
-            previous_time = death_time
-
-    controlled_simulation.env.process(scheduled_deaths())
-    controlled_simulation.run_for(9.0)
+    controlled_simulation.run_for(41.0)
     controlled_simulation.export_results(controlled_dir)
     controlled_manifest_path = controlled_dir / 'run_manifest.json'
     controlled_manifest = json.loads(
@@ -283,11 +224,11 @@ def main() -> int:
         'controlled_test_fixture_not_450_sensor_pilot'
     )
     controlled_manifest['controlled_event_type'] = (
-        'synthetic_battery_depletion_via_radio_model_for_lifetime_validation'
+        'real_application_traffic_battery_depletion_for_lifetime_validation'
     )
     controlled_manifest['controlled_event_description'] = (
-        'Scheduled test-only transmissions use the radio model to exhaust each '
-        'sensor exactly; these are not generated application packets.'
+        'Four direct-to-sink sensors transmit real 128-byte application packets '
+        'every 10 seconds; initial batteries are one through four TX costs.'
     )
     controlled_manifest_path.write_text(
         json.dumps(
@@ -328,7 +269,7 @@ def main() -> int:
     controlled_result = controlled_simulation.get_metrics()
     controlled_result.update({
         'data_classification': 'controlled_test_fixture_not_450_sensor_pilot',
-        'observation_end_s': 9.0,
+        'observation_end_s': 41.0,
         'run_directory': 'controlled_lifetime_run',
         'validation_passed': controlled_validation['passed'],
     })

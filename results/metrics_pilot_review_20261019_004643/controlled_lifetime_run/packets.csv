@@ -1,0 +1,11 @@
+packet_id,source_id,sink_id,sequence_number,size_bytes,payload_size_bytes,created_at,created_event_seq,delivered_at,delivered_event_seq,dropped_at,dropped_event_seq,latency_s,hop_count,status,drop_reason,drop_node_id,route,path
+S1_p1,S1,sink_00,1,128,128,10.0,3,10.004096,15,,,0.004096000000000544,1,DELIVERED,,,S1->sink_00,S1->sink_00
+S2_p1,S2,sink_00,1,128,128,10.0,5,10.004096,17,,,0.004096000000000544,1,DELIVERED,,,S2->sink_00,S2->sink_00
+S2_p2,S2,sink_00,2,128,128,20.0,22,20.004096,32,,,0.004096000000000544,1,DELIVERED,,,S2->sink_00,S2->sink_00
+S3_p1,S3,sink_00,1,128,128,10.0,7,10.004096,19,,,0.004096000000000544,1,DELIVERED,,,S3->sink_00,S3->sink_00
+S3_p2,S3,sink_00,2,128,128,20.0,24,20.004096,34,,,0.004096000000000544,1,DELIVERED,,,S3->sink_00,S3->sink_00
+S3_p3,S3,sink_00,3,128,128,30.0,37,30.004096,45,,,0.004096000000000544,1,DELIVERED,,,S3->sink_00,S3->sink_00
+S4_p1,S4,sink_00,1,128,128,10.0,9,10.004096,21,,,0.004096000000000544,1,DELIVERED,,,S4->sink_00,S4->sink_00
+S4_p2,S4,sink_00,2,128,128,20.0,26,20.004096,36,,,0.004096000000000544,1,DELIVERED,,,S4->sink_00,S4->sink_00
+S4_p3,S4,sink_00,3,128,128,30.0,39,30.004096,47,,,0.004096000000000544,1,DELIVERED,,,S4->sink_00,S4->sink_00
+S4_p4,S4,sink_00,4,128,128,40.0,48,40.004096,54,,,0.004095999999996991,1,DELIVERED,,,S4->sink_00,S4->sink_00

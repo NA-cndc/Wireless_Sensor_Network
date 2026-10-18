@@ -24,6 +24,7 @@ from wsn_sim.metrics import (
 from wsn_sim.models import Packet, Sensor, Sink
 from wsn_sim.network import Network
 from wsn_sim.simulation import Simulation
+from wsn_sim.validation_fixtures import build_real_traffic_lifetime_network
 
 
 def _known_answer_components():
@@ -654,21 +655,7 @@ def test_lifetime_real_traffic_milestones(tmp_path: Path):
         payload_size_bytes=128,
         packet_interval_s=10.0,
     )
-    network = Network(config, communication_range_m=100.0)
-    tx_cost = 0.0000768
-    sink = Sink('sink_00', 0.0, 0.0)
-    network.sensors = {
-        'S1': Sensor('S1', 50.0, 0.0, 1 * tx_cost),
-        'S2': Sensor('S2', 0.0, 50.0, 2 * tx_cost),
-        'S3': Sensor('S3', -50.0, 0.0, 3 * tx_cost),
-        'S4': Sensor('S4', 0.0, -50.0, 4 * tx_cost),
-    }
-    network.sinks = {'sink_00': sink}
-    network.graph = nx.Graph()
-    network.graph.add_node('sink_00', node_type='sink', x=0.0, y=0.0)
-    for s in network.sensors.values():
-        network.graph.add_node(s.node_id, node_type='sensor', x=s.x, y=s.y)
-        network.graph.add_edge(s.node_id, 'sink_00', distance_m=50.0, weight=50.0)
+    network = build_real_traffic_lifetime_network(config)
 
     simulation = Simulation(network, routing_algorithm='MHR', quiet=True, seed=42)
     simulation.run_for(41.0)

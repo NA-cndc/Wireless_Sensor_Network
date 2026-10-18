@@ -1,0 +1,11 @@
+time_s,event_seq,packet_id,sender_id,receiver_id,distance_m,tx_energy_j,rx_energy_j,success,reason,sender_energy_before,sender_energy_after,receiver_energy_before,receiver_energy_after
+10.004096,12,S1_p1,S1,sink_00,50.0,7.68e-05,0.0,True,OK,7.68e-05,0.0,,
+10.004096,16,S2_p1,S2,sink_00,50.0,7.68e-05,0.0,True,OK,0.0001536,7.68e-05,,
+10.004096,18,S3_p1,S3,sink_00,50.0,7.68e-05,0.0,True,OK,0.0002304,0.0001536,,
+10.004096,20,S4_p1,S4,sink_00,50.0,7.68e-05,0.0,True,OK,0.0003072,0.0002304,,
+20.004096,29,S2_p2,S2,sink_00,50.0,7.68e-05,0.0,True,OK,7.68e-05,0.0,,
+20.004096,33,S3_p2,S3,sink_00,50.0,7.68e-05,0.0,True,OK,0.0001536,7.68e-05,,
+20.004096,35,S4_p2,S4,sink_00,50.0,7.68e-05,0.0,True,OK,0.0002304,0.0001536,,
+30.004096,42,S3_p3,S3,sink_00,50.0,7.68e-05,0.0,True,OK,7.68e-05,0.0,,
+30.004096,46,S4_p3,S4,sink_00,50.0,7.68e-05,0.0,True,OK,0.0001536,7.68e-05,,
+40.004096,51,S4_p4,S4,sink_00,50.0,7.68e-05,0.0,True,OK,7.68e-05,0.0,,
