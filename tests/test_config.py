@@ -47,3 +47,10 @@ def test_reject_missing_required_range(config: SimulationConfig) -> None:
 def test_reject_non_integer_seed(config: SimulationConfig) -> None:
     with pytest.raises(TypeError, match="seed"):
         replace(config, seed=42.5)
+
+
+def test_energy_failure_policy_is_validated_and_round_trips(config: SimulationConfig) -> None:
+    partial = replace(config, energy_failure_policy="partial_debit")
+    assert partial.to_dict()["energy_failure_policy"] == "partial_debit"
+    with pytest.raises(ValueError, match="energy_failure_policy"):
+        replace(config, energy_failure_policy="unknown")

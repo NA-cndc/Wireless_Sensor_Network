@@ -269,6 +269,104 @@ class TrafficGenerator:
                 self._drop_packet(packet, "node_dead_mid_flight", node_id=sensor_id, counter_sensor=sensor)
                 continue
 
+            # State can change while the process yields for the radio delay. Recheck
+            # the exact route immediately before any TX/RX debit.
+            if (
+                not is_source
+                and self.router.algorithm == "EMHR"
+                and not sensor.can_forward(self.router.threshold_j)
+            ):
+                self._drop_packet(
+                    packet,
+                    "relay_below_threshold",
+                    node_id=sensor_id,
+                    counter_sensor=sensor,
+                )
+                continue
+
+            try:
+                current_index = len(packet.path) - 1
+                if (
+                    current_index < len(packet.route)
+                    and packet.route[current_index] == sensor_id
+                ):
+                    post_wait_route = packet.route[current_index:]
+                else:
+                    post_wait_route = packet.route[packet.route.index(sensor_id):]
+            except (ValueError, IndexError):
+                post_wait_route = []
+
+            post_wait_valid = bool(
+                len(post_wait_route) >= 2
+                and self.router.is_route_valid(
+                    post_wait_route,
+                    algorithm=self.router.algorithm,
+                    is_source=is_source,
+                    avoid_nodes=avoid_nodes,
+                )
+            )
+            if not post_wait_valid:
+                old_route = list(packet.route)
+                new_sub_route = self.router.get_route(
+                    sensor_id,
+                    algorithm=self.router.algorithm,
+                    avoid_nodes=avoid_nodes,
+                    is_source=is_source,
+                )
+                if not new_sub_route:
+                    self.router.record_route_event(
+                        time_s=float(self.env.now),
+                        source_id=packet.source_id,
+                        packet_id=packet.packet_id,
+                        current_node_id=sensor_id,
+                        old_route=old_route,
+                        new_route="",
+                        reason="route_invalid",
+                        outcome="failed",
+                    )
+                    self._drop_packet(
+                        packet,
+                        "unreachable",
+                        node_id=sensor_id,
+                        no_route=True,
+                        counter_sensor=sensor,
+                    )
+                    continue
+
+                new_full_route = list(packet.path[:-1]) + new_sub_route
+                self.router.record_route_event(
+                    time_s=float(self.env.now),
+                    source_id=packet.source_id,
+                    packet_id=packet.packet_id,
+                    current_node_id=sensor_id,
+                    old_route=old_route,
+                    new_route=new_full_route,
+                    reason="route_invalid",
+                    outcome="changed" if new_full_route != old_route else "unchanged",
+                )
+                packet.route = new_full_route
+                packet.sink_id = new_sub_route[-1]
+                packet.current_hop_index = len(packet.path) - 1
+                # The same sender loop will pick the packet again and pay a fresh
+                # transmission delay; no zero-time retry loop is possible.
+                self.queues[sensor_id].insert(0, packet)
+                continue
+
+            next_hop_id = post_wait_route[1]
+            receiver = (
+                self.network.sensors.get(next_hop_id)
+                or self.network.sinks.get(next_hop_id)
+            )
+            if receiver is None:
+                self._drop_packet(
+                    packet,
+                    "unreachable",
+                    node_id=sensor_id,
+                    no_route=True,
+                    counter_sensor=sensor,
+                )
+                continue
+
             # Tính khoảng cách hình học thực tế giữa nút phát và nút thu (mét)
             dist_m = math.hypot(sensor.x - receiver.x, sensor.y - receiver.y)
 

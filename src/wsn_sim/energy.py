@@ -8,6 +8,8 @@ from typing import Any
 
 from wsn_sim.models import Sensor, Sink
 
+ENERGY_FAILURE_POLICIES = {"reject_without_debit", "partial_debit"}
+
 
 class RadioModel:
     """Tính toán tiêu hao năng lượng truyền/nhận dựa trên khoảng cách và dung lượng.
@@ -30,6 +32,7 @@ class RadioModel:
         d0_m: float | None = None,
         death_callback: Callable[[dict[str, Any]], None] | None = None,
         event_seq_provider: Callable[[], int] | None = None,
+        energy_failure_policy: str = "reject_without_debit",
     ) -> None:
         self.e_elec = float(e_elec_j_bit)
         self.e_fs = float(e_fs_j_bit_m2)
@@ -45,6 +48,10 @@ class RadioModel:
         self.death_events: list[dict[str, Any]] = []
         self.death_callback = death_callback
         self.event_seq_provider = event_seq_provider
+        if energy_failure_policy not in ENERGY_FAILURE_POLICIES:
+            allowed = ", ".join(sorted(ENERGY_FAILURE_POLICIES))
+            raise ValueError(f"energy_failure_policy must be one of: {allowed}")
+        self.energy_failure_policy = energy_failure_policy
 
     def _get_seq(self) -> int:
         return self.event_seq_provider() if self.event_seq_provider is not None else 0
@@ -139,8 +146,10 @@ class RadioModel:
             "sender_id": sender.node_id,
             "receiver_id": receiver.node_id,
             "distance_m": distance_m,
-            "tx_energy_j": tx_energy,
-            "rx_energy_j": rx_energy,
+            "tx_energy_requested_j": tx_energy,
+            "rx_energy_requested_j": rx_energy,
+            "tx_energy_j": 0.0,
+            "rx_energy_j": 0.0,
             "success": False,
             "reason": "OK",
             "sender_energy_before": sender.energy_j,
@@ -149,9 +158,17 @@ class RadioModel:
 
         # Trường hợp 1: Nút gửi (Sender) không đủ pin để phát TX -> Thất bại ngay, không bên nào mất pin
         if not sender.has_enough_energy(tx_energy):
+            actual_tx = (
+                min(sender.energy_j, tx_energy)
+                if self.energy_failure_policy == "partial_debit"
+                else 0.0
+            )
+            if actual_tx > 0.0:
+                self._debit_sensor(sender, actual_tx, sim_time_s, 'tx')
+                sender.tx_energy_total_j += actual_tx
             ledger_entry["success"] = False
             ledger_entry["reason"] = "TX_INSUFFICIENT_ENERGY"
-            ledger_entry["tx_energy_j"] = 0.0
+            ledger_entry["tx_energy_j"] = actual_tx
             ledger_entry["rx_energy_j"] = 0.0
             ledger_entry['sender_energy_after'] = sender.energy_j
             ledger_entry['receiver_energy_after'] = (
@@ -165,10 +182,18 @@ class RadioModel:
         if isinstance(receiver, Sensor) and not receiver.has_enough_energy(rx_energy):
             self._debit_sensor(sender, tx_energy, sim_time_s, 'tx')
             sender.tx_energy_total_j += tx_energy
+            actual_rx = (
+                min(receiver.energy_j, rx_energy)
+                if self.energy_failure_policy == "partial_debit"
+                else 0.0
+            )
+            if actual_rx > 0.0:
+                self._debit_sensor(receiver, actual_rx, sim_time_s, 'rx')
+                receiver.rx_energy_total_j += actual_rx
             ledger_entry["success"] = False
             ledger_entry["reason"] = "RX_INSUFFICIENT_ENERGY"
             ledger_entry["tx_energy_j"] = tx_energy
-            ledger_entry["rx_energy_j"] = 0.0
+            ledger_entry["rx_energy_j"] = actual_rx
             ledger_entry["sender_energy_after"] = sender.energy_j
             ledger_entry["receiver_energy_after"] = receiver.energy_j
             self.energy_ledger.append(ledger_entry)
@@ -186,6 +211,8 @@ class RadioModel:
 
         # Ghi nhận trạng thái hoàn thành vào sổ cái năng lượng
         ledger_entry["success"] = True
+        ledger_entry["tx_energy_j"] = tx_energy
+        ledger_entry["rx_energy_j"] = rx_energy
         ledger_entry["sender_energy_after"] = sender.energy_j
         ledger_entry["receiver_energy_after"] = receiver.energy_j if isinstance(receiver, Sensor) else None
         self.energy_ledger.append(ledger_entry)

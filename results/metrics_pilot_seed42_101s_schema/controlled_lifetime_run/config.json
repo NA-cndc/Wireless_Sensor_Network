@@ -12,5 +12,6 @@
     350
   ],
   "seed": 42,
-  "payload_size_bytes": 128
+  "payload_size_bytes": 128,
+  "energy_failure_policy": "partial_debit"
 }

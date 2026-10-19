@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 REQUIRED_COMMUNICATION_RANGES_M = {250.0, 300.0, 350.0}
+ENERGY_FAILURE_POLICIES = {"reject_without_debit", "partial_debit"}
 
 
 def _require_positive_number(name: str, value: object) -> None:
@@ -44,6 +45,7 @@ class SimulationConfig:
     communication_ranges_m: tuple[float, ...]  # Bộ bán kính phủ sóng vô tuyến (mét: bắt buộc có 250, 300, 350 m)
     seed: int  # Hạt giống khởi tạo số ngẫu nhiên (đảm bảo tái lập hoàn toàn topology)
     payload_size_bytes: int | None = None
+    energy_failure_policy: str = "reject_without_debit"
 
     def __post_init__(self) -> None:
         """Thực hiện kiểm tra nghiêm ngặt kiểu dữ liệu và miền giá trị logic."""
@@ -68,6 +70,10 @@ class SimulationConfig:
         if payload_size > self.packet_size_bytes:
             raise ValueError("payload_size_bytes must not exceed packet_size_bytes")
         object.__setattr__(self, "payload_size_bytes", payload_size)
+
+        if self.energy_failure_policy not in ENERGY_FAILURE_POLICIES:
+            allowed = ", ".join(sorted(ENERGY_FAILURE_POLICIES))
+            raise ValueError(f"energy_failure_policy must be one of: {allowed}")
 
         # Kiểm tra hạt giống ngẫu nhiên (seed) phải là số nguyên
         if isinstance(self.seed, bool) or not isinstance(self.seed, int):
@@ -124,6 +130,9 @@ class SimulationConfig:
             communication_ranges_m=tuple(ranges),
             seed=data["seed"],
             payload_size_bytes=data.get("payload_size_bytes"),
+            energy_failure_policy=data.get(
+                "energy_failure_policy", "reject_without_debit"
+            ),
         )
 
     @classmethod

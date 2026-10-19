@@ -59,14 +59,28 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--algorithms', default='MHR,EMHR')
     parser.add_argument('--ranges', default='250,300,350')
     parser.add_argument('--duration', type=float, default=101.0)
+    parser.add_argument(
+        '--lifetime-probe-duration', type=float, default=0.0,
+        help='Optional longer 450-sensor observation duration; 0 disables it.',
+    )
+    parser.add_argument('--lifetime-probe-range', type=float, default=350.0)
     parser.add_argument('--output-dir', type=Path)
+    parser.add_argument(
+        '--energy-failure-policy',
+        choices=('reject_without_debit', 'partial_debit'),
+        default='partial_debit',
+    )
+    parser.add_argument(
+        '--overwrite', action='store_true',
+        help='Write into an existing output directory (managed files are replaced in place).',
+    )
     return parser
 
 
 def main() -> int:
     args = build_parser().parse_args()
-    if args.duration <= 0:
-        print('duration must be greater than zero', file=sys.stderr)
+    if args.duration <= 0 or args.lifetime_probe_duration < 0:
+        print('duration must be positive and lifetime probe duration non-negative', file=sys.stderr)
         return 2
     seeds = _parse_csv(args.seeds, int)
     algorithms = [item.upper() for item in _parse_csv(args.algorithms, str)]
@@ -80,12 +94,15 @@ def main() -> int:
         root = Path('results') / f'metrics_pilot_{stamp}'
     else:
         root = args.output_dir
-    if root.exists() and any(root.iterdir()):
+    if root.exists() and any(root.iterdir()) and not args.overwrite:
         print(f'refusing to overwrite non-empty output directory: {root}', file=sys.stderr)
         return 2
     root.mkdir(parents=True, exist_ok=True)
 
-    base_config = SimulationConfig.from_json(args.config)
+    base_config = replace(
+        SimulationConfig.from_json(args.config),
+        energy_failure_policy=args.energy_failure_policy,
+    )
     summaries: list[dict[str, Any]] = []
     fairness_rows: list[dict[str, Any]] = []
     failures: list[dict[str, Any]] = []
@@ -219,6 +236,87 @@ def main() -> int:
             )
     _write_csv(root / 'fairness_checks.csv', fairness_rows)
 
+    lifetime_probes: list[dict[str, Any]] = []
+    if args.lifetime_probe_duration > 0:
+        for seed in seeds:
+            probe_config = replace(base_config, seed=seed)
+            for algorithm in algorithms:
+                scenario = (
+                    f'lifetime_probe_{algorithm}_R{args.lifetime_probe_range:g}m_'
+                    f'seed{seed}'
+                )
+                run_dir = root / scenario
+                print(
+                    f'[LIFETIME] {scenario} '
+                    f'T={args.lifetime_probe_duration:g}s'
+                )
+                try:
+                    simulation = Simulation(
+                        probe_config,
+                        current_range_m=args.lifetime_probe_range,
+                        routing_algorithm=algorithm,
+                        quiet=True,
+                        csv_log_path=run_dir / 'timeseries.csv',
+                        seed=seed,
+                    )
+                    simulation.run_for(args.lifetime_probe_duration)
+                    simulation.export_results(run_dir)
+                    validation = validate_run(run_dir)
+                    manifest_path = run_dir / 'run_manifest.json'
+                    manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+                    if 'validation.json' not in manifest['generated_files']:
+                        manifest['generated_files'].append('validation.json')
+                    manifest['validation_passed'] = validation['passed']
+                    manifest['data_classification'] = (
+                        'long_450_sensor_lifetime_probe_not_main_experiment'
+                    )
+                    manifest_path.write_text(
+                        json.dumps(
+                            manifest, ensure_ascii=False, indent=2, allow_nan=False
+                        ) + '\n',
+                        encoding='utf-8',
+                    )
+                    metrics = simulation.get_metrics()
+                    lifetime_probes.append({
+                        'scenario': scenario,
+                        'algorithm': algorithm,
+                        'range_m': args.lifetime_probe_range,
+                        'seed': seed,
+                        'requested_duration_s': args.lifetime_probe_duration,
+                        'actual_duration_s': metrics['measurement_duration_s'],
+                        'fnd_s': metrics['fnd_s'],
+                        'fnd_status': metrics['fnd_status'],
+                        'hnd_s': metrics['hnd_s'],
+                        'hnd_status': metrics['hnd_status'],
+                        'lnd_s': metrics['lnd_s'],
+                        'lnd_status': metrics['lnd_status'],
+                        'network_lifetime_s': metrics['network_lifetime_s'],
+                        'network_lifetime_status': metrics['network_lifetime_status'],
+                        'energy_service_lifetime_sampled_s': (
+                            metrics['energy_service_lifetime_sampled_s']
+                        ),
+                        'energy_service_lifetime_status': (
+                            metrics['energy_service_lifetime_status']
+                        ),
+                        'alive_sensors': metrics['alive_sensors'],
+                        'dead_sensors': metrics['dead_sensors'],
+                        'generated_packets': metrics['generated_packets'],
+                        'delivered_packets': metrics['delivered_packets'],
+                        'dropped_packets': metrics['dropped_packets'],
+                        'pending_packets': metrics['pending_packets'],
+                        'validation_passed': validation['passed'],
+                        'output_dir': scenario,
+                    })
+                    if not validation['passed']:
+                        failures.append({
+                            'scenario': scenario,
+                            'reason': 'independent validation failed',
+                        })
+                except Exception as exc:
+                    failures.append({'scenario': scenario, 'reason': repr(exc)})
+                    print(f'[FAIL] {scenario}: {exc}', file=sys.stderr)
+        _write_csv(root / 'lifetime_probe_summary.csv', lifetime_probes)
+
     controlled_dir = root / 'controlled_lifetime_run'
     controlled_config = replace(
         base_config,
@@ -310,6 +408,10 @@ def main() -> int:
         'algorithms': algorithms,
         'ranges_m': ranges,
         'duration_s': args.duration,
+        'energy_failure_policy': args.energy_failure_policy,
+        'lifetime_probe_duration_s': args.lifetime_probe_duration,
+        'lifetime_probe_range_m': args.lifetime_probe_range,
+        'lifetime_probe_runs': lifetime_probes,
         'minimum_main_experiment_seeds_per_configuration': 30,
         'controlled_lifetime_run': 'controlled_lifetime_run',
         'controlled_lifetime_validation_passed': controlled_validation['passed'],

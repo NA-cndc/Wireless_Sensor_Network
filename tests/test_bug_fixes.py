@@ -162,6 +162,60 @@ def test_emhr_source_below_threshold_can_transmit_own_packet():
     assert source.is_alive is True
 
 
+def test_emhr_rechecks_and_reroutes_when_next_relay_changes_during_delay():
+    cfg = SimulationConfig(
+        area_width_m=500.0,
+        area_height_m=500.0,
+        num_sensors=3,
+        num_sinks=1,
+        initial_energy_j=5.0,
+        packet_size_bytes=128,
+        packet_interval_s=100.0,
+        communication_ranges_m=(250.0, 300.0, 350.0),
+        seed=42,
+    )
+    net = Network(cfg, communication_range_m=300.0)
+    source = Sensor("S", 0.0, 0.0, 5.0)
+    primary = Sensor("R1", 50.0, 0.0, 5.0)
+    alternate = Sensor("R2", 0.0, 50.0, 5.0)
+    sink = Sink("sink_00", 100.0, 0.0)
+    net.sensors = {node.node_id: node for node in (source, primary, alternate)}
+    net.sinks = {sink.node_id: sink}
+    net.graph = nx.Graph()
+    for node in (source, primary, alternate, sink):
+        net.graph.add_node(node.node_id)
+    net.graph.add_edges_from(
+        [("S", "R1"), ("R1", "sink_00"), ("S", "R2"), ("R2", "sink_00")]
+    )
+
+    sim = Simulation(net, routing_algorithm="EMHR", quiet=True)
+    sim.traffic_gen.bandwidth_bps = 1024.0  # one second per hop
+    packet = Packet("p-mid-delay", "S", 0.0, 128, sequence_number=1)
+    packet.assign_route(["S", "R1", "sink_00"])
+    sim.traffic_gen.generated_packets.append(packet)
+    source.generated_packets += 1
+    sim.traffic_gen.queues["S"].append(packet)
+    sim.traffic_gen.tx_events["S"].succeed()
+
+    def lower_primary_during_delay():
+        yield sim.env.timeout(0.5)
+        primary.energy_j = 0.5
+
+    sim.env.process(lower_primary_during_delay())
+    sim.run_for(3.1)
+
+    assert packet.status == PacketStatus.DELIVERED
+    assert packet.path == ["S", "R2", "sink_00"]
+    assert all(entry["receiver_id"] != "R1" for entry in sim.radio.energy_ledger)
+    assert sim.radio.energy_ledger[0]["time_s"] == pytest.approx(2.0)
+    reroutes = [
+        event for event in sim.router.route_events
+        if event["packet_id"] == packet.packet_id and event["outcome"] == "changed"
+    ]
+    assert len(reroutes) == 1
+    assert reroutes[0]["time_s"] == pytest.approx(1.0)
+
+
 def test_mhr_allows_forwarding_through_relay_below_emhr_threshold():
     """Lỗi 2: Thuật toán MHR không áp ngưỡng EMHR lên nút chuyển tiếp còn sống."""
     net = create_linear_test_network(num_sensors=2, initial_energy_j=5.0, distance_m=50.0)

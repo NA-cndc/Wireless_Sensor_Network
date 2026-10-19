@@ -15,6 +15,8 @@ import matplotlib
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 try:
     from scripts.validate_metrics import ABSOLUTE_TOLERANCE, validate_run
@@ -459,11 +461,14 @@ def main() -> int:
     seeds = sorted({int(row['seed']) for row in summary})
     sensor_counts = sorted({int(row['_metrics']['total_sensors']) for row in summary})
     durations = sorted({float(row['_metrics']['measurement_duration_s']) for row in summary})
+    energy_policies = sorted({
+        str(row['_manifest']['energy_failure_policy']) for row in summary
+    })
     sensors_label = '/'.join(str(value) for value in sensor_counts)
     duration_label = '/'.join(f'{value:g}' for value in durations)
     subtitle = (
         f'{sensors_label}-sensor pilot; interval [0,{duration_label}s); '
-        f'seeds={seeds}; runs={len(summary)}'
+        f'seed={seeds}; policy={"/".join(energy_policies)}; runs={len(summary)}'
     )
     algorithm_colors = {'MHR': 'tab:blue', 'EMHR': 'tab:orange'}
     algorithm_lines = {'MHR': '-', 'EMHR': '--'}
@@ -474,6 +479,10 @@ def main() -> int:
     marker_values = ['o', 's', '^', 'D', 'v']
     range_colors = {value: palette[index % len(palette)] for index, value in enumerate(range_values)}
     range_markers = {value: marker_values[index % len(marker_values)] for index, value in enumerate(range_values)}
+    range_lines = {
+        value: ('-', '--', ':', '-.')[index % 4]
+        for index, value in enumerate(range_values)
+    }
 
     def save_plot(figure: Any, basename: str) -> None:
         name = f'{basename}.png'
@@ -489,30 +498,30 @@ def main() -> int:
 
     # Figure 01: use exact death-event timestamps and a step representation.
     alive_source: list[dict[str, Any]] = []
-    alive_curves: list[tuple[tuple[float, int], ...]] = []
-    figure, axis = plt.subplots(figsize=(9, 5))
+    figure, axes = plt.subplots(
+        1, len(range_values), figsize=(13, 4.8), sharex=True, sharey=True,
+        squeeze=False,
+    )
+    axes_by_range = {value: axes[0][index] for index, value in enumerate(range_values)}
+    all_no_deaths = True
     for row in summary:
         events = _read_csv(row['_run_path'] / 'reachability_events.csv')
         duration = float(row['_metrics']['measurement_duration_s'])
         points = [(float(event['time_s']), int(event['alive_sensors'])) for event in events]
         if not points or points[-1][0] < duration:
             points.append((duration, points[-1][1]))
-        alive_curves.append(tuple(points))
         range_m = float(row['range_m'])
-        label = (
-            f'{row["algorithm"]} R={range_m:g}m seed={row["seed"]}; '
-            f'end={points[-1][1]} alive/{int(row["_metrics"]["dead_sensors"])} dead; '
-            f'FND/HND/LND={row["fnd_status"]}/'
-            f'{row["hnd_status"]}/{row["lnd_status"]}'
-        )
+        axis = axes_by_range[range_m]
+        label = str(row['algorithm'])
+        all_no_deaths = all_no_deaths and int(row['_metrics']['dead_sensors']) == 0
         axis.step(
             [point[0] for point in points],
             [point[1] for point in points],
             where='post',
             label=label,
-            color=range_colors[range_m],
+            color=algorithm_colors[row['algorithm']],
             linestyle=algorithm_lines[row['algorithm']],
-            marker=range_markers[range_m],
+            marker='o' if row['algorithm'] == 'MHR' else 's',
             linewidth=1.5,
             alpha=0.82,
         )
@@ -526,22 +535,22 @@ def main() -> int:
                 'fnd_status': row['fnd_status'], 'hnd_status': row['hnd_status'],
                 'lnd_status': row['lnd_status'],
             })
-    overlap_counts = Counter(alive_curves)
-    largest_overlap = max(overlap_counts.values(), default=1)
-    if largest_overlap > 1:
-        final_alive = alive_curves[0][-1][1]
-        axis.text(
-            0.99, 0.03,
-            f'{largest_overlap} curves overlap; end state: {final_alive} alive sensors',
-            ha='right', va='bottom', transform=axis.transAxes, fontsize=8,
-            bbox={'facecolor': 'white', 'alpha': 0.8, 'edgecolor': '0.8'},
+    for index, (range_m, axis) in enumerate(axes_by_range.items()):
+        axis.set_title(f'R = {range_m:g} m')
+        axis.set_xlabel('Thời gian mô phỏng (s)')
+        axis.set_ylim(0, max(sensor_counts))
+        axis.grid(alpha=0.25)
+        if index == 0:
+            axis.set_ylabel('Số sensor còn sống')
+            axis.legend(fontsize=8)
+    if all_no_deaths and sensor_counts == [450]:
+        axes[0][1 if len(range_values) > 1 else 0].text(
+            0.5, 0.05,
+            '450 sống, 0 chết; chưa quan sát mốc chết trong khoảng đo.',
+            ha='center', transform=axes[0][1 if len(range_values) > 1 else 0].transAxes,
+            fontsize=9,
         )
-    axis.set(
-        title=f'Alive sensors over simulation time\n{subtitle}',
-        xlabel='Simulation time (s)', ylabel='Alive sensors (count)',
-    )
-    axis.grid(alpha=0.25)
-    axis.legend(fontsize=7, ncol=2)
+    figure.suptitle(f'Số sensor còn sống theo thời gian\n{subtitle}')
     save_plot(figure, '01_alive_sensors_over_time')
     save_source(
         '01_alive_sensors_over_time', alive_source,
@@ -614,18 +623,42 @@ def main() -> int:
                 'status': 'observed' if value is not None else 'not_observed',
             })
     axis.set(
-        title=f'Packet delivery ratio by communication range\n{subtitle}',
-        xlabel='Communication range R (m)', ylabel='PDR (%)', ylim=(0, 101),
+        title=f'Tỷ lệ giao gói theo bán kính truyền\n{subtitle}',
+        xlabel='Bán kính truyền R (m)', ylabel='PDR (%)', ylim=(0, 101),
     )
     axis.grid(alpha=0.25)
     handles, labels = axis.get_legend_handles_labels()
     if handles:
-        axis.legend()
+        axis.legend(loc='lower right')
     else:
         axis.text(
             0.5, 0.5, f'PDR not observed in [0,{duration_label}s): no packets generated',
             ha='center', va='center', transform=axis.transAxes,
         )
+    observed_pdr = [
+        float(row['pdr_percent']) for row in summary
+        if _optional_float(row['pdr_percent']) is not None
+    ]
+    if observed_pdr and max(observed_pdr) - min(observed_pdr) < 5.0:
+        zoom = inset_axes(axis, width='38%', height='38%', loc='lower left', borderpad=3)
+        for algorithm, seed in groups:
+            selected = sorted(
+                (row for row in summary if row['algorithm'] == algorithm
+                 and int(row['seed']) == seed),
+                key=lambda row: float(row['range_m']),
+            )
+            zoom.plot(
+                [float(row['range_m']) for row in selected],
+                [float(row['pdr_percent']) for row in selected],
+                marker='o' if algorithm == 'MHR' else 's',
+                color=algorithm_colors[algorithm],
+                linestyle=algorithm_lines[algorithm],
+            )
+        margin = max(0.02, (max(observed_pdr) - min(observed_pdr)) * 0.25)
+        zoom.set_ylim(min(observed_pdr) - margin, max(observed_pdr) + margin)
+        zoom.ticklabel_format(axis='y', style='plain', useOffset=False)
+        zoom.set_title('Phóng đại (thang cắt)', fontsize=8)
+        zoom.grid(alpha=0.2)
     save_plot(figure, '02_pdr_by_range')
     save_source(
         '02_pdr_by_range', pdr_source,
@@ -637,36 +670,39 @@ def main() -> int:
     # Figure 03: throughput/goodput remain separate series even when they overlap.
     rate_source: list[dict[str, Any]] = []
     figure, axis = plt.subplots(figsize=(8, 5))
-    all_equal = True
+    all_equal = all(
+        _same_optional_number(row['throughput_bps'], row['goodput_bps'])
+        for row in summary
+    )
     for algorithm, seed in groups:
         selected = sorted(
             (row for row in summary if row['algorithm'] == algorithm and int(row['seed']) == seed),
             key=lambda row: float(row['range_m']),
         )
-        for key, display, marker, line in (
-            ('throughput_bps', 'throughput', 'o', '-'),
-            ('goodput_bps', 'goodput', 'x', ':'),
-        ):
+        rate_specs = (
+            (('throughput_bps', 'throughput = goodput', 'o', '-'),)
+            if all_equal else
+            (('throughput_bps', 'throughput', 'o', '-'),
+             ('goodput_bps', 'goodput', 'x', ':'))
+        )
+        for key, display, marker, line in rate_specs:
             x = [float(row['range_m']) for row in selected]
-            y = [float(row[key]) for row in selected]
+            y = [float(row[key]) / 1000.0 for row in selected]
             axis.plot(
                 x, y, marker=marker, linestyle=line,
                 color=algorithm_colors[algorithm],
-                label=f'{algorithm} {display} seed={seed}',
+                label=algorithm if all_equal else f'{algorithm} {display}',
             )
-            for row, range_m, value in zip(selected, x, y):
+        for key in ('throughput_bps', 'goodput_bps'):
+            for row in selected:
                 rate_source.append({
                     'scenario': row['scenario'], 'algorithm': algorithm,
-                    'range_m': range_m, 'seed': seed,
+                    'range_m': row['range_m'], 'seed': seed,
                     'measurement_duration_s': row['actual_duration_s'],
-                    'metric': key, 'rate_bps': value,
+                    'metric': key, 'rate_bps': row[key],
                     'packet_size_bytes': row['_manifest']['configuration']['packet_size_bytes'],
                     'payload_size_bytes': row['_manifest']['configuration']['payload_size_bytes'],
                 })
-        all_equal = all_equal and all(
-            _same_optional_number(row['throughput_bps'], row['goodput_bps'])
-            for row in selected
-        )
     max_rate_diff = max(
         (abs(float(row['throughput_bps']) - float(row['goodput_bps'])) for row in summary),
         default=0.0,
@@ -685,7 +721,7 @@ def main() -> int:
         )
         axis.text(
             0.02, 0.03,
-            f'Throughput and goodput overlap (diff = 0 bit/s): {size_text}.',
+            f'Throughput = goodput (chênh 0 bit/s): {size_text}.',
             transform=axis.transAxes, fontsize=8,
             bbox={'facecolor': 'white', 'alpha': 0.8, 'edgecolor': '0.8'},
         )
@@ -697,8 +733,8 @@ def main() -> int:
             bbox={'facecolor': 'white', 'alpha': 0.8, 'edgecolor': '0.8'},
         )
     axis.set(
-        title=f'Sink throughput and goodput by communication range\n{subtitle}',
-        xlabel='Communication range R (m)', ylabel='Rate (bit/s)',
+        title=f'Throughput và goodput tại sink theo bán kính truyền\n{subtitle}',
+        xlabel='Bán kính truyền R (m)', ylabel='Tốc độ (kbit/s)',
     )
     max_rate = max(
         (
@@ -708,7 +744,7 @@ def main() -> int:
         ),
         default=0.0,
     )
-    axis.set_ylim(0, max_rate * 1.05 if max_rate > 0 else 1.0)
+    axis.set_ylim(0, max_rate / 1000.0 * 1.05 if max_rate > 0 else 1.0)
     axis.grid(alpha=0.25)
     axis.legend(fontsize=8)
     save_plot(figure, '03_throughput_goodput_by_range')
@@ -740,11 +776,13 @@ def main() -> int:
             ]
             coordinate_counts.update(points)
             if points:
+                offset = -2.0 if algorithm == 'MHR' else 2.0
                 axis.plot(
-                    [point[0] for point in points], [point[1] for point in points],
+                    [point[0] + offset for point in points],
+                    [point[1] for point in points],
                     marker='o' if algorithm == 'MHR' else 's',
-                    linestyle=algorithm_lines[algorithm], color=algorithm_colors[algorithm],
-                    label=f'{algorithm} seed={seed}',
+                    linestyle='None', color=algorithm_colors[algorithm],
+                    label=algorithm,
                 )
             for row in selected:
                 value = _optional_float(row[metric_key])
@@ -759,11 +797,11 @@ def main() -> int:
         overlap_points = sum(1 for count in coordinate_counts.values() if count > 1)
         if overlap_points:
             axis.text(
-                0.02, 0.03, f'{overlap_points} plotted coordinates contain overlapping runs',
+                0.02, 0.03, f'{overlap_points} vị trí có giá trị trùng nhau; điểm đã dịch ngang',
                 ha='left', va='bottom', transform=axis.transAxes, fontsize=8,
                 bbox={'facecolor': 'white', 'alpha': 0.8, 'edgecolor': '0.8'},
             )
-        axis.set(title=f'{title}\n{subtitle}', xlabel='Communication range R (m)', ylabel=ylabel)
+        axis.set(title=f'{title}\n{subtitle}', xlabel='Bán kính truyền R (m)', ylabel=ylabel)
         axis.grid(alpha=0.25)
         axis.legend(fontsize=8)
         save_plot(figure, basename)
@@ -775,8 +813,8 @@ def main() -> int:
 
     single_metric_plot(
         '04_average_hops_by_range', 'average_hops',
-        'Average actual hops of delivered packets (edges, not relays)',
-        'Average actual path length (hop) [delivered packets only]', 'average_hops',
+        'Số chặng trung bình của gói đã nhận (theo đường đi thực tế)',
+        'Số chặng trung bình (hop)', 'average_hops',
     )
     # Figure 05: summary statistics and the full delivered-packet delay ECDF.
     delay_source: list[dict[str, Any]] = []
@@ -792,20 +830,21 @@ def main() -> int:
         median_ms = _percentile(latencies_ms, 0.5)
         p95_ms = _percentile(latencies_ms, 0.95)
         range_m = float(row['range_m'])
+        x_offset = -2.0 if row['algorithm'] == 'MHR' else 2.0
         if average_ms is not None:
-            summary_axis.scatter(range_m, average_ms, marker='o',
+            summary_axis.scatter(range_m + x_offset, average_ms, marker='o',
                                  color=algorithm_colors[row['algorithm']])
-            summary_axis.scatter(range_m, median_ms, marker='s',
+            summary_axis.scatter(range_m + x_offset, median_ms, marker='s',
                                  color=algorithm_colors[row['algorithm']])
-            summary_axis.scatter(range_m, p95_ms, marker='^',
+            summary_axis.scatter(range_m + x_offset, p95_ms, marker='^',
                                  color=algorithm_colors[row['algorithm']])
             probabilities = [(index + 1) / len(latencies_ms)
                              for index in range(len(latencies_ms))]
             ecdf_axis.step(
                 latencies_ms, probabilities, where='post',
-                color=range_colors[range_m],
-                linestyle=algorithm_lines[row['algorithm']],
-                label=f'{row["algorithm"]} R={range_m:g}m seed={row["seed"]}',
+                color=algorithm_colors[row['algorithm']],
+                linestyle=range_lines[range_m],
+                label=f'{row["algorithm"]} R={range_m:g}m',
                 alpha=0.85,
             )
         delay_source.append({
@@ -834,17 +873,17 @@ def main() -> int:
                 'p95_delay_ms': None,
             })
     summary_axis.set(
-        title='Delay summary by range\nmarkers: mean=o, median=s, p95=^',
-        xlabel='Communication range R (m)', ylabel='End-to-end delay (ms)',
+        title='Tóm tắt độ trễ theo R\ntrung bình=o, trung vị=s, p95 gói=^',
+        xlabel='Bán kính truyền R (m)', ylabel='Độ trễ đầu-cuối (ms)',
     )
     summary_axis.grid(alpha=0.25)
     ecdf_axis.set(
-        title='Delivered-packet delay ECDF', xlabel='End-to-end delay (ms)',
-        ylabel='Empirical cumulative probability', ylim=(0, 1.02),
+        title='ECDF độ trễ của gói đã nhận', xlabel='Độ trễ đầu-cuối (ms)',
+        ylabel='Xác suất tích lũy thực nghiệm', ylim=(0, 1.02),
     )
     ecdf_axis.grid(alpha=0.25)
     ecdf_axis.legend(fontsize=7)
-    figure.suptitle(f'Delay distribution of delivered packets\n{subtitle}')
+    figure.suptitle(f'Phân bố độ trễ của gói đã nhận\n{subtitle}')
     save_plot(figure, '05_average_delay_by_range')
     save_source(
         '05_average_delay_by_range', delay_source,
@@ -883,18 +922,18 @@ def main() -> int:
         axis.axis('off')
         intervals = sorted({item['observation_interval'] for item in lifetime_source})
         axis.text(
-            0.5, 0.62, 'No pilot lifetime milestones were observed',
+            0.5, 0.62, 'Chưa quan sát mốc lifetime nào trong pilot',
             ha='center', va='center', fontsize=15, weight='bold', transform=axis.transAxes,
         )
         axis.text(
             0.5, 0.45,
             f'FND · HND · LND · physical-connectivity · sampled energy-service lifetime\n'
-            f'Not observed in {", ".join(intervals)}\n'
+            f'Không quan sát được trong {", ".join(intervals)}\n'
             f'{algorithms_label}; R={ranges_label} m; seeds={seeds}',
             ha='center', va='center', fontsize=11, transform=axis.transAxes,
             bbox={'facecolor': '#f3f4f6', 'edgecolor': '#9ca3af', 'pad': 12},
         )
-        axis.set_title(f'Pilot lifetime status\n{subtitle}')
+        axis.set_title(f'Trạng thái lifetime của pilot\n{subtitle}')
     else:
         metric_markers = {'fnd_s': 'o', 'hnd_s': 's', 'lnd_s': '^',
                           'functional_network_death_s': 'D',
@@ -911,8 +950,8 @@ def main() -> int:
             ha='right', va='bottom', transform=axis.transAxes, fontsize=8,
         )
         axis.set(
-            title=f'Observed pilot lifetime milestones (points only)\n{subtitle}',
-            xlabel='Communication range R (m)', ylabel='Simulation time (s)',
+            title=f'Các mốc lifetime đã quan sát (chỉ vẽ điểm)\n{subtitle}',
+            xlabel='Bán kính truyền R (m)', ylabel='Thời gian mô phỏng (s)',
         )
         axis.grid(alpha=0.25)
         handles, labels = axis.get_legend_handles_labels()
@@ -955,11 +994,11 @@ def main() -> int:
                     va='bottom', color=color, fontsize=7,
                 )
         axis.set(
-            title='Controlled 4-sensor lifetime test (not the 450-sensor pilot)\n'
-                  'Real periodic traffic with test-sized batteries validates milestones\n'
+            title='Kiểm thử 4 sensor, không phải mạng 450 sensor\n'
+                  'Lưu lượng tuần hoàn thực với pin cỡ fixture để kiểm tra các mốc\n'
                   f'{controlled_algorithm}; R={controlled_range:g}m; '
                   f'seed={controlled_seed}; interval [0,{controlled_duration:g}s)',
-            xlabel='Simulation time (s)', ylabel='Cumulative dead sensors (count)',
+            xlabel='Thời gian mô phỏng (s)', ylabel='Số sensor chết tích lũy',
             xlim=(0, controlled_duration), ylim=(-0.1, len(controlled) + 0.5),
         )
         axis.grid(alpha=0.25)
@@ -1023,8 +1062,8 @@ def main() -> int:
             [p['residual_energy_j'] for p in points],
             where='post',
             label=f'{row["algorithm"]} R={range_m:g}m seed={row["seed"]}',
-            color=range_colors[range_m],
-            linestyle=algorithm_lines[row['algorithm']],
+            color=algorithm_colors[row['algorithm']],
+            linestyle=range_lines[range_m],
             linewidth=1.5,
         )
         for point in points:
@@ -1034,12 +1073,12 @@ def main() -> int:
                 **point,
             })
     axis.set(
-        title=f'Exact residual network energy from TX/RX ledger events\n{subtitle}',
-        xlabel='Simulation time (s)', ylabel='Residual energy (J)',
+        title=f'Pin mạng còn lại từ ledger TX/RX\n{subtitle}',
+        xlabel='Thời gian mô phỏng (s)', ylabel='Năng lượng còn lại (J)',
     )
     axis.text(
         0.02, 0.03,
-        'Every TX+RX debit is included, including failed transactions with sender TX cost.',
+        'Đường bậc thang dùng mọi khoản thực trừ TX+RX, kể cả giao dịch thất bại.',
         transform=axis.transAxes, fontsize=8,
         bbox={'facecolor': 'white', 'alpha': 0.8, 'edgecolor': '0.8'},
     )
@@ -1088,15 +1127,17 @@ def main() -> int:
             axis.plot(
                 [p[0] for p in points], [p[1] for p in points],
                 label=f'{row["algorithm"]} R={range_m:g}m energy-feasible',
-                color=range_colors[range_m],
-                linestyle=algorithm_lines[row['algorithm']],
+                color=algorithm_colors[row['algorithm']],
+                linestyle=range_lines[range_m],
                 linewidth=1.5,
             )
             axis.plot(
                 [p[0] for p in points],
                 [math.nan if p[6] is None else 100.0 * p[6] for p in points],
                 label=f'{row["algorithm"]} R={range_m:g}m physical reachability',
-                color=range_colors[range_m], linestyle=':', linewidth=1.1, alpha=0.8,
+                color=algorithm_colors[row['algorithm']], linestyle=':', linewidth=1.1,
+                marker=range_markers[range_m], markevery=max(1, len(points) // 4),
+                alpha=0.8,
             )
         for time_s, _, count, ratio, alive, status, physical_ratio in points:
             feasibility_source.append({
@@ -1121,20 +1162,24 @@ def main() -> int:
         )
     axis.text(
         0.02, 0.03,
-        'Solid/dashed: sampled energy-feasible path; dotted: physical reachability.\n'
-        'Feasibility is an independent one-packet snapshot, not a delivery guarantee.',
+        'Nét theo R: đường đi khả thi năng lượng; nét chấm + marker: kết nối vật lý.\n'
+        'Đây là snapshot độc lập, không bảo đảm giao đồng thời.',
         transform=axis.transAxes, fontsize=8,
         bbox={'facecolor': 'white', 'alpha': 0.8, 'edgecolor': '0.8'},
     )
     axis.set(
-        title=f'Physical reachability versus sampled energy serviceability\n{subtitle}',
-        xlabel='Simulation time (s)', ylabel='Alive-sensor ratio (%)',
+        title=f'Kết nối vật lý và khả năng phục vụ theo năng lượng\n{subtitle}',
+        xlabel='Thời gian mô phỏng (s)', ylabel='Tỷ lệ sensor còn sống (%)',
         ylim=(0, 105),
     )
     axis.grid(alpha=0.25)
     handles, labels = axis.get_legend_handles_labels()
     if handles:
-        axis.legend(fontsize=7, ncol=2)
+        algorithm_handles = [
+            Line2D([0], [0], color=algorithm_colors[name], lw=2, label=name)
+            for name in ('MHR', 'EMHR')
+        ]
+        axis.legend(handles=algorithm_handles, fontsize=8, loc='center right')
     save_plot(figure, '09_energy_feasible_ratio_over_time')
     save_source(
         '09_energy_feasible_ratio_over_time', feasibility_source,
@@ -1145,11 +1190,15 @@ def main() -> int:
 
     # Figure 10: Cumulative delivered bits over time
     bits_source: list[dict[str, Any]] = []
+    bits_curves: list[tuple[tuple[float, int], ...]] = []
     figure, axis = plt.subplots(figsize=(9, 5))
     for row in summary:
         packets = _read_csv(row['_run_path'] / 'packets.csv')
         duration = float(row['_metrics']['measurement_duration_s'])
         points = _cumulative_delivery_points(packets, duration)
+        bits_curves.append(tuple(
+            (float(point['time_s']), int(point['delivered_bits'])) for point in points
+        ))
         final_bits = points[-1]['delivered_bits']
         expected_bits = int(row['_metrics']['total_delivered_bits'])
         if final_bits != expected_bits:
@@ -1162,8 +1211,8 @@ def main() -> int:
             [p['time_s'] for p in points], [p['delivered_bits'] for p in points],
             where='post',
             label=f'{row["algorithm"]} R={range_m:g}m seed={row["seed"]}',
-            color=range_colors[range_m],
-            linestyle=algorithm_lines[row['algorithm']],
+            color=algorithm_colors[row['algorithm']],
+            linestyle=range_lines[range_m],
             linewidth=1.5,
         )
         for milestone_key, marker in (('fnd_s', 'o'), ('hnd_s', 's'), ('lnd_s', '^')):
@@ -1176,7 +1225,7 @@ def main() -> int:
             )
             axis.scatter(
                 [milestone_time], [milestone_bits], marker=marker,
-                color=range_colors[range_m], edgecolors='black', linewidths=0.4,
+                color=algorithm_colors[row['algorithm']], edgecolors='black', linewidths=0.4,
                 zorder=4,
             )
         for point in points:
@@ -1186,12 +1235,20 @@ def main() -> int:
                 **point,
             })
     axis.set(
-        title=f'Cumulative delivered bits to sink over simulation time\n{subtitle}',
-        xlabel='Simulation time (s)', ylabel='Cumulative delivered bits (bit)',
+        title=f'Số bit nhận tích lũy tại sink\n{subtitle}',
+        xlabel='Thời gian mô phỏng (s)', ylabel='Số bit nhận tích lũy (bit)',
     )
     axis.set_ylim(bottom=0)
     axis.grid(alpha=0.25)
     axis.legend(fontsize=7, ncol=2)
+    largest_bits_overlap = max(Counter(bits_curves).values(), default=1)
+    if largest_bits_overlap > 1:
+        axis.text(
+            0.99, 0.03,
+            f'Tối đa {largest_bits_overlap} đường trùng nhau; xem CSV nguồn để đối chiếu.',
+            ha='right', transform=axis.transAxes, fontsize=8,
+            bbox={'facecolor': 'white', 'alpha': 0.8, 'edgecolor': '0.8'},
+        )
     save_plot(figure, '10_cumulative_delivered_bits_over_time')
     save_source(
         '10_cumulative_delivered_bits_over_time', bits_source,
@@ -1244,27 +1301,30 @@ def main() -> int:
                 color=reason_colors[idx % len(reason_colors)],
             )
             bottom = [previous + count for previous, count in zip(bottom, counts)]
-        axis.legend(title='Drop category', fontsize=8)
+        axis.legend(title='Nguyên nhân', fontsize=8)
         for x_value, total in zip(x_indices, bottom):
             axis.annotate(
                 str(total), (x_value, total), xytext=(0, 4),
                 textcoords='offset points', ha='center', va='bottom', fontsize=8,
             )
     else:
-        axis.text(0.5, 0.5, 'Zero packets dropped in all scenarios', ha='center', va='center', transform=axis.transAxes)
+        axis.text(0.5, 0.5, 'Không có gói mất trong mọi kịch bản', ha='center', va='center', transform=axis.transAxes)
 
     if all_categories:
         axis.text(
             0.02, 0.88,
-            f'Observed drop categories: {", ".join(sorted(all_categories))}',
+            f'Nguyên nhân ghi nhận: {", ".join(sorted(all_categories))}',
             transform=axis.transAxes, fontsize=8,
             bbox={'facecolor': 'white', 'alpha': 0.85, 'edgecolor': '0.8'},
         )
     axis.set_xticks(x_indices)
-    axis.set_xticklabels(scenarios_list, rotation=25, ha='right', fontsize=8)
+    axis.set_xticklabels(
+        [f'{row["algorithm"]}\nR={float(row["range_m"]):g} m' for row in summary],
+        fontsize=8,
+    )
     axis.set(
-        title=f'Dropped packets by canonical category (stacked totals)\n{subtitle}',
-        xlabel='Scenario', ylabel='Dropped packets (count)',
+        title=f'Gói mất theo nguyên nhân chuẩn hóa\n{subtitle}',
+        xlabel='Kịch bản', ylabel='Số gói mất',
     )
     axis.set_ylim(bottom=0)
     axis.grid(alpha=0.25, axis='y')
@@ -1289,19 +1349,20 @@ def main() -> int:
         ]
         observed = [(r, val) for r, val in points if val is not None]
         if observed:
+            data_offset = -2.0 if algorithm == 'MHR' else 2.0
             axis.plot(
-                [p[0] for p in observed], [p[1] for p in observed],
+                [p[0] + data_offset for p in observed], [p[1] for p in observed],
                 marker='o' if algorithm == 'MHR' else 's',
-                linestyle=algorithm_lines[algorithm],
+                linestyle='None',
                 color=algorithm_colors[algorithm],
-                label=f'{algorithm} seed={seed}',
+                label=algorithm,
             )
             for r, val in observed:
                 x_offset = 24 if r == min(range_values) else (
                     -24 if r == max(range_values) else 0
                 )
                 axis.annotate(
-                    f'{val:.2e} J/bit', (r, val),
+                    f'{val:.2e} J/bit', (r + data_offset, val),
                     xytext=(x_offset, 10 if algorithm == 'MHR' else -15),
                     textcoords='offset points', ha='center', fontsize=7,
                 )
@@ -1315,9 +1376,9 @@ def main() -> int:
                 'status': 'observed' if val is not None else 'not_observed',
             })
     axis.set(
-        title=f'Energy consumed per delivered full-packet bit by range\n{subtitle}',
-        xlabel='Communication range R (m)',
-        ylabel='Energy per delivered full-packet bit (J/bit)',
+        title=f'Năng lượng trên mỗi bit gói nhận thành công\n{subtitle}',
+        xlabel='Bán kính truyền R (m)',
+        ylabel='Năng lượng / bit toàn gói (J/bit)',
     )
     axis.set_ylim(bottom=0)
     axis.grid(alpha=0.25)
@@ -1333,7 +1394,10 @@ def main() -> int:
 
     # Figure 13: delivered and payload rates in half-open time windows.
     window_source: list[dict[str, Any]] = []
-    figure, axis = plt.subplots(figsize=(10, 5.5))
+    partial_window_labels: set[str] = set()
+    figure, (axis, partial_axis) = plt.subplots(
+        1, 2, figsize=(12, 5.5), gridspec_kw={'width_ratios': [4, 1.25]}
+    )
     for row in summary:
         packets = _read_csv(row['_run_path'] / 'packets.csv')
         duration = float(row['_metrics']['measurement_duration_s'])
@@ -1350,36 +1414,75 @@ def main() -> int:
                 'does not match aggregate throughput'
             )
         range_m = float(row['range_m'])
-        x = [window['window_start_s'] for window in windows] + [duration]
-        for key, label, line in (
-            ('throughput_bps', 'throughput', algorithm_lines[row['algorithm']]),
-            ('goodput_bps', 'goodput', ':'),
-        ):
-            y = [window[key] for window in windows]
+        full_windows = [
+            window for window in windows
+            if math.isclose(window['duration_s'], 10.0, abs_tol=ABSOLUTE_TOLERANCE)
+        ]
+        partial_windows = [window for window in windows if window not in full_windows]
+        partial_window_labels.update(
+            f'[{window["window_start_s"]:g},{window["window_end_s"]:g}): '
+            f'{window["duration_s"]:g} s'
+            for window in partial_windows
+        )
+        rates_overlap = all(
+            math.isclose(
+                window['throughput_bps'], window['goodput_bps'],
+                abs_tol=ABSOLUTE_TOLERANCE,
+            )
+            for window in windows
+        )
+        metric_specs = (
+            [('throughput_bps', 'throughput = goodput', range_lines[range_m])]
+            if rates_overlap else
+            [('throughput_bps', 'throughput', range_lines[range_m]),
+             ('goodput_bps', 'goodput', ':')]
+        )
+        for key, label, line in metric_specs:
+            x = [window['window_start_s'] for window in full_windows]
+            if full_windows:
+                x.append(full_windows[-1]['window_end_s'])
+            y = [window[key] for window in full_windows]
+            if not y:
+                continue
             axis.step(
                 x, [*y, y[-1]], where='post',
-                color=range_colors[range_m], linestyle=line, alpha=0.82,
-                label=f'{row["algorithm"]} R={range_m:g}m {label}',
+                color=algorithm_colors[row['algorithm']], linestyle=line, alpha=0.82,
+                label=f'{row["algorithm"]} R={range_m:g}m',
             )
+            for window in partial_windows:
+                offset = -3.0 if row['algorithm'] == 'MHR' else 3.0
+                partial_axis.scatter(
+                    range_m + offset, window[key],
+                    color=algorithm_colors[row['algorithm']],
+                    marker=range_markers[range_m],
+                )
         for window in windows:
             window_source.append({
                 'scenario': row['scenario'], 'algorithm': row['algorithm'],
                 'range_m': range_m, 'seed': row['seed'], **window,
             })
     axis.set(
-        title=f'Throughput and goodput in 10-second windows\n{subtitle}',
-        xlabel='Simulation time (s)', ylabel='Rate (bit/s)',
+        title='Cửa sổ đủ 10 s',
+        xlabel='Thời gian mô phỏng (s)', ylabel='Tốc độ (bit/s)',
+    )
+    partial_axis.set(
+        title='Cửa sổ cuối thiếu thời gian\n'
+              + ('; '.join(sorted(partial_window_labels)) or 'không có'),
+        xlabel='Bán kính R (m)', ylabel='Tốc độ (bit/s)',
     )
     axis.text(
         0.02, 0.03,
-        'Half-open windows [start,end); events on a boundary enter the next window.\n'
-        'The final [100,101) window is divided by its actual 1-second duration.',
+        'Cửa sổ [start,end); sự kiện tại biên thuộc cửa sổ kế tiếp.\n'
+        'Throughput = goodput vì packet = payload.',
         transform=axis.transAxes, fontsize=8,
         bbox={'facecolor': 'white', 'alpha': 0.8, 'edgecolor': '0.8'},
     )
     axis.set_ylim(bottom=0)
     axis.grid(alpha=0.25)
     axis.legend(fontsize=6, ncol=3)
+    partial_axis.set_ylim(bottom=0)
+    partial_axis.grid(alpha=0.25)
+    figure.suptitle(f'Throughput và goodput theo cửa sổ thời gian\n{subtitle}')
     save_plot(figure, '13_throughput_goodput_over_time')
     save_source(
         '13_throughput_goodput_over_time', window_source,
@@ -1420,17 +1523,17 @@ def main() -> int:
     else:
         axis.axis('off')
         axis.text(
-            0.5, 0.58, 'No FND/HND/LND milestone was observed',
+            0.5, 0.58, 'Chưa quan sát mốc FND/HND/LND',
             ha='center', va='center', fontsize=15, weight='bold',
             transform=axis.transAxes,
         )
         axis.text(
             0.5, 0.42,
-            f'Delivered bits remain undefined; no zero-valued bars are drawn.\n'
-            f'Not observed in [0,{duration_label} s).',
+            f'Số bit tại mốc là N/A; không vẽ cột 0 thay cho dữ liệu thiếu.\n'
+            f'Không quan sát được trong [0,{duration_label} s).',
             ha='center', va='center', fontsize=10, transform=axis.transAxes,
         )
-    axis.set_title(f'Data delivered at physical lifetime milestones\n{subtitle}')
+    axis.set_title(f'Số bit nhận tại các mốc lifetime vật lý\n{subtitle}')
     save_plot(figure, '14_delivered_bits_at_lifetime_milestones')
     save_source(
         '14_delivered_bits_at_lifetime_milestones', milestone_bits_source,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import platform
 import subprocess
 from datetime import datetime, timezone
@@ -15,6 +16,7 @@ import pandas as pd
 from wsn_sim.config import SimulationConfig
 
 RUNTIME_LIBRARIES = ("networkx", "simpy", "numpy", "pandas", "matplotlib")
+SOURCE_HASH_ROOTS = ("src", "scripts", "configs", "tests")
 
 
 def save_topology_summary(frame: pd.DataFrame, path: str | Path) -> Path:
@@ -62,6 +64,22 @@ def _library_versions() -> dict[str, str]:
     return versions
 
 
+def _source_tree_sha256(repository_root: Path) -> str:
+    """Hash reproducibility-relevant source/config/test bytes in stable order."""
+    digest = hashlib.sha256()
+    files = [repository_root / "pyproject.toml"]
+    for directory in SOURCE_HASH_ROOTS:
+        root = repository_root / directory
+        if root.exists():
+            files.extend(path for path in root.rglob("*") if path.is_file())
+    for path in sorted(files, key=lambda item: item.relative_to(repository_root).as_posix()):
+        relative = path.relative_to(repository_root).as_posix().encode("utf-8")
+        digest.update(len(relative).to_bytes(4, "big"))
+        digest.update(relative)
+        digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
 def create_run_manifest(
     config: SimulationConfig,
     generated_files: Iterable[str | Path],
@@ -87,6 +105,7 @@ def create_run_manifest(
         "python_version": platform.python_version(),
         "library_versions": _library_versions(),
         "git_commit": _git_output(root, "rev-parse", "HEAD"),
+        "source_tree_sha256": _source_tree_sha256(root),
         "git_branch": _git_output(root, "branch", "--show-current"),
         "working_tree_clean": status == "" if status is not None else None,
         "working_tree_changes": status.splitlines() if status else [],

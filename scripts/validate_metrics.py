@@ -57,7 +57,8 @@ CSV_FIELDS = {
         'reason', 'outcome',
     },
     'energy_ledger.csv': {
-        'time_s', 'event_seq', 'packet_id', 'sender_id', 'receiver_id', 'distance_m', 'tx_energy_j',
+        'time_s', 'event_seq', 'packet_id', 'sender_id', 'receiver_id', 'distance_m',
+        'tx_energy_requested_j', 'rx_energy_requested_j', 'tx_energy_j',
         'rx_energy_j', 'success', 'reason', 'sender_energy_before',
         'sender_energy_after', 'receiver_energy_before', 'receiver_energy_after',
     },
@@ -113,7 +114,7 @@ METRIC_FIELDS = {
 MANIFEST_FIELDS = {
     'configuration', 'generated_files', 'routing_algorithm', 'communication_range_m',
     'topology_seed', 'traffic_seed', 'requested_duration_s', 'actual_duration_s',
-    'alpha_energy', 'radio_model',
+    'alpha_energy', 'energy_failure_policy', 'radio_model',
 }
 
 
@@ -414,10 +415,10 @@ def validate_run(
         'run_manifest.json.export_schema_version',
         non_negative=True,
     )
-    if schema_version < 4:
+    if schema_version < 5:
         raise InputDataError(
-            'run_manifest.json.export_schema_version: schema v4 with serviceability '
-            'snapshots and canonical packet drop categories is required'
+            'run_manifest.json.export_schema_version: schema v4 is obsolete; '
+            'schema v5 with requested/actual energy debits is required'
         )
     tables = {
         name: _read_csv(run_path / name, fields)
@@ -506,6 +507,16 @@ def validate_run(
         'run_manifest.json.configuration.initial_energy_j',
         non_negative=True,
     )
+    energy_failure_policy = str(manifest['energy_failure_policy'])
+    if energy_failure_policy not in {'reject_without_debit', 'partial_debit'}:
+        raise InputDataError(
+            'run_manifest.json.energy_failure_policy: expected '
+            'reject_without_debit or partial_debit'
+        )
+    if configuration.get('energy_failure_policy') != energy_failure_policy:
+        raise InputDataError(
+            'run_manifest.json: configuration and run energy policies differ'
+        )
     alpha_energy = _number(
         manifest['alpha_energy'], 'run_manifest.json.alpha_energy', non_negative=True
     )
@@ -1093,6 +1104,16 @@ def validate_run(
         location = f'energy_ledger.csv:{index}'
         time_s = _number(row['time_s'], f'{location}.time_s', non_negative=True)
         distance = _number(row['distance_m'], f'{location}.distance_m', non_negative=True)
+        tx_requested = _number(
+            row['tx_energy_requested_j'],
+            f'{location}.tx_energy_requested_j',
+            non_negative=True,
+        )
+        rx_requested = _number(
+            row['rx_energy_requested_j'],
+            f'{location}.rx_energy_requested_j',
+            non_negative=True,
+        )
         tx = _number(row['tx_energy_j'], f'{location}.tx_energy_j', non_negative=True)
         rx = _number(row['rx_energy_j'], f'{location}.rx_energy_j', non_negative=True)
         sender = row['sender_id'].strip()
@@ -1194,6 +1215,18 @@ def validate_run(
             radio_model['e_elec_j_bit'] * packet_size_bytes * 8
             if receiver in sensor_ids else 0.0
         )
+        if not math.isclose(
+            float(tx_requested), theoretical_tx, rel_tol=0.0, abs_tol=tolerance
+        ):
+            ledger_errors.append(
+                f'{location}.tx_energy_requested_j: does not match radio model'
+            )
+        if not math.isclose(
+            float(rx_requested), theoretical_rx, rel_tol=0.0, abs_tol=tolerance
+        ):
+            ledger_errors.append(
+                f'{location}.rx_energy_requested_j: does not match radio model'
+            )
         if success and reason != 'OK':
             ledger_errors.append(f'{location}.reason: successful transaction must be OK')
         if success:
@@ -1212,8 +1245,17 @@ def validate_run(
         if not success:
             failed_transaction_tx_debit += float(tx)
             if reason == 'TX_INSUFFICIENT_ENERGY':
-                if not math.isclose(float(tx) + float(rx), 0.0, abs_tol=tolerance):
-                    ledger_errors.append(f'{location}: insufficient TX must debit zero')
+                expected_tx_debit = (
+                    min(float(sender_before), theoretical_tx)
+                    if energy_failure_policy == 'partial_debit' else 0.0
+                )
+                if not math.isclose(
+                    float(tx), expected_tx_debit, rel_tol=0.0, abs_tol=tolerance
+                ) or not math.isclose(float(rx), 0.0, abs_tol=tolerance):
+                    ledger_errors.append(
+                        f'{location}: insufficient TX debit violates '
+                        f'{energy_failure_policy} policy'
+                    )
                 if float(sender_before) >= (
                     theoretical_tx - ENERGY_COMPARISON_TOLERANCE_J
                 ):
@@ -1221,11 +1263,17 @@ def validate_run(
                         f'{location}: sender had enough energy for claimed TX failure'
                     )
             elif reason == 'RX_INSUFFICIENT_ENERGY':
+                expected_rx_debit = (
+                    min(float(receiver_before), theoretical_rx)
+                    if energy_failure_policy == 'partial_debit'
+                    and receiver_before is not None else 0.0
+                )
                 if receiver not in sensor_ids or not math.isclose(
-                    float(rx), 0.0, abs_tol=tolerance
+                    float(rx), expected_rx_debit, rel_tol=0.0, abs_tol=tolerance
                 ):
                     ledger_errors.append(
-                        f'{location}: insufficient RX must target sensor and debit RX zero'
+                        f'{location}: insufficient RX debit violates '
+                        f'{energy_failure_policy} policy'
                     )
                 if not math.isclose(
                     float(tx), theoretical_tx, rel_tol=0.0, abs_tol=tolerance

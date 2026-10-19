@@ -140,6 +140,7 @@ class Simulation:
         self.radio = RadioModel(
             death_callback=self._on_node_death,
             event_seq_provider=self.next_event_seq,
+            energy_failure_policy=self.config.energy_failure_policy,
         )
         self.enable_traffic = enable_traffic
         self.traffic_gen: TrafficGenerator | None = None
@@ -572,6 +573,8 @@ class Simulation:
             'sender_id',
             'receiver_id',
             'distance_m',
+            'tx_energy_requested_j',
+            'rx_energy_requested_j',
             'tx_energy_j',
             'rx_energy_j',
             'success',
@@ -634,7 +637,7 @@ class Simulation:
             output_names,
             Path.cwd(),
             run_metadata={
-                'export_schema_version': 4,
+                'export_schema_version': 5,
                 'routing_algorithm': self.routing_algorithm,
                 'communication_range_m': self.network.communication_range_m,
                 'topology_seed': self.config.seed,
@@ -648,6 +651,7 @@ class Simulation:
                     self.traffic_gen.queue_capacity if self.traffic_gen else None
                 ),
                 'alpha_energy': self.alpha_energy,
+                'energy_failure_policy': self.config.energy_failure_policy,
                 'radio_model': {
                     'e_elec_j_bit': self.radio.e_elec,
                     'e_fs_j_bit_m2': self.radio.e_fs,

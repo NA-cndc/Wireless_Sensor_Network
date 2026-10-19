@@ -7,6 +7,7 @@
   "packet_size_bytes": 128,
   "payload_size_bytes": 128,
   "packet_interval_s": 10,
+  "energy_failure_policy": "reject_without_debit",
   "communication_ranges_m": [
     250,
     300,

@@ -114,3 +114,52 @@ def test_sink_does_not_consume_energy():
     res = radio.attempt_transmission(sender, sink, 128, 50.0)
     assert res["success"] is True
     assert res["rx_energy_j"] == 0.0
+
+
+def test_partial_debit_sender_failure_consumes_remaining_energy_once():
+    deaths = []
+    radio = RadioModel(
+        energy_failure_policy="partial_debit",
+        death_callback=deaths.append,
+    )
+    required = radio.compute_tx_energy(128 * 8, 50.0)
+    sender = Sensor("s1", 0, 0, initial_energy_j=required / 2.0)
+    receiver = Sensor("s2", 50, 0, initial_energy_j=5.0)
+
+    result = radio.attempt_transmission(
+        sender, receiver, 128, 50.0, sim_time_s=3.0, packet_id="partial-tx"
+    )
+
+    assert result["success"] is False
+    assert result["reason"] == "TX_INSUFFICIENT_ENERGY"
+    assert result["tx_energy_requested_j"] == pytest.approx(required)
+    assert result["tx_energy_j"] == pytest.approx(required / 2.0)
+    assert result["rx_energy_j"] == 0.0
+    assert sender.energy_j == 0.0
+    assert receiver.energy_j == 5.0
+    assert len(deaths) == len(radio.death_events) == 1
+
+
+def test_partial_debit_receiver_failure_debits_both_actual_amounts():
+    deaths = []
+    radio = RadioModel(
+        energy_failure_policy="partial_debit",
+        death_callback=deaths.append,
+    )
+    required_tx = radio.compute_tx_energy(128 * 8, 50.0)
+    required_rx = radio.compute_rx_energy(128 * 8)
+    sender = Sensor("s1", 0, 0, initial_energy_j=required_tx * 2.0)
+    receiver = Sensor("s2", 50, 0, initial_energy_j=required_rx / 2.0)
+
+    result = radio.attempt_transmission(
+        sender, receiver, 128, 50.0, sim_time_s=4.0, packet_id="partial-rx"
+    )
+
+    assert result["success"] is False
+    assert result["reason"] == "RX_INSUFFICIENT_ENERGY"
+    assert result["tx_energy_j"] == pytest.approx(required_tx)
+    assert result["rx_energy_requested_j"] == pytest.approx(required_rx)
+    assert result["rx_energy_j"] == pytest.approx(required_rx / 2.0)
+    assert sender.energy_j == pytest.approx(required_tx)
+    assert receiver.energy_j == 0.0
+    assert len(deaths) == len(radio.death_events) == 1

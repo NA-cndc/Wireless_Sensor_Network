@@ -129,8 +129,8 @@
     {
       "metric": "delivered_packets",
       "category": "cross_check",
-      "recalculated_value": 4495,
-      "reported_value": 4495,
+      "recalculated_value": 4496,
+      "reported_value": 4496,
       "difference": null,
       "passed": true,
       "detail": ""
@@ -138,8 +138,8 @@
     {
       "metric": "dropped_packets",
       "category": "cross_check",
-      "recalculated_value": 5,
-      "reported_value": 5,
+      "recalculated_value": 4,
+      "reported_value": 4,
       "difference": null,
       "passed": true,
       "detail": ""
@@ -175,10 +175,10 @@
       "metric": "drop_reasons",
       "category": "cross_check",
       "recalculated_value": {
-        "relay_below_threshold": 5
+        "relay_below_threshold": 4
       },
       "reported_value": {
-        "relay_below_threshold": 5
+        "relay_below_threshold": 4
       },
       "difference": null,
       "passed": true,
@@ -188,10 +188,10 @@
       "metric": "drop_categories",
       "category": "cross_check",
       "recalculated_value": {
-        "routing_policy": 5
+        "routing_policy": 4
       },
       "reported_value": {
-        "routing_policy": 5
+        "routing_policy": 4
       },
       "difference": null,
       "passed": true,
@@ -200,8 +200,8 @@
     {
       "metric": "drop_category_conservation",
       "category": "cross_check",
-      "recalculated_value": 5,
-      "reported_value": 5,
+      "recalculated_value": 4,
+      "reported_value": 4,
       "difference": null,
       "passed": true,
       "detail": ""
@@ -209,8 +209,8 @@
     {
       "metric": "total_hops_delivered",
       "category": "cross_check",
-      "recalculated_value": 11715,
-      "reported_value": 11715,
+      "recalculated_value": 11719,
+      "reported_value": 11719,
       "difference": null,
       "passed": true,
       "detail": ""
@@ -218,17 +218,17 @@
     {
       "metric": "total_end_to_end_delay_s",
       "category": "cross_check",
-      "recalculated_value": 123.76883200002982,
-      "reported_value": 123.76883200002868,
-      "difference": 1.1368683772161603e-12,
+      "recalculated_value": 123.92448000002994,
+      "reported_value": 123.92448000002884,
+      "difference": 1.1084466677857563e-12,
       "passed": true,
       "detail": ""
     },
     {
       "metric": "total_delivered_bytes",
       "category": "cross_check",
-      "recalculated_value": 575360,
-      "reported_value": 575360,
+      "recalculated_value": 575488,
+      "reported_value": 575488,
       "difference": null,
       "passed": true,
       "detail": ""
@@ -236,8 +236,8 @@
     {
       "metric": "total_delivered_bits",
       "category": "cross_check",
-      "recalculated_value": 4602880,
-      "reported_value": 4602880,
+      "recalculated_value": 4603904,
+      "reported_value": 4603904,
       "difference": null,
       "passed": true,
       "detail": ""
@@ -245,8 +245,8 @@
     {
       "metric": "total_delivered_payload_bytes",
       "category": "cross_check",
-      "recalculated_value": 575360,
-      "reported_value": 575360,
+      "recalculated_value": 575488,
+      "reported_value": 575488,
       "difference": null,
       "passed": true,
       "detail": ""
@@ -254,8 +254,8 @@
     {
       "metric": "total_delivered_payload_bits",
       "category": "cross_check",
-      "recalculated_value": 4602880,
-      "reported_value": 4602880,
+      "recalculated_value": 4603904,
+      "reported_value": 4603904,
       "difference": null,
       "passed": true,
       "detail": ""
@@ -263,8 +263,8 @@
     {
       "metric": "throughput_bps",
       "category": "cross_check",
-      "recalculated_value": 45573.069306930694,
-      "reported_value": 45573.069306930694,
+      "recalculated_value": 45583.207920792076,
+      "reported_value": 45583.207920792076,
       "difference": 0.0,
       "passed": true,
       "detail": ""
@@ -272,8 +272,8 @@
     {
       "metric": "goodput_bps",
       "category": "cross_check",
-      "recalculated_value": 45573.069306930694,
-      "reported_value": 45573.069306930694,
+      "recalculated_value": 45583.207920792076,
+      "reported_value": 45583.207920792076,
       "difference": 0.0,
       "passed": true,
       "detail": ""
@@ -281,7 +281,7 @@
     {
       "metric": "pdr_domain",
       "category": "domain",
-      "recalculated_value": 99.88888888888889,
+      "recalculated_value": 99.91111111111111,
       "reported_value": "[0, 100] or null",
       "difference": null,
       "passed": true,
@@ -290,8 +290,8 @@
     {
       "metric": "pdr_percent",
       "category": "cross_check",
-      "recalculated_value": 99.88888888888889,
-      "reported_value": 99.88888888888889,
+      "recalculated_value": 99.91111111111111,
+      "reported_value": 99.91111111111111,
       "difference": 0.0,
       "passed": true,
       "detail": ""
@@ -299,8 +299,8 @@
     {
       "metric": "average_hops",
       "category": "cross_check",
-      "recalculated_value": 2.6062291434927696,
-      "reported_value": 2.6062291434927696,
+      "recalculated_value": 2.6065391459074734,
+      "reported_value": 2.6065391459074734,
       "difference": 0.0,
       "passed": true,
       "detail": ""
@@ -308,9 +308,9 @@
     {
       "metric": "average_end_to_end_delay_s",
       "category": "cross_check",
-      "recalculated_value": 0.02753477908788205,
-      "reported_value": 0.027534779087881798,
-      "difference": 2.5326962749261384e-16,
+      "recalculated_value": 0.027563274021358972,
+      "reported_value": 0.027563274021358726,
+      "difference": 2.463307335887066e-16,
       "passed": true,
       "detail": ""
     },
@@ -353,8 +353,8 @@
     {
       "metric": "residual_total_energy_j",
       "category": "cross_check",
-      "recalculated_value": 2150.3686943652115,
-      "reported_value": 2150.3686943652115,
+      "recalculated_value": 2150.349487222003,
+      "reported_value": 2150.349487222003,
       "difference": 0.0,
       "passed": true,
       "detail": ""
@@ -362,8 +362,8 @@
     {
       "metric": "consumed_energy_sensors_j",
       "category": "cross_check",
-      "recalculated_value": 99.63130563478853,
-      "reported_value": 99.63130563478853,
+      "recalculated_value": 99.65051277799694,
+      "reported_value": 99.65051277799694,
       "difference": 0.0,
       "passed": true,
       "detail": ""
@@ -695,8 +695,8 @@
     {
       "metric": "energy_per_delivered_bit_j",
       "category": "cross_check",
-      "recalculated_value": 2.1645427565956212e-05,
-      "reported_value": 2.1645427565956212e-05,
+      "recalculated_value": 2.1644785116717666e-05,
+      "reported_value": 2.1644785116717666e-05,
       "difference": 0.0,
       "passed": true,
       "detail": ""
@@ -704,8 +704,8 @@
     {
       "metric": "relay_jain_fairness",
       "category": "cross_check",
-      "recalculated_value": 0.15406274380985815,
-      "reported_value": 0.15406274380985815,
+      "recalculated_value": 0.15401191684459936,
+      "reported_value": 0.15401191684459936,
       "difference": 0.0,
       "passed": true,
       "detail": ""
@@ -740,8 +740,8 @@
     {
       "metric": "route_change_count",
       "category": "cross_check",
-      "recalculated_value": 17,
-      "reported_value": 17,
+      "recalculated_value": 18,
+      "reported_value": 18,
       "difference": null,
       "passed": true,
       "detail": ""
@@ -749,8 +749,8 @@
     {
       "metric": "route_recompute_count",
       "category": "cross_check",
-      "recalculated_value": 17,
-      "reported_value": 17,
+      "recalculated_value": 18,
+      "reported_value": 18,
       "difference": null,
       "passed": true,
       "detail": ""

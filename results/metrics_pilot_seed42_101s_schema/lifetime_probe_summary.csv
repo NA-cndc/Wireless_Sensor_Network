@@ -1,0 +1,3 @@
+scenario,algorithm,range_m,seed,requested_duration_s,actual_duration_s,fnd_s,fnd_status,hnd_s,hnd_status,lnd_s,lnd_status,network_lifetime_s,network_lifetime_status,energy_service_lifetime_sampled_s,energy_service_lifetime_status,alive_sensors,dead_sensors,generated_packets,delivered_packets,dropped_packets,pending_packets,validation_passed,output_dir
+lifetime_probe_MHR_R350m_seed42,MHR,350.0,42,1101.0,1101.0,110.02048000000002,observed,,not_observed,,not_observed,,not_observed,,not_observed,361,89,45366,43936,1430,0,True,lifetime_probe_MHR_R350m_seed42
+lifetime_probe_EMHR_R350m_seed42,EMHR,350.0,42,1101.0,1101.0,620.004096,observed,,not_observed,,not_observed,,not_observed,,not_observed,432,18,49151,45495,3656,0,True,lifetime_probe_EMHR_R350m_seed42
