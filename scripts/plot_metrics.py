@@ -77,6 +77,10 @@ FIGURE_BASENAMES = [
     '12_energy_per_delivered_bit_by_range',
     '13_throughput_goodput_over_time',
     '14_delivered_bits_at_lifetime_milestones',
+    '15_lifetime_probe_alive_sensors_over_time',
+    '16_lifetime_probe_milestones',
+    '17_lifetime_probe_performance',
+    '18_lifetime_probe_bits_at_fnd',
 ]
 
 
@@ -437,6 +441,110 @@ def _validated_controlled_run(
     return deaths, metrics, manifest
 
 
+def _validated_lifetime_probes(root: Path) -> list[dict[str, Any]]:
+    """Load and validate long-run probes without mixing them into the pilot."""
+    summary_path = root / 'lifetime_probe_summary.csv'
+    if not summary_path.exists():
+        return []
+    rows = _read_csv(summary_path)
+    required = {
+        'scenario', 'algorithm', 'range_m', 'seed', 'requested_duration_s',
+        'actual_duration_s', 'fnd_s', 'fnd_status', 'hnd_s', 'hnd_status',
+        'lnd_s', 'lnd_status', 'network_lifetime_s',
+        'network_lifetime_status', 'energy_service_lifetime_sampled_s',
+        'energy_service_lifetime_status', 'alive_sensors', 'dead_sensors',
+        'generated_packets', 'delivered_packets', 'dropped_packets',
+        'pending_packets', 'validation_passed', 'output_dir',
+    }
+    if not rows:
+        raise ValueError('lifetime_probe_summary.csv contains no runs')
+    missing = sorted(required - set(rows[0]))
+    if missing:
+        raise ValueError(f'lifetime_probe_summary.csv missing columns {missing}')
+    scenarios = [row['scenario'] for row in rows]
+    if len(scenarios) != len(set(scenarios)):
+        raise ValueError('lifetime_probe_summary.csv contains duplicate scenarios')
+
+    for row in rows:
+        run_path = _resolve_run_path(root, row)
+        validation = validate_run(run_path, write_report=False)
+        if not validation['passed']:
+            failed = [
+                check['metric'] for check in validation['checks'] if not check['passed']
+            ]
+            raise ValueError(
+                f'{row["scenario"]}: long-run raw data failed validation checks {failed}'
+            )
+        metrics = json.loads((run_path / 'metrics.json').read_text(encoding='utf-8'))
+        manifest = json.loads((run_path / 'run_manifest.json').read_text(encoding='utf-8'))
+        numeric_pairs = {
+            'range_m': manifest['communication_range_m'],
+            'seed': manifest['topology_seed'],
+            'requested_duration_s': manifest['requested_duration_s'],
+            'actual_duration_s': metrics['measurement_duration_s'],
+            'fnd_s': metrics['fnd_s'],
+            'hnd_s': metrics['hnd_s'],
+            'lnd_s': metrics['lnd_s'],
+            'network_lifetime_s': metrics['network_lifetime_s'],
+            'energy_service_lifetime_sampled_s': (
+                metrics['energy_service_lifetime_sampled_s']
+            ),
+            'alive_sensors': metrics['alive_sensors'],
+            'dead_sensors': metrics['dead_sensors'],
+            'generated_packets': metrics['generated_packets'],
+            'delivered_packets': metrics['delivered_packets'],
+            'dropped_packets': metrics['dropped_packets'],
+            'pending_packets': metrics['pending_packets'],
+        }
+        text_pairs = {
+            'algorithm': manifest['routing_algorithm'],
+            'fnd_status': metrics['fnd_status'],
+            'hnd_status': metrics['hnd_status'],
+            'lnd_status': metrics['lnd_status'],
+            'network_lifetime_status': metrics['network_lifetime_status'],
+            'energy_service_lifetime_status': (
+                metrics['energy_service_lifetime_status']
+            ),
+        }
+        mismatches = [
+            name for name, expected in numeric_pairs.items()
+            if not _same_optional_number(row[name], expected)
+        ]
+        mismatches.extend(
+            name for name, expected in text_pairs.items()
+            if row[name] != str(expected)
+        )
+        if row['validation_passed'].strip().lower() != 'true':
+            mismatches.append('validation_passed')
+        if mismatches:
+            raise ValueError(
+                f'{row["scenario"]}: lifetime_probe_summary.csv does not match '
+                f'current run data for {sorted(set(mismatches))}'
+            )
+        row['_run_path'] = run_path
+        row['_metrics'] = metrics
+        row['_manifest'] = manifest
+
+    durations = {float(row['_metrics']['measurement_duration_s']) for row in rows}
+    if durations != {1101.0}:
+        raise ValueError(
+            'long-run comparison requires every lifetime probe to use T=1101 s; '
+            f'found {sorted(durations)}'
+        )
+    algorithms = [str(row['algorithm']) for row in rows]
+    if sorted(algorithms) != ['EMHR', 'MHR']:
+        raise ValueError(
+            'long-run comparison requires exactly one MHR and one EMHR probe; '
+            f'found {algorithms}'
+        )
+    if any(
+        row['fnd_status'] != 'observed' or _optional_float(row['fnd_s']) is None
+        for row in rows
+    ):
+        raise ValueError('each long-run probe must contain an observed FND')
+    return rows
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Plot a validated WSN metrics pilot.')
     parser.add_argument('pilot_dir', type=Path)
@@ -451,6 +559,7 @@ def main() -> int:
     try:
         summary = _validated_summary(root)
         controlled_data = _validated_controlled_run(root)
+        lifetime_probes = _validated_lifetime_probes(root)
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as exc:
         print(f'PLOT ERROR: {exc}', file=sys.stderr)
         return 1
@@ -475,9 +584,7 @@ def main() -> int:
     algorithms_label = '/'.join(sorted({str(row['algorithm']) for row in summary}))
     range_values = sorted({float(row['range_m']) for row in summary})
     ranges_label = '/'.join(f'{value:g}' for value in range_values)
-    palette = ['tab:blue', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown']
     marker_values = ['o', 's', '^', 'D', 'v']
-    range_colors = {value: palette[index % len(palette)] for index, value in enumerate(range_values)}
     range_markers = {value: marker_values[index % len(marker_values)] for index, value in enumerate(range_values)}
     range_lines = {
         value: ('-', '--', ':', '-.')[index % 4]
@@ -1096,6 +1203,10 @@ def main() -> int:
     figure, axis = plt.subplots(figsize=(9, 5))
     observed_feasibility = False
     undefined_no_alive = 0
+    feasibility_range_lines = {
+        value: ('-', '--', '-.')[index % 3]
+        for index, value in enumerate(range_values)
+    }
     for row in summary:
         timeseries = _read_csv(row['_run_path'] / 'serviceability_snapshots.csv')
         points = []
@@ -1128,7 +1239,7 @@ def main() -> int:
                 [p[0] for p in points], [p[1] for p in points],
                 label=f'{row["algorithm"]} R={range_m:g}m energy-feasible',
                 color=algorithm_colors[row['algorithm']],
-                linestyle=range_lines[range_m],
+                linestyle=feasibility_range_lines[range_m],
                 linewidth=1.5,
             )
             axis.plot(
@@ -1179,7 +1290,23 @@ def main() -> int:
             Line2D([0], [0], color=algorithm_colors[name], lw=2, label=name)
             for name in ('MHR', 'EMHR')
         ]
-        axis.legend(handles=algorithm_handles, fontsize=8, loc='center right')
+        algorithm_legend = axis.legend(
+            handles=algorithm_handles, title='Thuật toán (màu)', fontsize=8,
+            loc='center right', bbox_to_anchor=(1.0, 0.62),
+        )
+        axis.add_artist(algorithm_legend)
+        range_handles = [
+            Line2D(
+                [0], [0], color='0.25', lw=2,
+                linestyle=feasibility_range_lines[value],
+                label=f'R = {value:g} m',
+            )
+            for value in range_values
+        ]
+        axis.legend(
+            handles=range_handles, title='Bán kính (kiểu nét)', fontsize=8,
+            loc='center right', bbox_to_anchor=(1.0, 0.30),
+        )
     save_plot(figure, '09_energy_feasible_ratio_over_time')
     save_source(
         '09_energy_feasible_ratio_over_time', feasibility_source,
@@ -1541,9 +1668,240 @@ def main() -> int:
          'milestone_time_s', 'delivered_bits', 'status', 'observation_interval'],
     )
 
+    # Figures 15-18 use only the separate T=1101 s lifetime-probe dataset.
+    if lifetime_probes:
+        probe_order = {'MHR': 0, 'EMHR': 1}
+        probes = sorted(
+            lifetime_probes,
+            key=lambda item: (probe_order.get(str(item['algorithm']), 99), item['scenario']),
+        )
+        long_duration = float(probes[0]['_metrics']['measurement_duration_s'])
+        long_interval = f'[0,{long_duration:g} s)'
+
+        # Figure 15: exact node-death steps and the algorithm-specific FND times.
+        long_alive_source: list[dict[str, Any]] = []
+        figure, axis = plt.subplots(figsize=(10, 5.5))
+        for row in probes:
+            events = _read_csv(row['_run_path'] / 'reachability_events.csv')
+            points = [
+                {
+                    'time_s': float(event['time_s']),
+                    'alive_sensors': int(event['alive_sensors']),
+                    'event_seq': int(event['event_seq']),
+                    'trigger': event['trigger'],
+                }
+                for event in events
+            ]
+            if not points or points[-1]['time_s'] < long_duration:
+                points.append({
+                    'time_s': long_duration,
+                    'alive_sensors': int(row['_metrics']['alive_sensors']),
+                    'event_seq': None,
+                    'trigger': 'observation_end',
+                })
+            algorithm = str(row['algorithm'])
+            axis.step(
+                [point['time_s'] for point in points],
+                [point['alive_sensors'] for point in points],
+                where='post', color=algorithm_colors[algorithm],
+                linestyle=algorithm_lines[algorithm], linewidth=2,
+                label=f'{algorithm} (R={float(row["range_m"]):g} m)',
+            )
+            fnd_s = float(row['_metrics']['fnd_s'])
+            fnd_alive = int(row['_metrics']['total_sensors']) - 1
+            axis.scatter(
+                [fnd_s], [fnd_alive], color=algorithm_colors[algorithm],
+                edgecolors='black', linewidths=0.6, s=52, zorder=5,
+            )
+            axis.axvline(
+                fnd_s, color=algorithm_colors[algorithm], linestyle=':',
+                linewidth=1.1, alpha=0.8,
+            )
+            axis.annotate(
+                f'{algorithm} FND = {fnd_s:.3f} s', (fnd_s, fnd_alive),
+                xytext=(8, -22),
+                textcoords='offset points', fontsize=8,
+                color=algorithm_colors[algorithm],
+            )
+            for point in points:
+                long_alive_source.append({
+                    'scenario': row['scenario'], 'algorithm': algorithm,
+                    'range_m': row['range_m'], 'seed': row['seed'],
+                    'measurement_duration_s': long_duration,
+                    'observation_interval': long_interval,
+                    **point, 'fnd_s': fnd_s, 'fnd_status': row['fnd_status'],
+                })
+        axis.set(
+            title='Số sensor còn sống trong lần chạy dài T = 1101 giây',
+            xlabel='Thời gian mô phỏng (s)', ylabel='Số sensor còn sống',
+            xlim=(0, long_duration),
+            ylim=(0, max(int(row['_metrics']['total_sensors']) for row in probes) + 15),
+        )
+        axis.grid(alpha=0.25)
+        axis.legend(fontsize=8)
+        axis.text(
+            0.99, 0.04, f'Dữ liệu riêng của lifetime_probe_*; khoảng đo {long_interval}.',
+            ha='right', transform=axis.transAxes, fontsize=8,
+            bbox={'facecolor': 'white', 'alpha': 0.85, 'edgecolor': '0.8'},
+        )
+        save_plot(figure, '15_lifetime_probe_alive_sensors_over_time')
+        save_source(
+            '15_lifetime_probe_alive_sensors_over_time', long_alive_source,
+            ['scenario', 'algorithm', 'range_m', 'seed', 'measurement_duration_s',
+             'observation_interval', 'time_s', 'alive_sensors', 'event_seq',
+             'trigger', 'fnd_s', 'fnd_status'],
+        )
+
+        # Figure 16: explicit status table; missing milestones remain N/A.
+        long_milestone_source: list[dict[str, Any]] = []
+        table_text: list[list[str]] = []
+        for row in probes:
+            display_row = [str(row['algorithm'])]
+            for key, label in (('fnd', 'FND'), ('hnd', 'HND'), ('lnd', 'LND')):
+                value = _optional_float(row[f'{key}_s'])
+                status = row[f'{key}_status']
+                long_milestone_source.append({
+                    'scenario': row['scenario'], 'algorithm': row['algorithm'],
+                    'range_m': row['range_m'], 'seed': row['seed'],
+                    'measurement_duration_s': long_duration,
+                    'observation_interval': long_interval,
+                    'milestone': label, 'time_s': value, 'status': status,
+                })
+                display_row.append(
+                    f'{value:.3f} s\n{status}' if value is not None else f'N/A\n{status}'
+                )
+            table_text.append(display_row)
+        figure, axis = plt.subplots(figsize=(9, 3.5))
+        axis.axis('off')
+        table = axis.table(
+            cellText=table_text, colLabels=['Thuật toán', 'FND', 'HND', 'LND'],
+            cellLoc='center', colLoc='center', loc='center',
+            colWidths=[0.18, 0.27, 0.27, 0.27],
+        )
+        table.auto_set_font_size(False)
+        table.set_fontsize(10)
+        table.scale(1.0, 2.1)
+        for column in range(4):
+            table[(0, column)].set_facecolor('#dbeafe')
+            table[(0, column)].set_text_props(weight='bold')
+        axis.set_title(
+            'Các mốc lifetime của lần chạy dài T = 1101 giây\n'
+            'HND/LND chưa xuất hiện trong khoảng quan sát',
+            pad=18,
+        )
+        axis.text(
+            0.5, 0.05, f'Khoảng quan sát {long_interval}; không thay dữ liệu thiếu bằng 0.',
+            ha='center', transform=axis.transAxes, fontsize=9,
+        )
+        save_plot(figure, '16_lifetime_probe_milestones')
+        save_source(
+            '16_lifetime_probe_milestones', long_milestone_source,
+            ['scenario', 'algorithm', 'range_m', 'seed', 'measurement_duration_s',
+             'observation_interval', 'milestone', 'time_s', 'status'],
+        )
+
+        # Figure 17: all three aggregates share the same long-run horizon.
+        long_performance_source: list[dict[str, Any]] = []
+        performance_specs = (
+            ('pdr_percent', 'PDR', '%', 1.0),
+            ('throughput_bps', 'Throughput', 'kbit/s', 0.001),
+            ('average_end_to_end_delay_s', 'Độ trễ trung bình', 'ms', 1000.0),
+        )
+        figure, axes = plt.subplots(1, 3, figsize=(12, 4.8))
+        names = [str(row['algorithm']) for row in probes]
+        colors = [algorithm_colors[name] for name in names]
+        for axis, (key, title, unit, multiplier) in zip(axes, performance_specs):
+            values = [float(row['_metrics'][key]) * multiplier for row in probes]
+            bars = axis.bar(names, values, color=colors, width=0.62)
+            axis.set(title=title, ylabel=unit)
+            axis.set_ylim(0, max(values) * 1.18 if values else 1)
+            axis.grid(alpha=0.25, axis='y')
+            for bar, value in zip(bars, values):
+                decimals = 3 if key != 'pdr_percent' else 4
+                axis.annotate(
+                    f'{value:.{decimals}f}',
+                    (bar.get_x() + bar.get_width() / 2, bar.get_height()),
+                    xytext=(0, 4), textcoords='offset points', ha='center', fontsize=8,
+                )
+        for row in probes:
+            metrics = row['_metrics']
+            long_performance_source.append({
+                'scenario': row['scenario'], 'algorithm': row['algorithm'],
+                'range_m': row['range_m'], 'seed': row['seed'],
+                'measurement_duration_s': long_duration,
+                'observation_interval': long_interval,
+                'generated_packets': metrics['generated_packets'],
+                'delivered_packets': metrics['delivered_packets'],
+                'dropped_packets': metrics['dropped_packets'],
+                'pending_packets': metrics['pending_packets'],
+                'pdr_percent': metrics['pdr_percent'],
+                'throughput_bps': metrics['throughput_bps'],
+                'average_end_to_end_delay_ms': (
+                    float(metrics['average_end_to_end_delay_s']) * 1000.0
+                ),
+            })
+        figure.suptitle(
+            'So sánh hiệu năng lần chạy dài — chỉ lifetime_probe_*, T = 1101 giây'
+        )
+        figure.text(
+            0.5, 0.01, 'Không trộn với 6 lần chạy pilot T = 101 giây.',
+            ha='center', fontsize=9,
+        )
+        figure.tight_layout(rect=(0, 0.04, 1, 0.92))
+        save_plot(figure, '17_lifetime_probe_performance')
+        save_source(
+            '17_lifetime_probe_performance', long_performance_source,
+            ['scenario', 'algorithm', 'range_m', 'seed', 'measurement_duration_s',
+             'observation_interval', 'generated_packets', 'delivered_packets',
+             'dropped_packets', 'pending_packets', 'pdr_percent', 'throughput_bps',
+             'average_end_to_end_delay_ms'],
+        )
+
+        # Figure 18: each bar is evaluated at its own algorithm-specific FND.
+        fnd_bits_source: list[dict[str, Any]] = []
+        values = [int(row['_metrics']['delivered_bits_at_fnd']) for row in probes]
+        figure, axis = plt.subplots(figsize=(8, 5.2))
+        bars = axis.bar(names, values, color=colors, width=0.6)
+        for bar, row, value in zip(bars, probes, values):
+            fnd_s = float(row['_metrics']['fnd_s'])
+            axis.annotate(
+                f'{value:,} bit\nFND = {fnd_s:.3f} s',
+                (bar.get_x() + bar.get_width() / 2, bar.get_height()),
+                xytext=(0, 5), textcoords='offset points', ha='center', fontsize=9,
+            )
+            fnd_bits_source.append({
+                'scenario': row['scenario'], 'algorithm': row['algorithm'],
+                'range_m': row['range_m'], 'seed': row['seed'],
+                'measurement_duration_s': long_duration,
+                'observation_interval': long_interval,
+                'fnd_s': fnd_s, 'fnd_status': row['fnd_status'],
+                'delivered_bits_at_fnd': value,
+                'comparison_note': 'FND occurs at an algorithm-specific time',
+            })
+        axis.set(
+            title='Số bit nhận tại FND của lần chạy dài',
+            xlabel='Thuật toán', ylabel='Số bit nhận tích lũy tại FND (bit)',
+        )
+        axis.set_ylim(0, max(values) * 1.22)
+        axis.grid(alpha=0.25, axis='y')
+        axis.text(
+            0.5, 0.03,
+            'Lưu ý: hai cột được chốt tại hai thời điểm FND khác nhau, không cùng horizon.',
+            ha='center', transform=axis.transAxes, fontsize=8.5,
+            bbox={'facecolor': '#fff7ed', 'alpha': 0.9, 'edgecolor': '#fb923c'},
+        )
+        save_plot(figure, '18_lifetime_probe_bits_at_fnd')
+        save_source(
+            '18_lifetime_probe_bits_at_fnd', fnd_bits_source,
+            ['scenario', 'algorithm', 'range_m', 'seed', 'measurement_duration_s',
+             'observation_interval', 'fnd_s', 'fnd_status',
+             'delivered_bits_at_fnd', 'comparison_note'],
+        )
+
     manifest = {
         'pilot_directory': '.',
         'validated_runs': len(summary),
+        'validated_lifetime_probe_runs': len(lifetime_probes),
         'seeds': seeds,
         'classification': 'pilot_not_main_experiment',
         'figures': created_figures,

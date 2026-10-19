@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import json
 import hashlib
+import json
 import platform
 import subprocess
 from datetime import datetime, timezone
@@ -71,7 +71,13 @@ def _source_tree_sha256(repository_root: Path) -> str:
     for directory in SOURCE_HASH_ROOTS:
         root = repository_root / directory
         if root.exists():
-            files.extend(path for path in root.rglob("*") if path.is_file())
+            files.extend(
+                path
+                for path in root.rglob("*")
+                if path.is_file()
+                and not any(part.lower() == "__pycache__" for part in path.parts)
+                and path.suffix.lower() not in {".pyc", ".pyo"}
+            )
     for path in sorted(files, key=lambda item: item.relative_to(repository_root).as_posix()):
         relative = path.relative_to(repository_root).as_posix().encode("utf-8")
         digest.update(len(relative).to_bytes(4, "big"))

@@ -1,0 +1,7 @@
+scenario,algorithm,range_m,seed,measurement_duration_s,observation_interval,milestone,time_s,status
+lifetime_probe_MHR_R350m_seed42,MHR,350.0,42,1101.0,"[0,1101 s)",FND,110.02048000000002,observed
+lifetime_probe_MHR_R350m_seed42,MHR,350.0,42,1101.0,"[0,1101 s)",HND,,not_observed
+lifetime_probe_MHR_R350m_seed42,MHR,350.0,42,1101.0,"[0,1101 s)",LND,,not_observed
+lifetime_probe_EMHR_R350m_seed42,EMHR,350.0,42,1101.0,"[0,1101 s)",FND,620.004096,observed
+lifetime_probe_EMHR_R350m_seed42,EMHR,350.0,42,1101.0,"[0,1101 s)",HND,,not_observed
+lifetime_probe_EMHR_R350m_seed42,EMHR,350.0,42,1101.0,"[0,1101 s)",LND,,not_observed

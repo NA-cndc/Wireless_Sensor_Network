@@ -1,6 +1,7 @@
 {
   "pilot_directory": ".",
   "validated_runs": 6,
+  "validated_lifetime_probe_runs": 2,
   "seeds": [
     42
   ],
@@ -19,7 +20,11 @@
     "11_dropped_packets_by_reason.png",
     "12_energy_per_delivered_bit_by_range.png",
     "13_throughput_goodput_over_time.png",
-    "14_delivered_bits_at_lifetime_milestones.png"
+    "14_delivered_bits_at_lifetime_milestones.png",
+    "15_lifetime_probe_alive_sensors_over_time.png",
+    "16_lifetime_probe_milestones.png",
+    "17_lifetime_probe_performance.png",
+    "18_lifetime_probe_bits_at_fnd.png"
   ],
   "source_tables": [
     "01_alive_sensors_over_time.csv",
@@ -35,6 +40,10 @@
     "11_dropped_packets_by_reason.csv",
     "12_energy_per_delivered_bit_by_range.csv",
     "13_throughput_goodput_over_time.csv",
-    "14_delivered_bits_at_lifetime_milestones.csv"
+    "14_delivered_bits_at_lifetime_milestones.csv",
+    "15_lifetime_probe_alive_sensors_over_time.csv",
+    "16_lifetime_probe_milestones.csv",
+    "17_lifetime_probe_performance.csv",
+    "18_lifetime_probe_bits_at_fnd.csv"
   ]
 }

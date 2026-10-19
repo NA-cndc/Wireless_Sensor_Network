@@ -8,7 +8,12 @@ import pandas as pd
 from wsn_sim.config import SimulationConfig
 from wsn_sim.metrics import TOPOLOGY_SUMMARY_COLUMNS, topology_summary_frame
 from wsn_sim.network import Network
-from wsn_sim.storage import create_run_manifest, save_json, save_topology_summary
+from wsn_sim.storage import (
+    _source_tree_sha256,
+    create_run_manifest,
+    save_json,
+    save_topology_summary,
+)
 from wsn_sim.visualization import save_topology_plot
 
 
@@ -67,3 +72,21 @@ def test_manifest_round_trip(
         "pandas",
         "matplotlib",
     }
+
+
+def test_source_hash_ignores_python_cache_files(tmp_path: Path) -> None:
+    (tmp_path / "pyproject.toml").write_text("[project]\nname='hash-test'\n")
+    source = tmp_path / "src" / "package"
+    source.mkdir(parents=True)
+    (source / "module.py").write_text("VALUE = 1\n")
+    before = _source_tree_sha256(tmp_path)
+
+    cache = source / "__pycache__"
+    cache.mkdir()
+    (cache / "module.cpython-314.pyc").write_bytes(b"generated cache")
+    (source / "loose.pyc").write_bytes(b"generated cache outside __pycache__")
+    (source / "legacy.pyo").write_bytes(b"optimized generated cache")
+
+    assert _source_tree_sha256(tmp_path) == before
+    (source / "module.py").write_text("VALUE = 2\n")
+    assert _source_tree_sha256(tmp_path) != before
