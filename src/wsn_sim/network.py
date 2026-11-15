@@ -47,14 +47,19 @@ class Network:
 
     def _generate_nodes(self) -> None:
         rng = np.random.default_rng(self.config.seed)
-        node_count = self.config.num_sensors + self.config.num_sinks
-        coordinates = rng.uniform(
+        
+        # 1. Sinh số lượng sensor NGẪU NHIÊN từ 400 đến 500
+        base_num = self.config.num_sensors
+        actual_num_sensors = int(rng.integers(base_num - 50, base_num + 51))
+        
+        # Sinh vị trí ngẫu nhiên CHỈ CHO SENSORS
+        sensor_coordinates = rng.uniform(
             low=(0.0, 0.0),
             high=(self.config.area_width_m, self.config.area_height_m),
-            size=(node_count, 2),
+            size=(actual_num_sensors, 2),
         )
 
-        for index, (x, y) in enumerate(coordinates[: self.config.num_sensors]):
+        for index, (x, y) in enumerate(sensor_coordinates):
             node_id = f"sensor_{index:03d}"
             self.sensors[node_id] = Sensor(
                 node_id=node_id,
@@ -63,8 +68,25 @@ class Network:
                 initial_energy_j=self.config.initial_energy_j,
             )
 
-        for index, (x, y) in enumerate(coordinates[self.config.num_sensors :]):
+        sink_positions = [
+            (1500.0, 1500.0), # Sink 0: Trung tâm
+            (500.0, 500.0),   # Sink 1: Góc dưới trái
+            (2500.0, 500.0),  # Sink 2: Góc dưới phải
+            (500.0, 2500.0),  # Sink 3: Góc trên trái
+            (2500.0, 2500.0), # Sink 4: Góc trên phải
+            (500.0, 1500.0),  # Sink 5: Giữa cạnh trái
+            (2500.0, 1500.0)  # Sink 6: Giữa cạnh phải
+        ]
+
+        for index in range(self.config.num_sinks):
             node_id = f"sink_{index:02d}"
+            # Lấy tọa độ từ danh sách tĩnh, nếu config yêu cầu nhiều hơn 7 sink 
+            # thì các sink dư ra sẽ bị ép sinh ngẫu nhiên làm dự phòng
+            if index < len(sink_positions):
+                x, y = sink_positions[index]
+            else:
+                x, y = rng.uniform(0.0, self.config.area_width_m), rng.uniform(0.0, self.config.area_height_m)
+                
             self.sinks[node_id] = Sink(node_id=node_id, x=float(x), y=float(y))
 
     def build_graph(
