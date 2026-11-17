@@ -83,7 +83,7 @@ class Simulation:
                 ])
                 file.flush() 
                 
-                if alive_nodes == 0:
+                if alive_nodes == 0 or routable_nodes == 0:
                     break
                 yield self.env.timeout(10.0)
 

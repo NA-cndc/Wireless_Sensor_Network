@@ -29,11 +29,11 @@ import main as wsn_main
 
 
 def generate_topologies(ranges, config_data, fig_dir):
-    print("\n[1] ĐANG VẼ 3 BẢN ĐỒ TOPOLOGY...")
+    print("\n[1] ĐANG VẼ 3 BẢN ĐỒ TOPOLOGY (VECTOR PDF)...")
     cfg = SimulationConfig.from_dict(config_data)
     for r in ranges:
         network = Network(cfg, communication_range_m=r)
-        out_path = fig_dir / f"topology_R{int(r)}m.png"
+        out_path = fig_dir / f"topology_R{int(r)}m.pdf"
         save_topology_plot(network, out_path)
         print(f" -> Đã lưu: {out_path}")
 
@@ -59,7 +59,7 @@ def _format(fig, ax, title, xlabel, ylabel, path, legend_title="Thuật toán"):
     ax.legend(title=legend_title, fontsize="10", loc="best")
     ax.grid(True, linestyle=":", alpha=0.6)
     fig.tight_layout()
-    fig.savefig(path, dpi=300)
+    fig.savefig(path, format="pdf")
     plt.close(fig)
 
 
@@ -118,28 +118,28 @@ def plot_range_selection(ranges, csv_dir, fig_dir, algo="EMHR", initial_energy_j
         fig_life, ax_life,
         f"Ảnh hưởng của Bán kính truyền đến Tuổi thọ mạng ({algo})",
         "Thời gian (s)", "Tỷ lệ kết nối r(t) (%)",
-        fig_dir / "stage1_range_1_lifetime.png",
+        fig_dir / "stage1_range_1_lifetime.pdf",
         legend_title="Bán kính truyền"
     )
     _format(
         fig_energy, ax_energy,
         f"Ảnh hưởng của Bán kính truyền đến Tiêu hao Năng lượng ({algo})",
         "Thời gian (s)", "Năng lượng còn lại (Joules)",
-        fig_dir / "stage1_range_2_energy.png",
+        fig_dir / "stage1_range_2_energy.pdf",
         legend_title="Bán kính truyền"
     )
     _format(
         fig_lat, ax_lat,
         f"Ảnh hưởng của Bán kính truyền đến Độ trễ trung bình ({algo})",
         "Thời gian (s)", "Độ trễ (giây)",
-        fig_dir / "stage1_range_3_latency.png",
+        fig_dir / "stage1_range_3_latency.pdf",
         legend_title="Bán kính truyền"
     )
     _format(
         fig_dead, ax_dead,
         f"Số lượng Sensor chết theo Bán kính truyền ({algo})",
         "Thời gian (s)", "Số Sensor đã chết",
-        fig_dir / "stage1_range_4_dead_nodes.png",
+        fig_dir / "stage1_range_4_dead_nodes.pdf",
         legend_title="Bán kính truyền"
     )
 
@@ -211,25 +211,25 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
         fig_life, ax_life,
         f"So sánh Tỷ lệ kết nối vật lý r(t) ({r_label})",
         "Thời gian (s)", "Tỷ lệ r(t) (%)",
-        fig_dir / "stage2_algo_1_lifetime.png"
+        fig_dir / "stage2_algo_1_lifetime.pdf"
     )
     _format(
         fig_energy, ax_energy,
         f"So sánh Tiêu hao Năng lượng toàn mạng ({r_label})",
         "Thời gian (s)", "Năng lượng còn lại (Joules)",
-        fig_dir / "stage2_algo_2_energy.png"
+        fig_dir / "stage2_algo_2_energy.pdf"
     )
     _format(
         fig_lat, ax_lat,
         f"So sánh Độ trễ truyền tin trung bình ({r_label})",
         "Thời gian (s)", "Độ trễ (giây)",
-        fig_dir / "stage2_algo_3_latency.png"
+        fig_dir / "stage2_algo_3_latency.pdf"
     )
     _format(
         fig_dead, ax_dead,
         f"So sánh Số lượng Sensor chết - FND/HND ({r_label})",
         "Thời gian (s)", "Số Sensor đã chết",
-        fig_dir / "stage2_algo_4_dead_nodes.png"
+        fig_dir / "stage2_algo_4_dead_nodes.pdf"
     )
 
     # Vẽ biểu đồ phân rã gói tin tự động co giãn theo số lượng thuật toán
@@ -255,7 +255,6 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
 
             ax_target.set_title(f"Phân rã gói tin - {algo} ({r_label})", fontsize=13, fontweight="bold")
             ax_target.set_xlabel("Thời gian (s)", fontsize=11)
-            ax_target.set_ylim(bottom=0)
             ax_target.grid(True, linestyle=":", alpha=0.6)
 
             if idx % ncols == 0:
@@ -263,12 +262,14 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
             if idx == 0:
                 ax_target.legend(loc="upper left", fontsize="9.5")
 
-        # Ẩn các ô subplot thừa nếu số thuật toán là số lẻ > 3
+        # Đặt mốc 0 sau cùng để không khóa trục tung theo biểu đồ đầu tiên
+        axes_flat[0].set_ylim(bottom=0)
+
         for idx in range(n_algos, len(axes_flat)):
             axes_flat[idx].set_visible(False)
 
         fig_pkt.tight_layout()
-        fig_pkt.savefig(fig_dir / "stage2_algo_5_packet_breakdown.png", dpi=300)
+        fig_pkt.savefig(fig_dir / "stage2_algo_5_packet_breakdown.pdf", format="pdf")
         plt.close(fig_pkt)
 
 

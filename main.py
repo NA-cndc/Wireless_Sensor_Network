@@ -26,7 +26,7 @@ def run_single_scenario(range_m: float, routing_algo: str, config_data: dict) ->
     print(f"\n[CORE Khởi động] >>> Bán kính {range_m}m | Thuật toán {routing_algo} <<<")
     cfg = SimulationConfig.from_dict(config_data)
     sim = Simulation(cfg, current_range_m=range_m, routing_algo=routing_algo)
-    sim.run_for(5000.0)
+    sim.run_for(12000.0)
     return range_m, routing_algo
 
 
