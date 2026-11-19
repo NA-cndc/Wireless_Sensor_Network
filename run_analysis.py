@@ -1,7 +1,6 @@
-import sys
-import os
+import argparse
 import json
-import shutil
+import sys
 import multiprocessing
 from math import ceil
 from pathlib import Path
@@ -24,6 +23,7 @@ import matplotlib.pyplot as plt
 
 from wsn_sim.config import SimulationConfig
 from wsn_sim.network import Network
+from wsn_sim.storage import save_json, scenario_stem
 from wsn_sim.visualization import save_topology_plot
 import main as wsn_main
 
@@ -38,23 +38,35 @@ def generate_topologies(ranges, config_data, fig_dir):
         print(f" -> Đã lưu: {out_path}")
 
 
-def run_simulations_and_move_csv(csv_dir, results_dir=None):
-    print("\n[2] BẮT ĐẦU CHẠY MÔ PHỎNG ĐA TIẾN TRÌNH...")
-    wsn_main.run_project()
+def _validate_sources(csv_dir, config, scenarios):
+    sources = []
+    for radius, algo in scenarios:
+        stem = scenario_stem(algo, radius)
+        series = csv_dir / f"{stem}.csv"
+        manifest = csv_dir / f"{stem}.json"
+        metadata = json.loads(manifest.read_text(encoding="utf-8"))
+        if metadata["configuration"] != config.to_dict() or not series.is_file():
+            raise ValueError(f"{stem} does not match the current profile. Run python main.py first.")
+        metrics = metadata["metrics"]
+        last_time = pd.read_csv(series, usecols=["Time_s"], float_precision="round_trip")["Time_s"].iloc[-1]
+        if last_time != metrics["elapsed_s"]:
+            raise ValueError(f"{stem} has an inconsistent final timestamp")
+        sources.append({
+            "radius_m": radius,
+            "algorithm": algo,
+            "timeseries": f"csv/{series.name}",
+            "manifest": f"csv/{manifest.name}",
+            "git_commit": metadata["git_commit"],
+            "elapsed_s": metrics["elapsed_s"],
+            "stop_reason": metrics["stop_reason"],
+        })
+    return sources
 
-    print("\n[3] ĐANG LƯU DỮ LIỆU VÀO THƯ MỤC results/CSV...")
-    search_dir = results_dir if results_dir is not None else csv_dir.parent
-    if search_dir.exists():
-        for file in os.listdir(search_dir):
-            if file.endswith(".csv") and file.startswith("simulation_log"):
-                old_path = search_dir / file
-                new_path = csv_dir / file
-                shutil.move(str(old_path), str(new_path))
 
-
-def _format(fig, ax, title, xlabel, ylabel, path, legend_title="Thuật toán"):
+def _format(fig, ax, title, xlabel, ylabel, path, duration_s, legend_title="Thuật toán"):
     ax.set_title(title, fontsize=14, fontweight="bold", pad=15)
-    ax.set_xlabel(xlabel, fontsize=12)
+    ax.set_xlabel(f"{xlabel} · giới hạn {duration_s:g} s", fontsize=12)
+    ax.set_xlim(0, duration_s)
     ax.set_ylabel(ylabel, fontsize=12)
     ax.legend(title=legend_title, fontsize="10", loc="best")
     ax.grid(True, linestyle=":", alpha=0.6)
@@ -63,7 +75,7 @@ def _format(fig, ax, title, xlabel, ylabel, path, legend_title="Thuật toán"):
     plt.close(fig)
 
 
-def plot_range_selection(ranges, csv_dir, fig_dir, algo="EMHR", initial_energy_j=5.0):
+def plot_range_selection(ranges, csv_dir, fig_dir, algo="EMHR", initial_energy_j=5.0, *, duration_s):
     """
     GIAI ĐOẠN 1: Khảo sát độ nhạy bán kính truyền (R = 250m, 300m, 350m)
     trên cùng 1 thuật toán đại diện để chứng minh điểm cân bằng tối ưu.
@@ -80,7 +92,7 @@ def plot_range_selection(ranges, csv_dir, fig_dir, algo="EMHR", initial_energy_j
     actual_sensors = 450
 
     for r in ranges:
-        csv_file = csv_dir / f"simulation_log_{algo}_range_{int(r)}m.csv"
+        csv_file = csv_dir / f"{scenario_stem(algo, r)}.csv"
         if not csv_file.exists():
             print(f" [Bỏ qua] Không tìm thấy file: {csv_file.name}")
             continue
@@ -89,9 +101,8 @@ def plot_range_selection(ranges, csv_dir, fig_dir, algo="EMHR", initial_energy_j
         if df_raw.empty:
             continue
 
-        # Lấy đúng số sensor thực tế được sinh ngẫu nhiên để tránh lệch mốc 0
         actual_sensors = int(df_raw["Alive_Nodes"].max())
-        df = df_raw[df_raw["Time_s"] > 0]
+        df = df_raw
 
         c = colors.get(float(r), "black")
         label_name = f"R = {int(r)}m"
@@ -119,6 +130,7 @@ def plot_range_selection(ranges, csv_dir, fig_dir, algo="EMHR", initial_energy_j
         f"Ảnh hưởng của Bán kính truyền đến Tuổi thọ mạng ({algo})",
         "Thời gian (s)", "Tỷ lệ kết nối r(t) (%)",
         fig_dir / "stage1_range_1_lifetime.pdf",
+        duration_s,
         legend_title="Bán kính truyền"
     )
     _format(
@@ -126,6 +138,7 @@ def plot_range_selection(ranges, csv_dir, fig_dir, algo="EMHR", initial_energy_j
         f"Ảnh hưởng của Bán kính truyền đến Tiêu hao Năng lượng ({algo})",
         "Thời gian (s)", "Năng lượng còn lại (Joules)",
         fig_dir / "stage1_range_2_energy.pdf",
+        duration_s,
         legend_title="Bán kính truyền"
     )
     _format(
@@ -133,6 +146,7 @@ def plot_range_selection(ranges, csv_dir, fig_dir, algo="EMHR", initial_energy_j
         f"Ảnh hưởng của Bán kính truyền đến Độ trễ trung bình ({algo})",
         "Thời gian (s)", "Độ trễ (giây)",
         fig_dir / "stage1_range_3_latency.pdf",
+        duration_s,
         legend_title="Bán kính truyền"
     )
     _format(
@@ -140,11 +154,12 @@ def plot_range_selection(ranges, csv_dir, fig_dir, algo="EMHR", initial_energy_j
         f"Số lượng Sensor chết theo Bán kính truyền ({algo})",
         "Thời gian (s)", "Số Sensor đã chết",
         fig_dir / "stage1_range_4_dead_nodes.pdf",
+        duration_s,
         legend_title="Bán kính truyền"
     )
 
 
-def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_energy_j=5.0):
+def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_energy_j=5.0, *, duration_s):
     """
     GIAI ĐOẠN 2: Cố định bán kính tối ưu (VD: R=300m) để đối chứng MHR (nét đứt)
     với các thuật toán định tuyến tối ưu năng lượng (nét liền).
@@ -164,7 +179,7 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
     valid_dfs = []
 
     for algo in algos:
-        csv_file = csv_dir / f"simulation_log_{algo}_range_{int(fixed_range)}m.csv"
+        csv_file = csv_dir / f"{scenario_stem(algo, fixed_range)}.csv"
         if not csv_file.exists():
             print(f" [Bỏ qua] Không tìm thấy file: {csv_file.name}")
             continue
@@ -174,7 +189,7 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
             continue
 
         actual_sensors = int(df_raw["Alive_Nodes"].max())
-        df = df_raw[df_raw["Time_s"] > 0]
+        df = df_raw
         valid_dfs.append((algo, df))
 
         # MHR dùng nét đứt làm mốc chuẩn đối chứng; các thuật toán năng lượng dùng nét liền
@@ -211,25 +226,29 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
         fig_life, ax_life,
         f"So sánh Tỷ lệ kết nối vật lý r(t) ({r_label})",
         "Thời gian (s)", "Tỷ lệ r(t) (%)",
-        fig_dir / "stage2_algo_1_lifetime.pdf"
+        fig_dir / "stage2_algo_1_lifetime.pdf",
+        duration_s,
     )
     _format(
         fig_energy, ax_energy,
         f"So sánh Tiêu hao Năng lượng toàn mạng ({r_label})",
         "Thời gian (s)", "Năng lượng còn lại (Joules)",
-        fig_dir / "stage2_algo_2_energy.pdf"
+        fig_dir / "stage2_algo_2_energy.pdf",
+        duration_s,
     )
     _format(
         fig_lat, ax_lat,
         f"So sánh Độ trễ truyền tin trung bình ({r_label})",
         "Thời gian (s)", "Độ trễ (giây)",
-        fig_dir / "stage2_algo_3_latency.pdf"
+        fig_dir / "stage2_algo_3_latency.pdf",
+        duration_s,
     )
     _format(
         fig_dead, ax_dead,
         f"So sánh Số lượng Sensor chết - FND/HND ({r_label})",
         "Thời gian (s)", "Số Sensor đã chết",
-        fig_dir / "stage2_algo_4_dead_nodes.pdf"
+        fig_dir / "stage2_algo_4_dead_nodes.pdf",
+        duration_s,
     )
 
     # Vẽ biểu đồ phân rã gói tin tự động co giãn theo số lượng thuật toán
@@ -254,7 +273,9 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
             ax_target.plot(df["Time_s"], df["Drop_Interf"], label="Rớt do Nhiễu sóng", color="tab:purple", linewidth=2)
 
             ax_target.set_title(f"Phân rã gói tin - {algo} ({r_label})", fontsize=13, fontweight="bold")
-            ax_target.set_xlabel("Thời gian (s)", fontsize=11)
+            ax_target.plot(df["Time_s"], df["Drop_Cutoff"], label="Kết thúc mô phỏng", color="tab:gray", linewidth=2)
+            ax_target.set_xlabel(f"Thời gian (s) · giới hạn {duration_s:g} s", fontsize=11)
+            ax_target.set_xlim(0, duration_s)
             ax_target.grid(True, linestyle=":", alpha=0.6)
 
             if idx % ncols == 0:
@@ -275,6 +296,9 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()
+    parser = argparse.ArgumentParser(description="Run WSN scenarios and draw the original report figures.")
+    parser.add_argument("--plots-only", action="store_true", help="rebuild the figures from existing run data")
+    args = parser.parse_args()
 
     results_dir = PROJECT_ROOT / "results"
     csv_dir = results_dir / "csv"
@@ -290,11 +314,16 @@ if __name__ == "__main__":
     with open(config_path, "r", encoding="utf-8") as f:
         config_data = json.load(f)
 
-    ranges = config_data.get("communication_ranges_m", [250.0, 300.0, 350.0])
-    initial_energy = float(config_data.get("initial_energy_j", 5.0))
+    config = SimulationConfig.from_dict(config_data)
+    ranges = config.communication_ranges_m
+    initial_energy = config.initial_energy_j
+    algorithms_to_compare = wsn_main.STAGE2_ALGORITHMS
 
+    if not args.plots_only:
+        wsn_main.run_project()
+    scenarios = wsn_main.project_scenarios(config)
+    sources = _validate_sources(csv_dir, config, scenarios)
     generate_topologies(ranges, config_data, fig_dir)
-    run_simulations_and_move_csv(csv_dir, results_dir)
 
     # Giai đoạn 1: Khảo sát 3 bán kính trên thuật toán EMHR
     plot_range_selection(
@@ -302,24 +331,26 @@ if __name__ == "__main__":
         csv_dir=csv_dir,
         fig_dir=fig_dir,
         algo="EMHR",
-        initial_energy_j=initial_energy
+        initial_energy_j=initial_energy,
+        duration_s=config.duration_s
     )
 
     # Giai đoạn 2: Cố định R=300m, đối chứng MHR với 4 thuật toán tối ưu năng lượng
-    algorithms_to_compare = [
-        "MHR",
-        "EMHR",
-        "Weighted_Dijkstra",
-        "MMBCR",
-        "GPSR",
-    ]
     plot_algorithm_comparison(
-        fixed_range=300.0,
+        fixed_range=wsn_main.ANALYSIS_RADIUS_M,
         algos=algorithms_to_compare,
         csv_dir=csv_dir,
         fig_dir=fig_dir,
-        initial_energy_j=initial_energy
+        initial_energy_j=initial_energy,
+        duration_s=config.duration_s
     )
+
+    save_json({
+        "configuration": config.to_dict(),
+        "stage1": [source for source in sources if source["algorithm"] == "EMHR"],
+        "stage2": [source for source in sources if source["radius_m"] == wsn_main.ANALYSIS_RADIUS_M],
+        "topology_radii_m": list(ranges),
+    }, fig_dir / "sources.json")
 
     print("\n" + "=" * 70)
     print(" HOÀN TẤT! DỮ LIỆU 2 GIAI ĐOẠN ĐÃ ĐƯỢC XUẤT CHO BÁO CÁO ĐỒ ÁN.")

@@ -56,12 +56,13 @@ def test_manifest_round_trip(
     path = save_json(manifest, tmp_path / "manifest" / "run.json")
 
     loaded = json.loads(path.read_text(encoding="utf-8"))
-    assert loaded["seed"] == 42
-    assert loaded["git_branch"] == "XB"
+    assert loaded["seed"] == config.seed
+    assert loaded["git_branch"] == manifest["git_branch"]
     assert set(loaded["library_versions"]) == {
         "networkx",
         "simpy",
         "numpy",
         "pandas",
         "matplotlib",
+        "scipy",
     }

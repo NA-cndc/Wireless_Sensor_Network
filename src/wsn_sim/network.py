@@ -48,15 +48,10 @@ class Network:
     def _generate_nodes(self) -> None:
         rng = np.random.default_rng(self.config.seed)
         
-        # 1. Sinh số lượng sensor NGẪU NHIÊN từ 400 đến 500
-        base_num = self.config.num_sensors
-        actual_num_sensors = int(rng.integers(base_num - 50, base_num + 51))
-        
-        # Sinh vị trí ngẫu nhiên CHỈ CHO SENSORS
         sensor_coordinates = rng.uniform(
             low=(0.0, 0.0),
             high=(self.config.area_width_m, self.config.area_height_m),
-            size=(actual_num_sensors, 2),
+            size=(self.config.num_sensors, 2),
         )
 
         for index, (x, y) in enumerate(sensor_coordinates):
@@ -68,25 +63,13 @@ class Network:
                 initial_energy_j=self.config.initial_energy_j,
             )
 
-        sink_positions = [
-            (1500.0, 1500.0), # Sink 0: Trung tâm
-            (500.0, 500.0),   # Sink 1: Góc dưới trái
-            (2500.0, 500.0),  # Sink 2: Góc dưới phải
-            (500.0, 2500.0),  # Sink 3: Góc trên trái
-            (2500.0, 2500.0), # Sink 4: Góc trên phải
-            (500.0, 1500.0),  # Sink 5: Giữa cạnh trái
-            (2500.0, 1500.0)  # Sink 6: Giữa cạnh phải
-        ]
-
-        for index in range(self.config.num_sinks):
+        sink_coordinates = rng.uniform(
+            low=(0.0, 0.0),
+            high=(self.config.area_width_m, self.config.area_height_m),
+            size=(self.config.num_sinks, 2),
+        )
+        for index, (x, y) in enumerate(sink_coordinates):
             node_id = f"sink_{index:02d}"
-            # Lấy tọa độ từ danh sách tĩnh, nếu config yêu cầu nhiều hơn 7 sink 
-            # thì các sink dư ra sẽ bị ép sinh ngẫu nhiên làm dự phòng
-            if index < len(sink_positions):
-                x, y = sink_positions[index]
-            else:
-                x, y = rng.uniform(0.0, self.config.area_width_m), rng.uniform(0.0, self.config.area_height_m)
-                
             self.sinks[node_id] = Sink(node_id=node_id, x=float(x), y=float(y))
 
     def build_graph(
@@ -183,11 +166,15 @@ class Network:
             if self.graph.degree[node_id] == 0
         )
 
-    def routable_sensor_ids(self) -> list[str]:
+    def routable_sensor_ids(self, *, alive_only: bool = False) -> list[str]:
         """Return sensors in connected components containing at least one sink."""
         routable: set[str] = set()
         sink_ids = set(self.sinks)
-        for component in nx.connected_components(self.graph):
+        graph = self.graph
+        if alive_only:
+            alive = {node_id for node_id, node in self.sensors.items() if node.is_alive}
+            graph = graph.subgraph(alive | sink_ids)
+        for component in nx.connected_components(graph):
             if component & sink_ids:
                 routable.update(component & self.sensors.keys())
         return sorted(routable)

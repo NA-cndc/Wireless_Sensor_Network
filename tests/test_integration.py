@@ -30,5 +30,5 @@ def test_demo_generates_all_required_outputs(project_root: Path) -> None:
     assert len(pd.read_csv(csv_path)) == 3
     assert all(path.exists() and path.stat().st_size > 0 for path in figure_paths)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    assert manifest["seed"] == 42
+    assert manifest["seed"] == json.loads((project_root / "configs" / "default.json").read_text(encoding="utf-8"))["seed"]
     assert len(manifest["generated_files"]) == 5

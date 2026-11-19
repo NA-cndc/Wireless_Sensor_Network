@@ -15,6 +15,9 @@ dist/
 *.swp
 
 results/csv/*.csv
+results/csv/simulation_log_*.json
+results/csv/simulation_log_*.csv.gz
+results/study_10000s/
 results/figures/*.png
 results/logs/*
 results/run_manifest.json

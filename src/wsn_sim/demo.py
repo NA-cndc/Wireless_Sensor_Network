@@ -47,12 +47,14 @@ def run_demo(project_root: str | Path) -> dict[str, object]:
     )
 
     simulation = Simulation(network)
-    simpy_time_s = simulation.run_for(config.packet_interval_s)
+    simpy_time_s = simulation.run_for(min(config.packet_interval_s, config.duration_s), finalize=True)
 
     manifest_path = root / "results" / "run_manifest.json"
     generated_paths = [csv_path, *figure_paths, manifest_path]
     relative_paths = [path.relative_to(root) for path in generated_paths]
     manifest = create_run_manifest(config, relative_paths, root)
+    manifest["smoke_test_elapsed_s"] = simpy_time_s
+    manifest["smoke_test_stop_reason"] = simulation.stop_reason
     save_json(manifest, manifest_path)
 
     print(f"sensors={len(network.sensors)}")

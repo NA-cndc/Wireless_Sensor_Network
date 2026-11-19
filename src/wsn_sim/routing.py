@@ -14,12 +14,32 @@ from wsn_sim.network import Network
 class RoutingEngine:
     """Cung cấp các chiến lược định tuyến cho gói tin trong mạng WSN."""
 
-    def __init__(self, network: Network) -> None:
+    def __init__(
+        self, network: Network, rng: random.Random | None = None, *, cache_mhr: bool = False,
+    ) -> None:
         self.network = network
+        self.rng = rng if rng is not None else random.Random(network.config.effective_traffic_seed)
+        self._mhr_graph = network.graph
+        self._mhr_choices: dict[str, list[list[str]]] | None = {} if cache_mhr else None
         self._static_dist_cache: dict[str, list[tuple[str, float]]] | None = None
         self._cached_alpha: float | None = None
 
+    def invalidate_mhr(self) -> None:
+        if self._mhr_choices is not None:
+            self._mhr_choices.clear()
+
     def get_mhr_route(self, source_id: str) -> list[str] | None:
+        if self._mhr_graph is not self.network.graph:
+            self.invalidate_mhr()
+            self._mhr_graph = self.network.graph
+        choices = None if self._mhr_choices is None else self._mhr_choices.get(source_id)
+        if choices is None:
+            choices = self._mhr_shortest_routes(source_id)
+            if self._mhr_choices is not None:
+                self._mhr_choices[source_id] = choices
+        return self.rng.choice(choices) if choices else None
+
+    def _mhr_shortest_routes(self, source_id: str) -> list[list[str]]:
         """
         Minimum Hop Routing (MHR) - Tối ưu BFS dừng sớm theo từng lớp hop.
         Giữ nguyên cân bằng tải ngẫu nhiên giữa các Sink cùng số hop nhỏ nhất.
@@ -28,11 +48,11 @@ class RoutingEngine:
         sinks = self.network.sinks
         src_sensor = sensors.get(source_id)
         if src_sensor is None or not src_sensor.is_alive:
-            return None
+            return []
 
         adj = self.network.graph._adj
         if source_id not in adj:
-            return None
+            return []
 
         parent: dict[str, str | None] = {source_id: None}
         current_level = [source_id]
@@ -55,100 +75,62 @@ class RoutingEngine:
                             next_level.append(v)
             current_level = next_level
 
-        if not found_sinks:
-            return None
+        return [self._reconstruct(parent, sink_id) for sink_id in found_sinks]
 
-        curr: str | None = random.choice(found_sinks)
+    @staticmethod
+    def _reconstruct(parent: dict[str, str | None], node_id: str) -> list[str]:
         route: list[str] = []
-        while curr is not None:
-            route.append(curr)
-            curr = parent[curr]
+        current: str | None = node_id
+        while current is not None:
+            route.append(current)
+            current = parent[current]
         route.reverse()
         return route
 
-    def get_emhr_route(self, source_id: str, alpha: float = 0.8) -> list[str] | None:
-        """
-        Energy-aware Minimum Hop Routing (EMHR) với Cơ chế Dự phòng (Fallback).
-        Tối ưu hóa bằng BFS dừng sớm + Cache trạng thái pin láng giềng theo gói tin.
-        """
+    @property
+    def relay_threshold_j(self) -> float:
+        return self.network.config.emhr_alpha * self.network.config.initial_energy_j
+
+    def get_emhr_route(
+        self, source_id: str, alpha: float | None = None, *, excluded: set[str] | None = None,
+    ) -> list[str] | None:
+        """Find the minimum (hop count, distance in metres, relay energy penalty)."""
         sensors = self.network.sensors
         sinks = self.network.sinks
-        src_sensor = sensors.get(source_id)
-        if src_sensor is None or not src_sensor.is_alive:
+        graph = self.network.graph
+        source = sensors.get(source_id)
+        if source is None or not source.is_alive or source_id not in graph:
             return None
 
-        adj = self.network.graph._adj
-        if source_id not in adj:
-            return None
-
-        eligible_cache: dict[str, bool] = {}
-
-        def is_eligible(node_id: str) -> bool:
-            cached = eligible_cache.get(node_id)
-            if cached is not None:
-                return cached
-
-            sensor = sensors.get(node_id)
-            if sensor is None or not sensor.is_alive or sensor.energy_j <= 0.1:
-                eligible_cache[node_id] = False
-                return False
-
-            total_e = 0.0
-            count = 0
-            for nb in adj[node_id]:
-                nb_s = sensors.get(nb)
-                if nb_s is not None and nb_s.is_alive:
-                    total_e += nb_s.energy_j
-                    count += 1
-
-            res = True if count == 0 else (sensor.energy_j >= alpha * (total_e / count))
-            eligible_cache[node_id] = res
-            return res
-
-        def bfs_early_exit(check_eligible: bool) -> list[str] | None:
-            parent: dict[str, str | None] = {source_id: None}
-            current_level = [source_id]
-            found_sinks: list[str] = []
-
-            while current_level and not found_sinks:
-                next_level: list[str] = []
-                for u in current_level:
-                    for v in adj[u]:
-                        if v in parent:
-                            continue
-                        if v in sinks:
-                            parent[v] = u
-                            found_sinks.append(v)
-                        else:
-                            if check_eligible:
-                                ok = is_eligible(v)
-                            else:
-                                sv = sensors.get(v)
-                                ok = sv is not None and sv.is_alive
-                            if ok:
-                                parent[v] = u
-                                next_level.append(v)
-                current_level = next_level
-
-            if not found_sinks:
-                return None
-
-            curr: str | None = random.choice(found_sinks)
-            route: list[str] = []
-            while curr is not None:
-                route.append(curr)
-                curr = parent[curr]
-            route.reverse()
-            return route
-
-        # Bước 1: Tìm đường qua các node khỏe mạnh (Dừng ngay khi chạm Sink gần nhất)
-        route = bfs_early_exit(check_eligible=True)
-
-        # Bước 2 (Fallback): Nếu không có đường khỏe, tìm đường qua mọi node còn sống
-        if route is None:
-            route = bfs_early_exit(check_eligible=False)
-
-        return route
+        initial_energy = self.network.config.initial_energy_j
+        threshold = self.relay_threshold_j if alpha is None else alpha * initial_energy
+        blocked = excluded or set()
+        origin = (0, 0.0, 0.0)
+        best = {source_id: origin}
+        parent: dict[str, str | None] = {source_id: None}
+        queue = [(origin, source_id)]
+        while queue:
+            score, node_id = heapq.heappop(queue)
+            if score != best[node_id]:
+                continue
+            if node_id in sinks:
+                return self._reconstruct(parent, node_id)
+            hops, distance, penalty = score
+            for neighbor, edge in graph[node_id].items():
+                if neighbor in blocked:
+                    continue
+                relay_penalty = 0.0
+                if neighbor not in sinks:
+                    relay = sensors[neighbor]
+                    if not relay.can_forward(threshold):
+                        continue
+                    relay_penalty = initial_energy / (relay.energy_j + 1e-12)
+                candidate = (hops + 1, distance + edge["distance_m"], penalty + relay_penalty)
+                if neighbor not in best or candidate < best[neighbor]:
+                    best[neighbor] = candidate
+                    parent[neighbor] = node_id
+                    heapq.heappush(queue, (candidate, neighbor))
+        return None
 
     def get_weighted_dijkstra_route(
         self, source_id: str, alpha: float = 2.0, beta: float = 2.0

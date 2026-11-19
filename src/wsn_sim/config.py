@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 import json
+from math import isfinite
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -14,7 +15,7 @@ REQUIRED_COMMUNICATION_RANGES_M = {250.0, 300.0, 350.0}
 def _require_positive_number(name: str, value: object) -> None:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise TypeError(f"{name} must be a number")
-    if value <= 0:
+    if not isfinite(value) or value <= 0:
         raise ValueError(f"{name} must be greater than zero")
 
 
@@ -38,6 +39,11 @@ class SimulationConfig:
     packet_interval_s: float
     communication_ranges_m: tuple[float, ...]
     seed: int
+    duration_s: float = 10_000.0
+    emhr_alpha: float = 0.20
+    channel_loss_probability: float = 0.05
+    traffic_seed: int | None = None
+    channel_seed: int | None = None
 
     def __post_init__(self) -> None:
         """Validate types, positive values, and required communication ranges."""
@@ -48,9 +54,22 @@ class SimulationConfig:
         _require_positive_number("initial_energy_j", self.initial_energy_j)
         _require_positive_integer("packet_size_bytes", self.packet_size_bytes)
         _require_positive_number("packet_interval_s", self.packet_interval_s)
+        _require_positive_number("duration_s", self.duration_s)
 
-        if isinstance(self.seed, bool) or not isinstance(self.seed, int):
-            raise TypeError("seed must be an integer")
+        for name in ("seed", "traffic_seed", "channel_seed"):
+            value = getattr(self, name)
+            if value is None and name != "seed":
+                continue
+            if isinstance(value, bool) or not isinstance(value, int):
+                raise TypeError(f"{name} must be an integer")
+            if value < 0:
+                raise ValueError(f"{name} must be non-negative")
+        for name in ("emhr_alpha", "channel_loss_probability"):
+            value = getattr(self, name)
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise TypeError(f"{name} must be a number")
+            if not 0 <= value <= 1:
+                raise ValueError(f"{name} must be between 0 and 1")
         if not isinstance(self.communication_ranges_m, tuple):
             raise TypeError("communication_ranges_m must be a tuple")
         if not self.communication_ranges_m:
@@ -110,7 +129,21 @@ class SimulationConfig:
             packet_interval_s=data["packet_interval_s"],
             communication_ranges_m=tuple(ranges),
             seed=data["seed"],
+            **{
+                name: data[name]
+                for name in ("duration_s", "emhr_alpha", "channel_loss_probability",
+                             "traffic_seed", "channel_seed")
+                if name in data
+            },
         )
+
+    @property
+    def effective_traffic_seed(self) -> int:
+        return self.seed if self.traffic_seed is None else self.traffic_seed
+
+    @property
+    def effective_channel_seed(self) -> int:
+        return self.seed if self.channel_seed is None else self.channel_seed
 
     @classmethod
     def from_json(cls, path: str | Path) -> "SimulationConfig":

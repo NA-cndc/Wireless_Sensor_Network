@@ -1,6 +1,7 @@
 """Tests for configuration loading and validation."""
 
 from dataclasses import replace
+import json
 from pathlib import Path
 
 import pytest
@@ -15,7 +16,9 @@ def test_load_default_configuration(project_root: Path) -> None:
     assert config.num_sensors == 450
     assert config.num_sinks == 7
     assert config.communication_ranges_m == (250, 300, 350)
-    assert config.seed == 42
+    assert config.seed == json.loads((project_root / "configs" / "default.json").read_text(encoding="utf-8"))["seed"]
+    assert config.duration_s == 10_000
+    assert config.packet_interval_s == 10
 
 
 @pytest.mark.parametrize(

@@ -30,6 +30,7 @@ class Packet:
     status: PacketStatus = PacketStatus.CREATED
     delivered_at: float | None = None
     drop_reason: str | None = None
+    tx_attempts: int = 0
 
     def __post_init__(self) -> None:
         if not self.packet_id:

@@ -20,17 +20,30 @@ for path_dir in (str(PROJECT_ROOT), str(SRC_DIR)):
 
 from wsn_sim.config import SimulationConfig
 from wsn_sim.simulation import Simulation
+from wsn_sim.storage import save_simulation_run
+
+ANALYSIS_RADIUS_M = 300.0
+STAGE2_ALGORITHMS = ("MHR", "EMHR", "Weighted_Dijkstra", "MMBCR", "GPSR")
 
 
-def run_single_scenario(range_m: float, routing_algo: str, config_data: dict) -> tuple:
+def project_scenarios(config: SimulationConfig) -> list[tuple[float, str]]:
+    stage1 = [(float(radius), "EMHR") for radius in config.communication_ranges_m]
+    stage2 = [(ANALYSIS_RADIUS_M, algo) for algo in STAGE2_ALGORITHMS]
+    return list(dict.fromkeys(stage1 + stage2))
+
+
+def run_single_scenario(
+    range_m: float, routing_algo: str, config_data: dict, output_dir: Path | None = None,
+) -> tuple:
     print(f"\n[CORE Khởi động] >>> Bán kính {range_m}m | Thuật toán {routing_algo} <<<")
     cfg = SimulationConfig.from_dict(config_data)
     sim = Simulation(cfg, current_range_m=range_m, routing_algo=routing_algo)
-    sim.run_for(12000.0)
+    sim.run_for()
+    save_simulation_run(sim, output_dir or PROJECT_ROOT / "results" / "csv", PROJECT_ROOT)
     return range_m, routing_algo
 
 
-def run_project():
+def run_project(workers: int | None = None):
     print("=" * 70)
     print(" KHỞI ĐỘNG HỆ THỐNG MÔ PHỎNG 2 GIAI ĐOẠN (WSN ROUTING)")
     print(" Chế độ: ĐA TIẾN TRÌNH (MULTIPROCESSING) TỐI ƯU TỐC ĐỘ")
@@ -40,16 +53,8 @@ def run_project():
     with open(config_file, "r", encoding="utf-8") as f:
         config_data = json.load(f)
 
-    ranges = config_data.get("communication_ranges_m", [250.0, 300.0, 350.0])
-    stage2_algos = ["MHR", "EMHR", "Weighted_Dijkstra", "MMBCR", "GPSR"]
-
-    # Giai đoạn 1: Chạy EMHR trên cả 3 bán kính để chọn R=300m
-    stage1_scenarios = [(float(r), "EMHR") for r in ranges]
-    # Giai đoạn 2: Chạy đủ 5 thuật toán tại R=300m
-    stage2_scenarios = [(300.0, algo) for algo in stage2_algos]
-
-    scenarios = list(dict.fromkeys(stage1_scenarios + stage2_scenarios))
-    optimal_workers = min(len(scenarios), os.cpu_count() or 4)
+    scenarios = project_scenarios(SimulationConfig.from_dict(config_data))
+    optimal_workers = min(len(scenarios), workers or os.cpu_count() or 4)
 
     print(f"[HỆ THỐNG] Đang phân bổ {len(scenarios)} kịch bản vào {optimal_workers} nhân CPU...")
     with concurrent.futures.ProcessPoolExecutor(max_workers=optimal_workers) as executor:

@@ -65,7 +65,7 @@ def test_neighbors_isolated_routable_and_summary(network: Network) -> None:
     assert isinstance(network.neighbors("sensor_000"), list)
     assert set(network.isolated_sensor_ids()) <= set(network.sensors)
     assert set(network.routable_sensor_ids()) <= set(network.sensors)
-    assert summary["seed"] == 42
+    assert summary["seed"] == network.config.seed
     assert summary["sensors"] == 450
     assert summary["sinks"] == 7
     assert summary["nodes"] == 457
