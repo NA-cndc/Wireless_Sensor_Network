@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import replace
 import json
@@ -10,6 +11,7 @@ from math import ceil, sqrt
 import multiprocessing
 import os
 from pathlib import Path
+import hashlib
 from statistics import mean, stdev
 import sys
 
@@ -104,6 +106,31 @@ def read_completed(job, commit):
     ):
         return None
     return path
+
+
+def audit_archived_runs(jobs, commit, output):
+    inventory = []
+    for pair, treatment, job in jobs:
+        manifest = read_completed(job, commit)
+        if manifest is None:
+            raise ValueError(f"archive missing valid pair {pair}, treatment {treatment}")
+        run = json.loads(manifest.read_text(encoding="utf-8"))
+        metrics = run["metrics"]
+        elapsed = metrics["elapsed_s"]
+        if not 0 < elapsed <= 10000 or (elapsed < 10000 and metrics["stop_reason"] != "lnd"):
+            raise ValueError(f"incorrect horizon: {manifest}")
+        files = [manifest, *(manifest.parent / name for name in run["generated_files"])]
+        series = manifest.with_suffix(".csv")
+        with series.open(encoding="utf-8-sig", newline="") as handle:
+            last = list(csv.DictReader(handle))[-1]
+        if float(last["Time_s"]) != elapsed:
+            raise ValueError(f"time series endpoint mismatch: {series}")
+        for file in dict.fromkeys(files):
+            inventory.append({"pair": pair, "treatment": treatment, "seed": run["seed"],
+                              "git_commit": commit, "elapsed_s": elapsed,
+                              "file": file.relative_to(ROOT).as_posix(),
+                              "sha256": hashlib.sha256(file.read_bytes()).hexdigest()})
+    save_topology_summary(pd.DataFrame(inventory), output / "raw_inventory.csv")
 
 
 def metric_values(run):
@@ -225,6 +252,8 @@ def main():
     if args.pilot_only:
         return
     jobs = list(study_jobs(configs, selected, run_directory))
+    if archived_report:
+        audit_archived_runs(jobs, commit, args.output)
     if not args.report_only:
         remaining = [job for _, _, job in jobs if read_completed(job, commit) is None]
         print(f"Running {len(remaining)} of {len(jobs)} scenarios at R={selected:g} m", flush=True)

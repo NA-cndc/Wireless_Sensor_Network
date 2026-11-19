@@ -13,8 +13,8 @@ def test_load_default_configuration(project_root: Path) -> None:
     assert config.initial_energy_j == 5
     assert config.energy_threshold_j == 1
     assert config.communication_range_m == 300
-    assert config.max_rounds == 10000
-    assert config.max_duration_s == 100000
+    assert config.max_rounds == 1000
+    assert config.max_duration_s == 10000
     assert config.transmission_size_bytes == config.packet_size_bytes == 128
     assert config.detector is None
 

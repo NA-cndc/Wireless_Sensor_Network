@@ -1,0 +1,76 @@
+{
+  "created_at_utc": "2026-11-19T18:02:17.299403+00:00",
+  "source_sha256": "82df24844bc8b6ecca3f70d7de4a668a845bb75994d06adb3940dacbe7ea94f1",
+  "protocol_sha256": "3bc0a25e74c4b6c3cf8059a34831ba7316487568aac657157a0080a45ea67b2a",
+  "parameters": {
+    "beta_trust": 0.8,
+    "window_size_s": 80,
+    "forwarding_timeout_s": 0.02,
+    "min_observations": 10,
+    "trust_threshold": 0.95,
+    "consecutive_bad_windows": 2,
+    "initial_trust": 1.0,
+    "isolation_duration_s": 60.0,
+    "calibration_status": "TEST_ONLY"
+  },
+  "benign": [
+    {
+      "channel": 0,
+      "runs": 4,
+      "fpr": 0.019444444444444445,
+      "conditional_fpr": 0.02570106394026897,
+      "min_coverage": 0.7266666666666667,
+      "FP": 35,
+      "passed": true
+    },
+    {
+      "channel": 0.01,
+      "runs": 4,
+      "fpr": 0.019444444444444445,
+      "conditional_fpr": 0.025885060960232822,
+      "min_coverage": 0.7266666666666667,
+      "FP": 35,
+      "passed": true
+    },
+    {
+      "channel": 0.05,
+      "runs": 4,
+      "fpr": 0.017222222222222222,
+      "conditional_fpr": 0.022551349425962926,
+      "min_coverage": 0.7244444444444444,
+      "FP": 31,
+      "passed": true
+    }
+  ],
+  "attack": [
+    {
+      "p_drop": 0.25,
+      "runs": 4,
+      "tpr": 0.5978260869565217,
+      "conditional_tpr": 0.9298076923076923,
+      "mean_capped_delay_s": 4528.695652173913,
+      "passed": true
+    },
+    {
+      "p_drop": 0.5,
+      "runs": 4,
+      "tpr": 0.6521739130434783,
+      "conditional_tpr": 1.0,
+      "mean_capped_delay_s": 3989.5652173913045,
+      "passed": true
+    },
+    {
+      "p_drop": 0.75,
+      "runs": 4,
+      "tpr": 0.6739130434782609,
+      "conditional_tpr": 1.0,
+      "mean_capped_delay_s": 3822.608695652174,
+      "passed": true
+    }
+  ],
+  "benign_passed": true,
+  "attack_passed": true,
+  "selection_unchanged": true,
+  "evaluation_runs_before_gate": 0,
+  "reselection_allowed": false
+}

@@ -1,7 +1,7 @@
 {
   "stage": "long_horizon_crosscheck",
   "scope": "10000s empirical benign FPR gate plus independent attack validation; ideal observer; no real overhearing or lifetime guarantee",
-  "frozen_at_utc": "2026-11-17T06:07:50.601060+00:00",
+  "frozen_at_utc": "2026-11-19T18:03:02.916577+00:00",
   "protocol": {
     "version": "long_horizon_benign_v1",
     "duration_s": 10000.0,
@@ -237,6 +237,6 @@
   "benign_validation_passed": true,
   "attack_validation_passed": true,
   "validation_evidence_path": "results/security_crosscheck_20261117/validation_gate.json",
-  "validation_evidence_sha256": "93f3a91a4ae52becda7ed2f532b3cb25497a9bbf6c70b4b8910a03183a705daf",
+  "validation_evidence_sha256": "701ab888fd29e1e3e4e3559ad7b6f75c04d8170e886d2fd7f045849e5a7c0486",
   "evaluation_runs_before_freeze": 0
 }

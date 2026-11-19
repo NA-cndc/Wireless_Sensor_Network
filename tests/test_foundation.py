@@ -15,7 +15,9 @@ def test_plan_default_alias_and_legacy_energy_are_explicitly_separated(project_r
     default = SimulationConfig.from_json(project_root / 'configs/default.json')
     legacy = SimulationConfig.from_json(project_root / 'configs/legacy/energy_3j.json')
     assert DEFAULT_CONFIG_PATH == project_root / 'configs/plan.json'
-    assert default == plan
+    assert default == SimulationConfig.from_json(project_root / 'configs/experiment_10000s.json')
+    assert default.max_duration_s == 10000
+    assert plan.max_duration_s == 100000
     assert plan.config_profile == 'PLAN'
     assert plan.energy_configuration == {'initial_energy_j': 5, 'energy_threshold_ratio': 0.2, 'energy_threshold_j': 1}
     assert legacy.config_profile == 'LEGACY_ENERGY_REGRESSION'
@@ -136,7 +138,7 @@ def test_saved_packets_distinguish_planned_actual_and_wire_payload(network_facto
     assert row['wire_size_bytes'] == 160
 
 def test_foundation_check_writes_measured_reachability_and_known_graph(project_root, tmp_path):
-    result = subprocess.run([sys.executable, 'scripts/check_foundation.py', '--seeds', '42', '--output', str(tmp_path)], cwd=project_root, check=True, capture_output=True, text=True)
+    result = subprocess.run([sys.executable, '-m', 'analysis.check_foundation', '--seeds', '42', '--output', str(tmp_path)], cwd=project_root, check=True, capture_output=True, text=True)
     report = json.loads(result.stdout)
     assert report['stage'] == 1
     assert report['checks_passed']
@@ -150,10 +152,10 @@ def test_foundation_check_writes_measured_reachability_and_known_graph(project_r
     directory = Path(report['output_directory'])
     assert (directory / 'foundation_check.json').exists()
     manifest = json.loads((directory / 'run_manifest.json').read_text(encoding='utf-8'))
-    assert manifest['config_profile'] == 'PLAN'
+    assert manifest['config_profile'] == 'CUSTOM'
     assert all((Path(path).exists() for path in manifest['generated_files']))
 
 def test_foundation_check_rejects_repeated_seeds(project_root, tmp_path):
-    result = subprocess.run([sys.executable, 'scripts/check_foundation.py', '--seeds', '42', '42', '--output', str(tmp_path)], cwd=project_root, capture_output=True, text=True)
+    result = subprocess.run([sys.executable, '-m', 'analysis.check_foundation', '--seeds', '42', '42', '--output', str(tmp_path)], cwd=project_root, capture_output=True, text=True)
     assert result.returncode != 0
     assert 'unique non-negative' in result.stderr

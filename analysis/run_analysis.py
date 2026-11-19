@@ -299,14 +299,18 @@ if __name__ == "__main__":
     multiprocessing.freeze_support()
     parser = argparse.ArgumentParser(description="Run WSN scenarios and draw the original report figures.")
     parser.add_argument("--plots-only", action="store_true", help="rebuild the figures from existing run data")
+    parser.add_argument("--input", type=Path, help="timeseries directory for --plots-only")
+    parser.add_argument("--source-index", type=Path, help="verify every published input against sources.json")
     parser.add_argument("--duration", type=float, help="override the configured simulation duration")
     parser.add_argument("--output", type=Path, default=PROJECT_ROOT / "results")
     args = parser.parse_args()
     if args.duration is not None and (not isfinite(args.duration) or args.duration <= 0):
         parser.error("--duration must be finite and greater than zero")
+    if (args.input or args.source_index) and not args.plots_only:
+        parser.error("--input and --source-index require --plots-only")
 
     results_dir = args.output.resolve()
-    csv_dir = results_dir / "csv"
+    csv_dir = args.input.resolve() if args.input else results_dir / "csv"
     fig_dir = results_dir / "figures"
     csv_dir.mkdir(parents=True, exist_ok=True)
     fig_dir.mkdir(parents=True, exist_ok=True)
@@ -322,6 +326,14 @@ if __name__ == "__main__":
         wsn_main.run_project(config, csv_dir)
     scenarios = wsn_main.project_scenarios(config)
     sources = _validate_sources(csv_dir, config, scenarios)
+    source_index = {
+        "configuration": config.to_dict(),
+        "stage1": [source for source in sources if source["algorithm"] == "EMHR"],
+        "stage2": [source for source in sources if source["radius_m"] == wsn_main.ANALYSIS_RADIUS_M],
+        "topology_radii_m": list(ranges),
+    }
+    if args.source_index and json.loads(args.source_index.read_text(encoding="utf-8")) != source_index:
+        raise ValueError("plot inputs differ from the published source index")
     generate_topologies(ranges, config.to_dict(), fig_dir)
 
     # Giai đoạn 1: Khảo sát 3 bán kính trên thuật toán EMHR
@@ -344,12 +356,7 @@ if __name__ == "__main__":
         duration_s=config.duration_s
     )
 
-    save_json({
-        "configuration": config.to_dict(),
-        "stage1": [source for source in sources if source["algorithm"] == "EMHR"],
-        "stage2": [source for source in sources if source["radius_m"] == wsn_main.ANALYSIS_RADIUS_M],
-        "topology_radii_m": list(ranges),
-    }, fig_dir / "sources.json")
+    save_json(source_index, fig_dir / "sources.json")
 
     print("\n" + "=" * 70)
     print(" HOÀN TẤT! DỮ LIỆU 2 GIAI ĐOẠN ĐÃ ĐƯỢC XUẤT CHO BÁO CÁO ĐỒ ÁN.")
