@@ -5,8 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "wsn-sim"
 version = "0.1.0"
-description = "Initial software architecture for a reproducible wireless sensor network simulation."
-readme = "README.md"
+description = "Reproducible MHR, EMHR and S-EMHR wireless sensor network simulation."
 requires-python = ">=3.10"
 dependencies = [
     "networkx",
@@ -14,6 +13,7 @@ dependencies = [
     "numpy",
     "pandas",
     "matplotlib",
+    "scipy>=1.12,<2",
 ]
 
 [project.optional-dependencies]
@@ -21,6 +21,7 @@ dev = ["pytest"]
 
 [project.scripts]
 wsn-demo = "wsn_sim.demo:main"
+wsn-sim = "wsn_sim.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -28,4 +29,5 @@ include = ["wsn_sim*"]
 
 [tool.pytest.ini_options]
 addopts = "-ra"
-testpaths = ["tests"]
+testpaths = ["tests", "test_env.py"]
+pythonpath = ["src"]

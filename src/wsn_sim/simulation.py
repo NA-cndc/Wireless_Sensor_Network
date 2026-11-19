@@ -1,127 +1,130 @@
-"""Module điều phối chính của mô phỏng WSN bằng SimPy (Đã hợp nhất)."""
-
 from __future__ import annotations
+from copy import deepcopy
+from math import isfinite
 import simpy
-
 from wsn_sim.config import SimulationConfig
+from wsn_sim.detection import ForwardingDetector
+from wsn_sim.energy import RadioModel
+from wsn_sim.metrics import LifetimeTracker, METRIC_SCHEMA, performance_metrics, security_metrics
 from wsn_sim.network import Network
 from wsn_sim.routing import RoutingEngine
+from wsn_sim.randomness import randomness_metadata
+from wsn_sim.recording import RunRecorder
 from wsn_sim.traffic import TrafficGenerator
-from wsn_sim.energy import RadioModel
-import os
-import csv
 
 class Simulation:
-    """Quản lý toàn bộ vòng đời và tiến trình mô phỏng mạng cảm biến."""
 
-    def __init__(
-        self, 
-        config: SimulationConfig,
-        current_range_m: float,  # Thêm tham số này
-        env: simpy.Environment | None = None
-    ) -> None:
+    def __init__(self, config: SimulationConfig, current_range_m: float | None=None, env: simpy.Environment | None=None, *, network: Network | None=None, recorder: RunRecorder | None=None) -> None:
+        if not isinstance(config, SimulationConfig):
+            raise TypeError('config must be a SimulationConfig; pass custom topology with network=')
+        if network is not None and network.config != config:
+            raise ValueError('network and simulation must use the same configuration')
+        if network is not None and current_range_m is not None:
+            raise ValueError('choose an existing network or current_range_m')
         self.config = config
+        self.recorder = recorder
         self.env = env if env is not None else simpy.Environment()
-        
-        self.network = Network(self.config)
-        self.network.build_graph(range_m=current_range_m) 
-        
-        self.router = RoutingEngine(self.network)
+        self.started_at = float(self.env.now)
+        self.network = Network(config, current_range_m) if network is None else network
+        self.detector = None if config.detector is None else ForwardingDetector(config.detector, self.network.sensors, self.started_at, sink_ids=self.network.sinks, retain_history=recorder is None, observation_sink=self._record_detector_event if recorder else None)
+        self.router = RoutingEngine(self.network, self.detector)
+        self.router.cache_enabled = recorder is not None
+        if recorder is not None:
+            for sink in self.network.sinks.values():
+                sink.retain_packet_ids = False
         self.radio = RadioModel()
-        
-        self.traffic_gen = TrafficGenerator(
-            env=self.env, 
-            network=self.network, 
-            router=self.router,
-            radio=self.radio,
-            config=self.config
-        )
-
-
-        # Nạp sẵn các tiến trình chạy ngầm vào đồng hồ SimPy
+        self.stop_event = self.env.event()
+        self.lifetime = LifetimeTracker(self.network, self.router, start_time_s=self.started_at, complete_payload_history=True)
+        self.network_events: list[dict] = []
+        if recorder is not None:
+            self.network_events = recorder.journal('network_events')
+            self.lifetime.retain_history = False
+            self.lifetime.events = recorder.journal('lifetime_events')
+            self.lifetime.reachability_events = recorder.journal('reachability_events')
+        self.traffic_gen = TrafficGenerator(self.env, self.network, self.router, self.radio, config, detector=self.detector, on_delivery=self._record_delivery, recorder=recorder)
+        self.energy_events = self.traffic_gen.energy_events
+        for sensor in self.network.sensors.values():
+            sensor.energy_observer = self._energy_changed
+            sensor.energy_clock = lambda: float(self.env.now)
+        self._observe_network()
         self.traffic_gen.start()
-        self.env.process(self._monitor_network())
+        if self.detector is not None:
+            self.env.process(self._monitor_detector())
+
+    def _record_detector_event(self, name, row):
+        self.recorder.emit(name, row)
+        if self.config.routing_algorithm == 'S_EMHR' and name == 'detector_events' and (row['event'] in {'isolated', 'probation'}):
+            node = row['relay_id']
+            effective_gain = row['event'] == 'probation' and self.network.sensors[node].can_forward(self.config.energy_threshold_j)
+            self.router.invalidate_cache(node, removed=not effective_gain)
+
+    def _record_delivery(self) -> None:
+        self.lifetime.record_received(float(self.env.now), self.traffic_gen.delivered_payload_bits)
+
+    def _energy_changed(self, event: dict) -> None:
+        self.energy_events.append({**event, 'received_payload_bits_before': self.traffic_gen.delivered_payload_bits})
+        threshold = self.config.energy_threshold_j
+        if event['became_dead'] or event['before_j'] >= threshold > event['after_j']:
+            self.router.invalidate_cache(event['node_id'], removed=True)
+            self._observe_network()
+
+    def _observe_network(self) -> None:
+        self.lifetime.observe(float(self.env.now), self.traffic_gen.delivered_payload_bits)
+        if all((not sensor.is_alive for sensor in self.network.sensors.values())) and (not self.stop_event.triggered):
+            self.stop_event.succeed()
+
+    def set_link_state(self, sender_id: str, receiver_id: str, *, available: bool) -> None:
+        nodes = self.network.sensors.keys() | self.network.sinks.keys()
+        if sender_id not in nodes or receiver_id not in nodes or sender_id == receiver_id:
+            raise ValueError('link endpoints must be distinct physical nodes')
+        if not isinstance(available, bool):
+            raise TypeError('link availability must be boolean')
+        if sender_id in self.network.sinks and receiver_id in self.network.sinks:
+            raise ValueError('sink-to-sink links are not modeled')
+        graph = self.network.graph
+        if graph.has_edge(sender_id, receiver_id) == available:
+            return
+        if available:
+            distance = self.network.distance(sender_id, receiver_id)
+            if distance > self.network.communication_range_m:
+                raise ValueError('link exceeds physical communication range')
+            graph.add_edge(sender_id, receiver_id, distance_m=distance)
+        else:
+            graph.remove_edge(sender_id, receiver_id)
+        self.router.invalidate_cache()
+        self.network_events.append({'time_s': float(self.env.now), 'event': 'link_state', 'sender_id': sender_id, 'receiver_id': receiver_id, 'available': available})
+        self._observe_network()
+
+    def _monitor_detector(self):
+        while not self.stop_event.triggered:
+            yield self.env.timeout(self.detector.next_transition_time_s - self.env.now)
+            self.detector.advance(float(self.env.now))
+            self._observe_network()
 
     def run_for(self, duration_s: float) -> float:
-        """
-        Tua nhanh mô phỏng thêm một khoảng thời gian.
-        
-        Args:
-            duration_s: Số giây muốn chạy mô phỏng.
-            
-        Returns:
-            Thời gian tuyệt đối của hệ thống sau khi chạy xong.
-        """
-        if duration_s <= 0:
-            raise ValueError("Thời gian mô phỏng (duration_s) phải lớn hơn 0")
-            
-        print(f"\n[MÔ PHỎNG] Tua nhanh hệ thống thêm {duration_s} giây...")
-        
-        # Chạy đồng hồ hệ thống đến mốc thời gian (hiện tại + thời gian chạy thêm)
-        self.env.run(until=self.env.now + duration_s)
-        
-        self._print_summary()
+        if not isfinite(duration_s) or duration_s <= 0:
+            raise ValueError('duration_s must be finite and greater than zero')
+        limit = self.started_at + self.config.max_duration_s
+        target = min(float(self.env.now) + duration_s, limit)
+        self._observe_network()
+        if target > self.env.now and (not self.stop_event.triggered):
+            self.env.run(until=self.stop_event | self.env.timeout(target - self.env.now))
+            while not self.stop_event.triggered and self.env.peek() == self.env.now:
+                self.env.step()
+        if self.detector is not None:
+            self.detector.advance(float(self.env.now))
+        self._observe_network()
         return float(self.env.now)
 
-    def _monitor_network(self):
-        """Tiến trình giám sát: Ghi log TẤT CẢ chỉ số ra file CSV."""
-        import os, csv
-        
-        os.makedirs("results", exist_ok=True)
-        csv_filename = f"results/simulation_log_range_{int(self.network.communication_range_m)}m.csv"
-        
-        with open(csv_filename, mode='w', newline='') as file:
-            writer = csv.writer(file)
-            
-            # [MỚI] Thêm cột số gói Đã sinh, Đến đích, Bị rớt, và Độ trễ trung bình
-            writer.writerow([
-                "Time_s", "Alive_Nodes", "Total_Energy_J", 
-                "Generated_Packets", "Delivered_Packets", "Dropped_Packets", "Avg_Latency_s"
-            ])
-            
-            while True:
-                # Đếm số node và pin
-                alive_nodes = len([s for s in self.network.sensors.values() if s.is_alive])
-                total_energy = sum(s.energy_j for s in self.network.sensors.values())
-                
-                # Đếm số liệu gói tin
-                gen_count = len(self.traffic_gen.generated_packets)
-                deliv_count = len(self.traffic_gen.delivered_packets)
-                drop_count = len(self.traffic_gen.dropped_packets)
-                
-                # Tính độ trễ trung bình của các gói ĐÃ ĐẾN ĐÍCH
-                if deliv_count > 0:
-                    avg_latency = sum(self.traffic_gen.delivered_latencies) / deliv_count
-                else:
-                    avg_latency = 0.0
-                
-                # In ra Terminal một phiên bản gọn gàng
-                print(f"[{self.env.now:05.1f}s] Sống: {alive_nodes:3d} | Gửi: {gen_count} | Tới: {deliv_count} | Rớt: {drop_count} | Trễ: {avg_latency:.4f}s")
-                
-                # Ghi vào CSV
-                writer.writerow([
-                    round(self.env.now, 1), 
-                    alive_nodes, 
-                    round(total_energy, 4), 
-                    gen_count, 
-                    deliv_count, 
-                    drop_count, 
-                    round(avg_latency, 5)
-                ])
-                file.flush() 
-                
-                if alive_nodes == 0:
-                    break
-                    
-                yield self.env.timeout(10.0)
+    def run(self) -> dict:
+        remaining = self.started_at + self.config.max_duration_s - self.env.now
+        if remaining > 0:
+            self.run_for(remaining)
+        return self.summary()
 
-    def _print_summary(self):
-        """In báo cáo khi đồng hồ tạm dừng."""
-        total_generated = len(self.traffic_gen.generated_packets)
-        alive_nodes = len([s for s in self.network.sensors.values() if s.is_alive])
-        
-        print("-" * 40)
-        print(f"[TẠM DỪNG] Tại giây thứ {self.env.now:.1f}")
-        print(f" -> Cảm biến còn sống : {alive_nodes}/{self.config.num_sensors}")
-        print(f" -> Gói tin đã sinh   : {total_generated}")
-        print("-" * 40)
+    def summary(self) -> dict:
+        if self.detector is not None:
+            self.detector.advance(float(self.env.now))
+        self._observe_network()
+        stop_reason = 'LND' if self.stop_event.triggered else 'max_rounds' if self.env.now >= self.started_at + self.config.max_duration_s else 'duration'
+        return {'metric_schema': METRIC_SCHEMA, 'config_profile': self.config.config_profile, 'energy_configuration': self.config.energy_configuration, 'time_s': float(self.env.now), 'rounds': self.traffic_gen.rounds, 'stop_reason': stop_reason, 'performance': performance_metrics(self.network, self.traffic_gen, self.env.now - self.started_at), 'lifetime': deepcopy(self.lifetime.milestones), 'lifetime_metadata': {**deepcopy(self.lifetime.metadata), 'observation_end_s': float(self.env.now), 'censoring_reason': stop_reason, 'round_duration_s': self.config.packet_interval_s}, 'reachability': dict(self.lifetime.reachability), 'security': None if self.detector is None else security_metrics(self.network.sensors, self.traffic_gen.attack.attacker_ids, self.detector, float(self.env.now), attack_start_time_s=self.started_at), 'detector': None if self.detector is None else self.detector.summary(), 'attack': self.traffic_gen.attack.to_dict(), 'stream_seeds': self.config.stream_seeds, 'randomness': randomness_metadata(), 'detector_status': 'NEEDS_CALIBRATION' if self.detector is None else self.config.detector.calibration_status}

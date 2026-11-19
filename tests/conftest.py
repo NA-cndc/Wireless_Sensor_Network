@@ -1,30 +1,37 @@
-"""Shared pytest fixtures for the WSN simulation tests."""
-
-import os
+from dataclasses import replace
 from pathlib import Path
-import shutil
-
 import pytest
-
-from wsn_sim.config import SimulationConfig
+from wsn_sim.config import DetectorConfig, SimulationConfig
+from wsn_sim.models import Sensor, Sink
 from wsn_sim.network import Network
 
-for _git_dir in [Path(r"D:\ProgramFiles\Git\cmd"), Path(r"C:\Program Files\Git\cmd")]:
-    if _git_dir.exists() and not shutil.which("git"):
-        os.environ["PATH"] = str(_git_dir) + os.pathsep + os.environ.get("PATH", "")
-
-
-
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def project_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
-
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def config(project_root: Path) -> SimulationConfig:
-    return SimulationConfig.from_json(project_root / "configs" / "default.json")
+    return SimulationConfig.from_json(project_root / 'configs/plan.json')
 
+@pytest.fixture
+def detector_config() -> DetectorConfig:
+    return DetectorConfig(0.5, 5, 1, 1, 0.8, 2, 1, 10)
 
-@pytest.fixture()
+@pytest.fixture
 def network(config: SimulationConfig) -> Network:
     return Network(config, communication_range_m=250)
+
+@pytest.fixture
+def network_factory(config):
+
+    def make(sensors, edges=None, sinks=None, **changes):
+        sinks = {'k': (100, 0)} if sinks is None else sinks
+        changes.setdefault('config_profile', 'TEST_ONLY')
+        cfg = replace(config, num_sensors=len(sensors), num_sinks=len(sinks), **changes)
+        net = Network(cfg, sensors={node: Sensor(node, *xy, cfg.initial_energy_j) for node, xy in sensors.items()}, sinks={node: Sink(node, *xy) for node, xy in sinks.items()})
+        if edges is not None:
+            net.graph.remove_edges_from(list(net.graph.edges))
+            for left, right in edges:
+                net.graph.add_edge(left, right, distance_m=net.distance(left, right))
+        return net
+    return make
