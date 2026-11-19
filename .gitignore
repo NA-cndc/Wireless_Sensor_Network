@@ -16,7 +16,6 @@ dist/
 *.swp
 *.bak
 
-.wsn-foundation-10000s/
 evidence/
 *.md
 
@@ -28,6 +27,13 @@ results/*
 !results/figures/.gitkeep
 !results/logs/
 !results/logs/.gitkeep
+!results/study_10000s/
+results/study_10000s/*
+!results/study_10000s/paired_differences.csv
+!results/study_10000s/pilot_summary.json
+!results/study_10000s/pilot_topologies.csv
+!results/study_10000s/run_index.csv
+!results/study_10000s/summary.csv
 
 data/topologies/*
 !data/topologies/.gitkeep

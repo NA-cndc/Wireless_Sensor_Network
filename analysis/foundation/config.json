@@ -7,5 +7,8 @@
   "packet_size_bytes": 128,
   "packet_interval_s": 10,
   "communication_ranges_m": [250, 300, 350],
-  "seed": 36
+  "seed": 36,
+  "duration_s": 10000,
+  "emhr_alpha": 0.20,
+  "channel_loss_probability": 0.05
 }

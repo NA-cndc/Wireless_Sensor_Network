@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from wsn_sim.models import Sensor, Sink
+from analysis.foundation.models import Sensor, Sink
 
 class RadioModel:
     """Tính toán tiêu hao năng lượng truyền/nhận dựa trên khoảng cách và dung lượng."""
