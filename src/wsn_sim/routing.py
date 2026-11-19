@@ -348,6 +348,8 @@ class RoutingEngine:
                             route = route[: cut_idx + 1]
                         else:
                             route.append(node)
+                        if node in sinks:
+                            break
                     return route
                 except (nx.NetworkXNoPath, nx.NodeNotFound):
                     return None

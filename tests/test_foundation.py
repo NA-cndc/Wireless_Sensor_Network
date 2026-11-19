@@ -130,3 +130,17 @@ def test_transmission_crossing_limit_is_accounted_for(config):
     assert packet.current_hop_index == 0
     assert packet.drop_reason == "simulation_end_duration_limit"
     assert sim.traffic_gen.cutoff_state[packet.packet_id] == "transmitting"
+
+
+def test_gpsr_recovery_terminates_at_the_first_sink(config):
+    config = replace(config, num_sensors=3, num_sinks=2, channel_loss_probability=0)
+    network = Network(config, 300)
+    nodes = [*network.sensors.values(), *network.sinks.values()]
+    for node, coordinates in zip(nodes, [(0, 0), (0, 300), (410, 200), (350, 0), (250, 450)]):
+        node.x, node.y = coordinates
+    network.build_graph(300)
+    sim = Simulation(network, routing_algo="GPSR")
+    sim.run_for(11, finalize=True)
+    forwarded = sim.traffic_gen.generated_packets[0]
+    assert forwarded.route == ["sensor_000", "sensor_001", "sink_01"]
+    assert forwarded.status == PacketStatus.DELIVERED

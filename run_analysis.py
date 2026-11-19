@@ -2,6 +2,7 @@ import argparse
 import json
 import sys
 import multiprocessing
+from hashlib import sha256
 from math import ceil
 from pathlib import Path
 
@@ -45,7 +46,8 @@ def _validate_sources(csv_dir, config, scenarios):
         series = csv_dir / f"{stem}.csv"
         manifest = csv_dir / f"{stem}.json"
         metadata = json.loads(manifest.read_text(encoding="utf-8"))
-        if metadata["configuration"] != config.to_dict() or not series.is_file():
+        if (metadata["configuration"] != config.to_dict() or not series.is_file()
+                or metadata["routing_algorithm"] != algo or metadata["communication_range_m"] != radius):
             raise ValueError(f"{stem} does not match the current profile. Run python main.py first.")
         metrics = metadata["metrics"]
         last_time = pd.read_csv(series, usecols=["Time_s"], float_precision="round_trip")["Time_s"].iloc[-1]
@@ -59,6 +61,8 @@ def _validate_sources(csv_dir, config, scenarios):
             "git_commit": metadata["git_commit"],
             "elapsed_s": metrics["elapsed_s"],
             "stop_reason": metrics["stop_reason"],
+            "timeseries_sha256": sha256(series.read_bytes()).hexdigest(),
+            "manifest_sha256": sha256(manifest.read_bytes()).hexdigest(),
         })
     return sources
 

@@ -202,11 +202,17 @@ def main():
     parser.add_argument("--output", type=Path, default=OUTPUT)
     parser.add_argument("--pilot-only", action="store_true")
     parser.add_argument("--report-only", action="store_true")
+    parser.add_argument("--source-commit", help="Git revision of existing runs for --report-only")
     args = parser.parse_args()
     if args.seeds < 1 or args.workers < 1:
         parser.error("--seeds and --workers must be positive")
+    if args.source_commit and not args.report_only:
+        parser.error("--source-commit requires --report-only")
     config = SimulationConfig.from_json(ROOT / "configs" / "default.json")
-    commit = _git_output(ROOT, "rev-parse", "HEAD")
+    revision = args.source_commit or "HEAD"
+    commit = _git_output(ROOT, "rev-parse", "--verify", "--end-of-options", f"{revision}^{{commit}}")
+    if args.source_commit and commit is None:
+        parser.error("--source-commit must identify a commit in this repository")
     configs = paired_configs(config, args.seeds)
     selected = radius_pilot(configs, args.output, commit)
     if args.pilot_only:
