@@ -1,0 +1,6 @@
+{
+  "extends": "../plan.json",
+  "config_profile": "LEGACY_ENERGY_REGRESSION",
+  "initial_energy_j": 3.0,
+  "energy_threshold_ratio": 0.16666666666666666
+}

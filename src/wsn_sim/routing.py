@@ -1,387 +1,175 @@
-"""Routing algorithms for the WSN simulation (Tối ưu hóa hiệu năng cao)."""
-
 from __future__ import annotations
-
-import heapq
-import random
-from math import hypot
-
+from heapq import heappop, heappush
+from typing import TYPE_CHECKING
 import networkx as nx
-
 from wsn_sim.network import Network
-
+if TYPE_CHECKING:
+    from wsn_sim.detection import ForwardingDetector
+REASON_CATEGORIES = {'node_dead': 'energy', 'relay_energy': 'energy', 'isolation': 'security', 'link_unavailable': 'link', 'unknown_node': 'route', 'invalid_route': 'route'}
 
 class RoutingEngine:
-    """Cung cấp các chiến lược định tuyến cho gói tin trong mạng WSN."""
 
-    def __init__(self, network: Network) -> None:
+    def __init__(self, network: Network, detector: ForwardingDetector | None=None) -> None:
         self.network = network
-        self._static_dist_cache: dict[str, list[tuple[str, float]]] | None = None
-        self._cached_alpha: float | None = None
+        self.detector = detector
+        self.cache_enabled = False
+        self.cache_hits = 0
+        self._cache_epoch = 0
+        self._cached_epoch = None
+        self._route_cache = {}
+        self._reachable_cache = None
+        self._last_route_unique = False
 
     def get_mhr_route(self, source_id: str) -> list[str] | None:
-        """
-        Minimum Hop Routing (MHR) - Tối ưu BFS dừng sớm theo từng lớp hop.
-        Giữ nguyên cân bằng tải ngẫu nhiên giữa các Sink cùng số hop nhỏ nhất.
-        """
-        sensors = self.network.sensors
-        sinks = self.network.sinks
-        src_sensor = sensors.get(source_id)
-        if src_sensor is None or not src_sensor.is_alive:
+        return self.find_route(source_id, 'MHR')
+
+    def get_emhr_route(self, source_id: str, threshold_j: float | None=None) -> list[str] | None:
+        return self.find_route(source_id, 'EMHR', threshold_j=threshold_j)
+
+    def get_semhr_route(self, source_id: str, **options) -> list[str] | None:
+        return self.find_route(source_id, 'S_EMHR', **options)
+
+    def _node_ineligibility(self, node_id, algorithm, packet_source_id, time_s, threshold_j=None):
+        if node_id in self.network.sinks:
             return None
-
-        adj = self.network.graph._adj
-        if source_id not in adj:
+        sensor = self.network.sensors.get(node_id)
+        if sensor is None:
+            return 'unknown_node'
+        if not sensor.is_alive:
+            return 'node_dead'
+        if node_id == packet_source_id:
             return None
-
-        parent: dict[str, str | None] = {source_id: None}
-        current_level = [source_id]
-        found_sinks: list[str] = []
-
-        # Duyệt BFS từng lớp hop; dừng ngay khi chạm lớp đầu tiên có Sink
-        while current_level and not found_sinks:
-            next_level: list[str] = []
-            for u in current_level:
-                for v in adj[u]:
-                    if v in parent:
-                        continue
-                    if v in sinks:
-                        parent[v] = u
-                        found_sinks.append(v)
-                    else:
-                        sv = sensors.get(v)
-                        if sv is not None and sv.is_alive:
-                            parent[v] = u
-                            next_level.append(v)
-            current_level = next_level
-
-        if not found_sinks:
-            return None
-
-        curr: str | None = random.choice(found_sinks)
-        route: list[str] = []
-        while curr is not None:
-            route.append(curr)
-            curr = parent[curr]
-        route.reverse()
-        return route
-
-    def get_emhr_route(self, source_id: str, alpha: float = 0.8) -> list[str] | None:
-        """
-        Energy-aware Minimum Hop Routing (EMHR) với Cơ chế Dự phòng (Fallback).
-        Tối ưu hóa bằng BFS dừng sớm + Cache trạng thái pin láng giềng theo gói tin.
-        """
-        sensors = self.network.sensors
-        sinks = self.network.sinks
-        src_sensor = sensors.get(source_id)
-        if src_sensor is None or not src_sensor.is_alive:
-            return None
-
-        adj = self.network.graph._adj
-        if source_id not in adj:
-            return None
-
-        eligible_cache: dict[str, bool] = {}
-
-        def is_eligible(node_id: str) -> bool:
-            cached = eligible_cache.get(node_id)
-            if cached is not None:
-                return cached
-
-            sensor = sensors.get(node_id)
-            if sensor is None or not sensor.is_alive or sensor.energy_j <= 0.1:
-                eligible_cache[node_id] = False
-                return False
-
-            total_e = 0.0
-            count = 0
-            for nb in adj[node_id]:
-                nb_s = sensors.get(nb)
-                if nb_s is not None and nb_s.is_alive:
-                    total_e += nb_s.energy_j
-                    count += 1
-
-            res = True if count == 0 else (sensor.energy_j >= alpha * (total_e / count))
-            eligible_cache[node_id] = res
-            return res
-
-        def bfs_early_exit(check_eligible: bool) -> list[str] | None:
-            parent: dict[str, str | None] = {source_id: None}
-            current_level = [source_id]
-            found_sinks: list[str] = []
-
-            while current_level and not found_sinks:
-                next_level: list[str] = []
-                for u in current_level:
-                    for v in adj[u]:
-                        if v in parent:
-                            continue
-                        if v in sinks:
-                            parent[v] = u
-                            found_sinks.append(v)
-                        else:
-                            if check_eligible:
-                                ok = is_eligible(v)
-                            else:
-                                sv = sensors.get(v)
-                                ok = sv is not None and sv.is_alive
-                            if ok:
-                                parent[v] = u
-                                next_level.append(v)
-                current_level = next_level
-
-            if not found_sinks:
-                return None
-
-            curr: str | None = random.choice(found_sinks)
-            route: list[str] = []
-            while curr is not None:
-                route.append(curr)
-                curr = parent[curr]
-            route.reverse()
-            return route
-
-        # Bước 1: Tìm đường qua các node khỏe mạnh (Dừng ngay khi chạm Sink gần nhất)
-        route = bfs_early_exit(check_eligible=True)
-
-        # Bước 2 (Fallback): Nếu không có đường khỏe, tìm đường qua mọi node còn sống
-        if route is None:
-            route = bfs_early_exit(check_eligible=False)
-
-        return route
-
-    def get_weighted_dijkstra_route(
-        self, source_id: str, alpha: float = 2.0, beta: float = 2.0
-    ) -> list[str] | None:
-        """
-        1. Energy-Distance Weighted Dijkstra (Tối ưu heapq dừng sớm + Cache khoảng cách tĩnh).
-        """
-        sensors = self.network.sensors
-        sinks = self.network.sinks
-        src_sensor = sensors.get(source_id)
-        if src_sensor is None or not src_sensor.is_alive:
-            return None
-
-        adj = self.network.graph._adj
-        if source_id not in adj:
-            return None
-
-        r_max = self.network.communication_range_m or 300.0
-        init_energy = getattr(self.network.config, "initial_energy_j", 5.0)
-
-        # Tính sẵn (dist_m / r_max) ** alpha một lần duy nhất cho toàn bộ mô phỏng
-        if self._static_dist_cache is None or self._cached_alpha != alpha:
-            self._cached_alpha = alpha
-            self._static_dist_cache = {
-                u: [
-                    (v, (attrs.get("distance_m", r_max) / r_max) ** alpha)
-                    for v, attrs in neighbors.items()
-                ]
-                for u, neighbors in adj.items()
-            }
-
-        static_adj = self._static_dist_cache
-        node_energy_cost_cache: dict[str, float] = {}
-
-        pq: list[tuple[float, str]] = [(0.0, source_id)]
-        best_dist: dict[str, float] = {source_id: 0.0}
-        parent: dict[str, str | None] = {source_id: None}
-
-        while pq:
-            cur_cost, u = heapq.heappop(pq)
-            if cur_cost > best_dist.get(u, float("inf")):
-                continue
-
-            # Dừng ngay khi pop được trạm Sink có tổng chi phí thấp nhất
-            if u in sinks:
-                route: list[str] = []
-                curr: str | None = u
-                while curr is not None:
-                    route.append(curr)
-                    curr = parent[curr]
-                route.reverse()
-                return route
-
-            for v, d_cost in static_adj[u]:
-                if v in sinks:
-                    e_cost = 1.0
-                else:
-                    e_cost = node_energy_cost_cache.get(v)
-                    if e_cost is None:
-                        sv = sensors.get(v)
-                        if sv is None or not sv.is_alive:
-                            node_energy_cost_cache[v] = -1.0
-                            continue
-                        energy_ratio = max(sv.energy_j, 1e-6) / init_energy
-                        e_cost = (1.0 / energy_ratio) ** beta
-                        node_energy_cost_cache[v] = e_cost
-                    elif e_cost < 0.0:
-                        continue
-
-                new_cost = cur_cost + d_cost * e_cost
-                if new_cost < best_dist.get(v, float("inf")):
-                    best_dist[v] = new_cost
-                    parent[v] = u
-                    heapq.heappush(pq, (new_cost, v))
-
+        threshold = self.network.config.energy_threshold_j if threshold_j is None else threshold_j
+        if algorithm != 'MHR' and (not sensor.can_forward(threshold)):
+            return 'relay_energy'
+        if algorithm == 'S_EMHR' and self.detector.is_isolated(node_id, time_s):
+            return 'isolation'
         return None
 
-    def get_mmbcr_route(self, source_id: str) -> list[str] | None:
-        """
-        2. Min-Max Battery Cost Routing (MMBCR):
-        Phá vỡ nút thắt cổ chai dựa trên năng lượng của nút yếu nhất trên toàn tuyến.
-        """
-        sensors = self.network.sensors
-        sinks = self.network.sinks
-        src_sensor = sensors.get(source_id)
-        if src_sensor is None or not src_sensor.is_alive:
-            return None
+    def eligible(self, node_id: str, algorithm: str, packet_source_id: str, time_s: float, threshold_j: float | None=None) -> bool:
+        return self._node_ineligibility(node_id, algorithm, packet_source_id, time_s, threshold_j) is None
 
-        adj = self.network.graph._adj
-        if source_id not in adj:
-            return None
+    @property
+    def validation_epoch(self):
+        return (self._cache_epoch, self.detector.routing_epoch if self.detector is not None and self.network.config.routing_algorithm == 'S_EMHR' else 0)
 
-        init_energy = getattr(self.network.config, "initial_energy_j", 5.0)
-
-        pq: list[tuple[float, int, str]] = [(0.0, 0, source_id)]
-        best_state: dict[str, tuple[float, int]] = {source_id: (0.0, 0)}
-        parent: dict[str, str | None] = {source_id: None}
-
-        while pq:
-            cur_max_cost, hops, u = heapq.heappop(pq)
-            if (cur_max_cost, hops) > best_state.get(u, (float("inf"), 10**9)):
-                continue
-
-            if u in sinks:
-                route: list[str] = []
-                curr: str | None = u
-                while curr is not None:
-                    route.append(curr)
-                    curr = parent[curr]
-                route.reverse()
-                return route
-
-            for v in adj[u]:
-                if v in sinks:
-                    v_cost = 0.0
-                else:
-                    sensor_v = sensors.get(v)
-                    if sensor_v is None or not sensor_v.is_alive:
-                        continue
-                    v_cost = init_energy / max(sensor_v.energy_j, 1e-6)
-
-                new_state = (max(cur_max_cost, v_cost), hops + 1)
-                if new_state < best_state.get(v, (float("inf"), 10**9)):
-                    best_state[v] = new_state
-                    parent[v] = u
-                    heapq.heappush(pq, (new_state[0], new_state[1], v))
-
-        return None
-
-    def get_gpsr_route(self, source_id: str) -> list[str] | None:
-        """
-        3. Energy-Aware GPSR (Greedy Perimeter Stateless Routing):
-        Định tuyến cục bộ dựa trên tọa độ địa lý (x, y) kết hợp trọng số năng lượng.
-        """
-        sensors = self.network.sensors
-        sinks = self.network.sinks
-        src_sensor = sensors.get(source_id)
-        if src_sensor is None or not src_sensor.is_alive:
-            return None
-
-        adj = self.network.graph._adj
-        if source_id not in adj:
-            return None
-
-        r_max = self.network.communication_range_m or 300.0
-        init_energy = getattr(self.network.config, "initial_energy_j", 5.0)
-
-        def get_pos(nid: str) -> tuple[float, float]:
-            if nid in sinks:
-                s = sinks[nid]
-                return (s.x, s.y)
-            sn = sensors[nid]
-            return (sn.x, sn.y)
-
-        route = [source_id]
-        visited = {source_id}
-        curr = source_id
-
-        for _ in range(60):
-            if curr in sinks:
-                return route
-
-            neighbors = adj[curr]
-            for nb in neighbors:
-                if nb in sinks:
-                    route.append(nb)
-                    return route
-
-            cx, cy = get_pos(curr)
-            target_sink = min(
-                sinks,
-                key=lambda sid: hypot(cx - sinks[sid].x, cy - sinks[sid].y),
-            )
-            sx, sy = get_pos(target_sink)
-            curr_dist_to_sink = hypot(cx - sx, cy - sy)
-
-            best_next = None
-            best_score = -1.0
-
-            for nb in neighbors:
-                if nb in visited or nb not in sensors:
-                    continue
-                nb_sensor = sensors[nb]
-                if not nb_sensor.is_alive:
-                    continue
-
-                nb_dist_to_sink = hypot(nb_sensor.x - sx, nb_sensor.y - sy)
-                progress = curr_dist_to_sink - nb_dist_to_sink
-                if progress > 0:
-                    energy_ratio = nb_sensor.energy_j / init_energy
-                    score = (progress / r_max) * (0.4 + 0.6 * energy_ratio)
-                    if score > best_score:
-                        best_score = score
-                        best_next = nb
-
-            if best_next is not None:
-                visited.add(best_next)
-                route.append(best_next)
-                curr = best_next
-            else:
-                def is_alive(nid: str) -> bool:
-                    if nid in sinks:
-                        return True
-                    sn = sensors.get(nid)
-                    return sn is not None and sn.is_alive
-
-                alive_graph = nx.subgraph_view(self.network.graph, filter_node=is_alive)
-                try:
-                    recovery_path = nx.shortest_path(
-                        alive_graph, source=curr, target=target_sink
-                    )
-                    for node in recovery_path[1:]:
-                        if node in route:
-                            cut_idx = route.index(node)
-                            route = route[: cut_idx + 1]
-                        else:
-                            route.append(node)
-                    return route
-                except (nx.NetworkXNoPath, nx.NodeNotFound):
-                    return None
-
-        return None
-
-    def get_route(self, source_id: str, routing_algo: str = "MHR") -> list[str] | None:
-        if routing_algo == "MHR":
-            return self.get_mhr_route(source_id)
-        elif routing_algo == "EMHR":
-            return self.get_emhr_route(source_id)
-        elif routing_algo == "Weighted_Dijkstra":
-            return self.get_weighted_dijkstra_route(source_id)
-        elif routing_algo == "MMBCR":
-            return self.get_mmbcr_route(source_id)
-        elif routing_algo == "GPSR":
-            return self.get_gpsr_route(source_id)
+    def invalidate_cache(self, node_id=None, removed=False):
+        self._cache_epoch += 1
+        self._reachable_cache = None
+        if removed and node_id is not None:
+            self._route_cache = {key: route for key, route in self._route_cache.items() if route is None or node_id not in route}
         else:
-            raise ValueError(f"Thuật toán định tuyến không hợp lệ: {routing_algo}")
+            self._route_cache.clear()
+        self._cached_epoch = self.validation_epoch
+
+    def _synchronize_cache(self):
+        epoch = self.validation_epoch
+        if epoch != self._cached_epoch:
+            self._route_cache.clear()
+            self._reachable_cache = None
+            self._cached_epoch = epoch
+
+    def find_route(self, source_id: str, algorithm: str | None=None, **options) -> list[str] | None:
+        algorithm = self.network.config.routing_algorithm if algorithm is None else algorithm
+        if not self.cache_enabled or algorithm != self.network.config.routing_algorithm:
+            return self._find_route(source_id, algorithm, **options)
+        if algorithm == 'S_EMHR' and self.detector is not None:
+            self.detector.advance(options.get('time_s', 0))
+        self._synchronize_cache()
+        key = (source_id, algorithm, options.get('packet_source_id'), options.get('target_sink'), frozenset(options.get('forbidden') or ()), options.get('threshold_j'))
+        if key in self._route_cache:
+            self.cache_hits += 1
+            route = self._route_cache[key]
+            return None if route is None else list(route)
+        route = self._find_route(source_id, algorithm, **options)
+        if route is None or self._last_route_unique or algorithm == 'MHR':
+            self._route_cache[key] = None if route is None else tuple(route)
+        return route
+
+    def reachable_sensor_ids(self, time_s: float) -> list[str]:
+        if not self.cache_enabled:
+            return self._reachable_sensor_ids(time_s)
+        if self.network.config.routing_algorithm == 'S_EMHR' and self.detector is not None:
+            self.detector.advance(time_s)
+        self._synchronize_cache()
+        if self._reachable_cache is None:
+            self._reachable_cache = self._reachable_sensor_ids(time_s)
+        return list(self._reachable_cache)
+
+    def _find_route(self, source_id: str, algorithm: str | None=None, *, packet_source_id: str | None=None, target_sink: str | None=None, forbidden: set[str] | None=None, time_s: float=0.0, threshold_j: float | None=None) -> list[str] | None:
+        algorithm = self.network.config.routing_algorithm if algorithm is None else algorithm
+        if algorithm not in {'MHR', 'EMHR', 'S_EMHR'}:
+            raise ValueError(f'unknown routing algorithm: {algorithm}')
+        if algorithm == 'S_EMHR' and self.detector is None:
+            raise ValueError('S_EMHR requires a forwarding detector')
+        if target_sink is not None and target_sink not in self.network.sinks:
+            return None
+        packet_source_id = source_id if packet_source_id is None else packet_source_id
+        blocked = forbidden or set()
+        graph = nx.subgraph_view(self.network.graph, filter_node=lambda node: node not in blocked and self.eligible(node, algorithm, packet_source_id, time_s, threshold_j))
+        if source_id not in self.network.sensors or source_id not in graph:
+            return None
+
+        def penalty(node: str) -> float:
+            sensor = self.network.sensors.get(node)
+            if algorithm == 'MHR' or sensor is None:
+                return 0.0
+            return self.network.config.initial_energy_j / (sensor.energy_j + self.network.config.energy_epsilon_j)
+        self._last_route_unique = False
+        path_counts = {source_id: 1}
+        initial = (0, 0.0, 0.0, (source_id,))
+        best = {source_id: initial}
+        queue = [initial]
+        while queue:
+            cost = heappop(queue)
+            hops, distance, energy_penalty, path = cost
+            node = path[-1]
+            if best[node] != cost:
+                continue
+            if node in self.network.sinks:
+                if target_sink is None or node == target_sink:
+                    matching = [end for end, label in best.items() if end in self.network.sinks and (target_sink is None or end == target_sink) and (label[:2] == cost[:2])]
+                    self._last_route_unique = sum((path_counts[end] for end in matching)) == 1
+                    return list(path)
+                continue
+            for neighbor in sorted(graph.neighbors(node)):
+                edge_distance = self.network.distance(node, neighbor) if algorithm != 'MHR' else 0.0
+                candidate = (hops + 1, distance + edge_distance, energy_penalty + penalty(neighbor), (*path, neighbor))
+                if neighbor not in best or candidate[:2] < best[neighbor][:2]:
+                    path_counts[neighbor] = path_counts[node]
+                elif candidate[:2] == best[neighbor][:2]:
+                    path_counts[neighbor] = min(2, path_counts[neighbor] + path_counts[node])
+                if neighbor not in best or candidate < best[neighbor]:
+                    best[neighbor] = candidate
+                    heappush(queue, candidate)
+        return None
+
+    def _reachable_sensor_ids(self, time_s: float) -> list[str]:
+        algorithm = self.network.config.routing_algorithm
+        if algorithm == 'S_EMHR' and self.detector is None:
+            raise ValueError('S_EMHR reachability requires a detector')
+        graph = self.network.graph
+        relays = {node for node in self.network.sensors if node in graph and self.eligible(node, algorithm, '', time_s)}
+        reachable = {node for node in self.network.sinks if node in graph}
+        frontier = list(reachable)
+        while frontier:
+            node = frontier.pop()
+            for neighbor in graph.neighbors(node):
+                if neighbor in relays and neighbor not in reachable:
+                    reachable.add(neighbor)
+                    frontier.append(neighbor)
+        return sorted((node for node, sensor in self.network.sensors.items() if sensor.is_alive and node in graph and (node in reachable or any((neighbor in reachable for neighbor in graph.neighbors(node))))))
+
+    def route_issues(self, route: list[str], packet_source_id: str, time_s: float) -> list[dict]:
+        if len(route) < 2 or len(route) != len(set(route)) or route[-1] not in self.network.sinks or any((node in self.network.sinks for node in route[:-1])):
+            return [{'reason': 'invalid_route', 'reason_category': 'route', 'node_id': None}]
+        issues = []
+        for node in route:
+            reason = self._node_ineligibility(node, self.network.config.routing_algorithm, packet_source_id, time_s)
+            if reason is not None:
+                issues.append({'reason': reason, 'reason_category': REASON_CATEGORIES[reason], 'node_id': node})
+        issues.extend(({'reason': 'link_unavailable', 'reason_category': 'link', 'node_id': None, 'sender_id': left, 'receiver_id': right} for left, right in zip(route, route[1:]) if not self.network.graph.has_edge(left, right)))
+        return issues
+
+    def route_is_valid(self, route: list[str], packet_source_id: str, time_s: float) -> bool:
+        return not self.route_issues(route, packet_source_id, time_s)

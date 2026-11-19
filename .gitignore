@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+.pytest_tmp/
 .coverage
 htmlcov/
 
@@ -13,13 +14,20 @@ dist/
 .idea/
 .vscode/
 *.swp
+*.bak
 
-results/csv/*.csv
-results/figures/*.png
-results/logs/*
-results/run_manifest.json
+.wsn-foundation-10000s/
+evidence/
+*.md
+
+results/*
+!results/.gitkeep
+!results/csv/
+!results/csv/.gitkeep
+!results/figures/
+!results/figures/.gitkeep
+!results/logs/
+!results/logs/.gitkeep
+
 data/topologies/*
 !data/topologies/.gitkeep
-!results/csv/.gitkeep
-!results/figures/.gitkeep
-!results/logs/.gitkeep

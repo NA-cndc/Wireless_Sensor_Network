@@ -1,0 +1,42 @@
+{
+  "version": "requested_security_performance_ofat_v1",
+  "source_plan_url": "https://chatgpt.com/library/share/libfile_aa6824b2c7f08191866f8f78895e0979",
+  "user_scope": "minimum additional runs while retaining reportable independent data",
+  "design": "one_factor_at_a_time_around_rho0.05_pdrop0.5_random",
+  "center_scenarios": [
+    "MHR",
+    "EMHR",
+    "MHR_SF",
+    "EMHR_SF",
+    "SF2",
+    "SF3"
+  ],
+  "sensitivity_scenarios": [
+    "EMHR_SF",
+    "SF3"
+  ],
+  "rhos": [
+    0.02,
+    0.05,
+    0.1
+  ],
+  "p_drops": [
+    0.25,
+    0.5,
+    0.75
+  ],
+  "placements": [
+    "random",
+    "near_sink"
+  ],
+  "independent_seeds_per_configuration": 30,
+  "expected_runs": 480,
+  "center_results_already_existed_before_this_scope": true,
+  "new_sensitivity_cases_selected_from_requested_levels_before_new_runs": true,
+  "interactions_estimated": false,
+  "algorithm_or_detector_retuned": false,
+  "timestamp_utc": "2026-11-12T14:35:23.792708+00:00",
+  "batch": "F:\\bangdzaihjhj\\dancctt\\results\\requested\\requested_study_20261112T143524926794Z_4314c200",
+  "report": "F:\\bangdzaihjhj\\dancctt\\results\\requested_reports\\bao_cao_20261112T160148803181Z_900fee27",
+  "status": "COMPLETE_480_OFAT"
+}

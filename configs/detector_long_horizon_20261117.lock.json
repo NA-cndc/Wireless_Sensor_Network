@@ -1,0 +1,242 @@
+{
+  "stage": "long_horizon_crosscheck",
+  "scope": "10000s empirical benign FPR gate plus independent attack validation; ideal observer; no real overhearing or lifetime guarantee",
+  "frozen_at_utc": "2026-11-17T06:07:50.601060+00:00",
+  "protocol": {
+    "version": "long_horizon_benign_v1",
+    "duration_s": 10000.0,
+    "channel_loss_probabilities": [
+      0,
+      0.01,
+      0.05
+    ],
+    "seed_partitions": {
+      "calibration_fit": [
+        171001,
+        171002,
+        171003,
+        171004,
+        171005,
+        171006
+      ],
+      "benign_validation": [
+        172001,
+        172002,
+        172003,
+        172004
+      ],
+      "attack_validation_reserved": [
+        173001,
+        173002,
+        173003,
+        173004
+      ],
+      "evaluation_reserved": [
+        174001,
+        174002,
+        174003,
+        174004,
+        174005,
+        174006,
+        174007,
+        174008,
+        174009,
+        174010,
+        174011,
+        174012,
+        174013,
+        174014,
+        174015,
+        174016,
+        174017,
+        174018,
+        174019,
+        174020,
+        174021,
+        174022,
+        174023,
+        174024,
+        174025,
+        174026,
+        174027,
+        174028,
+        174029,
+        174030
+      ]
+    },
+    "grid": {
+      "window_size_s": [
+        20,
+        40,
+        80
+      ],
+      "min_observations": [
+        2,
+        5,
+        10
+      ],
+      "beta_trust": [
+        0.5,
+        0.8
+      ],
+      "trust_threshold": [
+        0.7,
+        0.8,
+        0.9,
+        0.95
+      ],
+      "consecutive_bad_windows": [
+        1,
+        2,
+        3
+      ]
+    },
+    "fixed": {
+      "forwarding_timeout_s": 0.02,
+      "initial_trust": 1.0,
+      "isolation_duration_s": 60.0,
+      "calibration_status": "TEST_ONLY"
+    },
+    "observation_model": "ideal_observer_deadline_cohorts_v1",
+    "routing_algorithm": "EMHR",
+    "prediction": "ever_suspected_by_cutoff_all_sensors",
+    "max_empirical_fpr": 0.05,
+    "max_empirical_conditional_fpr": 0.05,
+    "min_seed_coverage": 0.2,
+    "selection_order": [
+      "highest_tau_within_fpr_budget",
+      "lowest_worst_conditional_fpr",
+      "highest_min_seed_coverage",
+      "K_closest_to_2",
+      "shortest_window",
+      "candidate_id"
+    ],
+    "K_policy": "K controls isolation only; suspicion FPR must not be claimed to improve from K alone",
+    "attack_validation": {
+      "rho": 0.05,
+      "p_drop_values": [
+        0.25,
+        0.5,
+        0.75
+      ],
+      "channel_loss_probability": 0.01,
+      "min_conditional_tpr": 0.5,
+      "min_unconditional_tpr": 0.3,
+      "max_mean_capped_detection_delay_s": 5000
+    },
+    "validation_policy": "fit selection saved before validation; reject without reselection on any gate failure",
+    "evaluation_policy": "freeze before evaluation; 30 new matched seeds; no evaluation tuning",
+    "independent_unit": "seed",
+    "FPR_scope": "ever_suspected over 10000s, not instantaneous",
+    "overhead_policy": "ideal observer retains NA; parameterized counterfactual estimates reported separately without battery feedback",
+    "original_plan_horizon": "10000 rounds = 100000s; this study is a separate 10000s audit"
+  },
+  "protocol_sha256": "3bc0a25e74c4b6c3cf8059a34831ba7316487568aac657157a0080a45ea67b2a",
+  "source_fingerprint": {
+    "sha256": "82df24844bc8b6ecca3f70d7de4a668a845bb75994d06adb3940dacbe7ea94f1",
+    "files": {
+      "config.py": "c0b8cfc26b433c3db9b5d6a3819dacd43efcb04140acab136f510654b1d0ca25",
+      "configs/plan.json": "18a9abef5ee53500a4e328ee136650c45c2a146de34b92e68512d78ba9356a17",
+      "logger.py": "a304040e69e7b7da9bfd71cf30b6cc489c149964594dacf07ed7380ddcedd985",
+      "main.py": "87a97563ae3c5d9e642eef995e924899333f7a8416680b74c4368f80b77b14ab",
+      "pyproject.toml": "f05cd2f1c1f8f13d0268b9fbce7be70c9cf893f68bae5f2676fdbb1db8484210",
+      "requirements-dev.txt": "1cf245755ca62bfe8c5ffcbcf6ee7ce34d23fa10c7ec49f9d09a7c22327057cf",
+      "requirements.txt": "ff1773dae54f4c00f3409777f9f06262e016293c3bc6576d6426b3c239bcfa87",
+      "scripts/calibrate_detector.py": "9ec751f662dcf96ba68700e570a9965be1e8ead4a2a8cc065ea29aae0f28cb0b",
+      "scripts/check_attacks.py": "b85c29402e0cbdc223b1fce304afc20e7f62c1f18821966b458e6e4c1a169e81",
+      "scripts/check_detector.py": "94974ac0b2bd1ba22428e2c10f9bfc0d18321440ed1c2a87a985047660b4ffa3",
+      "scripts/check_foundation.py": "a356e8b41a0d85a1e52d535e01f9ac9b95817e8332643f5f3af795605342b8a9",
+      "scripts/check_metrics.py": "e8f4af98cb11a9bc3902ce93f52e28934b254fccb11d64ff6461a6b5a726d16d",
+      "scripts/check_recovery.py": "d17b2a35b1a9fbb9babac4940d56d5bafeb22bc47e123cb4ce312dfc7b25b788",
+      "scripts/report_experiments.py": "87a2d6b2b57d4af973166ecd0253c03dc9cea65e3f96fc216f7e943022841aea",
+      "scripts/review_wsn.py": "d5c4dc61d6b91666248a62a8d7f14a03dbcdd4cf9c3661a7875eb6a317604ad8",
+      "scripts/run_calibration.py": "134b64daf843d861baf365c256185b455c65bfdb12d1f2f999dc047ab50f1340",
+      "scripts/run_demo.py": "b936f017099181c130f513a3a44f91f50846efe3212d6c590a3de4ffbf04aa7a",
+      "scripts/run_experiments.py": "0d72c23bf038709c913e321030beeaa50c9072741abdb7da516b1269a5df62b9",
+      "scripts/verify_wsn.py": "3a5d4de64ab463ce101e412072850771fbaa49f31ca5e3af22c4618e5abfdf7e",
+      "src/wsn_sim/__init__.py": "b81e9d35e201912ee44174423849c0ac8cc458e29feae28f815c686b33210c4b",
+      "src/wsn_sim/attack_verification.py": "324ad649bb036f8e084c566ad2a86f54907937d817bfe6fc97479fbf219a8f6c",
+      "src/wsn_sim/attacks.py": "7b70f8ca83fcb2b3da840ff52ecb8749b012dd8ec41e3ff207db5ce936a1ce48",
+      "src/wsn_sim/calibration.py": "04207691f2d433bfaa2b9189126a3dfa2891856bc1349d57b2908b6b7ea64eea",
+      "src/wsn_sim/cli.py": "1f75fd8f238ad24e3c791e5734c6d9afddb0423f1aee4901b6f70e845a55a119",
+      "src/wsn_sim/config.py": "c337a2ad6dbde61a1e50334f592f4e2fec603cb781476e95d02f715c7be90260",
+      "src/wsn_sim/demo.py": "cf858850a75aef4afc2055af9e866dc2155c5473610ffdd95e50b2a35f979aef",
+      "src/wsn_sim/detection.py": "59662eb95cae112666e6cc3b16347042470d8663109330dc40b1e303bf543095",
+      "src/wsn_sim/detector_verification.py": "023aabf92655de004a7a5344001b1b761de5b0ee3060231a7bb8752f88e1012c",
+      "src/wsn_sim/energy.py": "79e4eb2abe46230f3984ee6569950660db584b077d0059e2703ce4d4139fc010",
+      "src/wsn_sim/evaluation.py": "d9986e9fefe3f2540aaa867fd8d4c0cb7d0c3440bdf41260b51e1be3266c2c57",
+      "src/wsn_sim/experiment_execution.py": "71ecba4ea3d0ab1b7a85181f535bf12f26ba043661c23fae99c756a0f15075ce",
+      "src/wsn_sim/experiment_figures.py": "45a035575c85009afd4f5d4b857f0b39381e5ce5368a0d51c63e0f6d5e00adc4",
+      "src/wsn_sim/experiment_plan.py": "2852fae635be8ab9b1c35def5d6923298c03b797decac948ce5d6f0309a2bbd9",
+      "src/wsn_sim/experiment_report.py": "4681130d7d4dd5929545535620be90da51f55c14a91180156385a5243bc269e1",
+      "src/wsn_sim/experiment_statistics.py": "3c8f554425e367bb289d96501dfef958bfbe59fc7d5d2e986074d1f38b3aa81f",
+      "src/wsn_sim/experiment_tables.py": "3ea92a2f171ea853497dc06822e4abf17ff61395f8070c0059be5a9cf8d08fb8",
+      "src/wsn_sim/experiments.py": "9c1397c12f72ff5c01c7199ad19fee10ef79f68e03df5162687323e0b3734349",
+      "src/wsn_sim/metrics.py": "dbc8519c1fb68fa05b1634daee11654f0f63509e43ad457efee8bb43c939bed3",
+      "src/wsn_sim/models/__init__.py": "abcc444f77504e14b31aa72d1834762f53a593e410337cb078512173a3258b51",
+      "src/wsn_sim/models/packet.py": "29e8eee6a46107fc593e9550b8a718cda6807b0e000a9283607795dc95d50bce",
+      "src/wsn_sim/models/sensor.py": "f98e601982fd352a871c542afe79e004d15cd94c68ec135d0f3638091755a5c3",
+      "src/wsn_sim/models/sink.py": "0451776614ebd2dfe6336ca3bd1878f0e815e03d8b22da5e884d9f47298a27ba",
+      "src/wsn_sim/network.py": "23b8e6ba94a1374b9e9bad06aac59003b28136c32bc0a725053629a90eae167c",
+      "src/wsn_sim/randomness.py": "09350d73746af6d60ed375df31da9550dc1f0f9c97c7b10754376f8213feace9",
+      "src/wsn_sim/recording.py": "641974e0a830c737a908ae8bc39003a274b7e0d19c7ca7ae5fa64ac12108a069",
+      "src/wsn_sim/review.py": "c453a41acb5ac0f0e5e427c9f7f2eee702a9d645a30d7f7900ea420dd664cf05",
+      "src/wsn_sim/routing.py": "7f1fa5727c9aba92dd1195f431b1fc57f7616c4a7f8eba8753131afc039fd9ae",
+      "src/wsn_sim/simulation.py": "1120dc6b99eb34cdba318c54f33be1eebccab9316a465e26aa1a2591c8675ab6",
+      "src/wsn_sim/stage56_verification.py": "ebd4d9fd87a07700b2ec4b7480ad5e5cdcca590fe6104e1b69dfa5e121773f7f",
+      "src/wsn_sim/storage.py": "928489c14dfc78e63dce53980f325980fee1ac878f43bf20fb522d2e7e8521fe",
+      "src/wsn_sim/traffic.py": "8a7674936b2a304204c6eeccdffab08374a4c67f8b919bc67131ced985c02515",
+      "src/wsn_sim/verification.py": "1fb25fb2fada92af88006d165945abc9495c986ecf34af54887d7ab06a43f9de",
+      "src/wsn_sim/visualization.py": "13b7fa2defa7706a2a2e8c78ecd03ade84157a0afea00e481d371540d6c98c14",
+      "test_env.py": "aeb064a2efdb74768b4f7d982d8a76f03af624593323e52f05f3fd14e3c85add",
+      "topology.py": "75a7b33a9cb922c9d64491d820abcd315100b056bc4e71c7aafda14d9402c97a"
+    }
+  },
+  "detector_parameters": {
+    "beta_trust": 0.8,
+    "window_size_s": 80,
+    "forwarding_timeout_s": 0.02,
+    "min_observations": 10,
+    "trust_threshold": 0.95,
+    "consecutive_bad_windows": 2,
+    "initial_trust": 1.0,
+    "isolation_duration_s": 60.0,
+    "calibration_status": "CALIBRATED"
+  },
+  "simulation_configuration": {
+    "area_width_m": 3000,
+    "area_height_m": 3000,
+    "num_sensors": 450,
+    "num_sinks": 7,
+    "initial_energy_j": 5.0,
+    "packet_size_bytes": 128,
+    "packet_interval_s": 10,
+    "communication_ranges_m": [
+      250,
+      300,
+      350
+    ],
+    "seed": 42,
+    "communication_range_m": 300,
+    "energy_threshold_ratio": 0.2,
+    "energy_epsilon_j": 1e-12,
+    "max_rounds": 1000,
+    "routing_algorithm": "EMHR",
+    "wire_size_bytes": null,
+    "bandwidth_bps": 250000,
+    "attacker_ratio": 0,
+    "attacker_ids": null,
+    "attacker_selection": "random",
+    "p_drop": 0.5,
+    "channel_loss_probability": 0.01,
+    "detector": null,
+    "config_profile": "CUSTOM"
+  },
+  "simulation_config_sha256": "a4c5693285abc59bc9cbb46dc8866a64b0e19bc9d5099f1b50dce86d55014f75",
+  "config_file_sha256": "a1007739cda463a5fc6e7b7014f4d58a35cf4d1926dd13cd1dc6734379a2c4c6",
+  "benign_validation_passed": true,
+  "attack_validation_passed": true,
+  "validation_evidence_path": "results/security_crosscheck_20261117/validation_gate.json",
+  "validation_evidence_sha256": "93f3a91a4ae52becda7ed2f532b3cb25497a9bbf6c70b4b8910a03183a705daf",
+  "evaluation_runs_before_freeze": 0
+}

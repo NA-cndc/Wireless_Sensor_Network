@@ -1,0 +1,13 @@
+# Calibration locks hash these source files with CRLF line endings.
+/*.py text eol=crlf
+/src/**/*.py text eol=crlf
+/scripts/**/*.py text eol=crlf
+/pyproject.toml text eol=crlf
+/requirements*.txt text eol=crlf
+/configs/plan.json text eol=crlf
+
+# Keep each frozen detector configuration in the format recorded by its lock.
+/configs/detector_calibrated.json text eol=lf
+/configs/detector_stage56.json text eol=lf
+/configs/detector_stage78.json text eol=lf
+/configs/detector_long_horizon_20261117.json text eol=crlf

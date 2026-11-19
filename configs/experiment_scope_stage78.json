@@ -1,0 +1,25 @@
+{
+  "timestamp_utc": "2026-11-12T14:05:38.966798+00:00",
+  "reason": "User explicitly requested reducing 1140 runs to optimize machine time",
+  "user_request": "giảm số lượng 1.140 này xuống để tối ưu thời gian được không ?",
+  "target_main_runs": 180,
+  "configurations": 6,
+  "seeds_per_configuration": 30,
+  "treatment": {
+    "rho": 0.05,
+    "p_drop": 0.5,
+    "placement": "random",
+    "R_m": 300,
+    "p_channel": 0.01
+  },
+  "selection_rule": "six center scenarios already prioritized in original preregistration; no detector retuning or outcome-based scenario/seed exclusion",
+  "scope_change_after_evaluation_started": true,
+  "original_plan_directory": "F:\\bangdzaihjhj\\dancctt\\results\\runs\\stage7_batch_20261112T133003076746Z_4662981d",
+  "original_plan_hash": "e4f5d50c9d8386dd98bed40e7fe44585937b09ca7b815c9a92152d92f1e6ec28",
+  "original_expected": 1140,
+  "original_completed": 188,
+  "original_pending": 952,
+  "completed_outside_core": 8,
+  "source_and_per_run_configuration_changed": false,
+  "result_reuse": "same run_id, exact spec equality and all completion hashes verified; no simulation reruns"
+}

@@ -1,0 +1,44 @@
+{
+  "selected_range_m": 300,
+  "criteria_met": true,
+  "criteria": {
+    "minimum_mean_reachability": 0.99,
+    "minimum_full_topology_fraction": 0.8
+  },
+  "rule": "lowest_R_meeting_both_criteria_else_best_mean_with_explicit_failure_flag",
+  "all_radii": [
+    {
+      "radius_m": 250,
+      "mean_routable_fraction": 0.9986666666666666,
+      "fully_reachable_topology_fraction": 0.4,
+      "not_fully_reachable_rate": 0.6,
+      "passes": false
+    },
+    {
+      "radius_m": 300,
+      "mean_routable_fraction": 0.9995555555555555,
+      "fully_reachable_topology_fraction": 0.8,
+      "not_fully_reachable_rate": 0.19999999999999996,
+      "passes": true
+    },
+    {
+      "radius_m": 350,
+      "mean_routable_fraction": 1.0,
+      "fully_reachable_topology_fraction": 1.0,
+      "not_fully_reachable_rate": 0.0,
+      "passes": true
+    }
+  ],
+  "pilot_seeds": [
+    44001,
+    44002,
+    44003,
+    44004,
+    44005
+  ],
+  "evaluation_used": false,
+  "topologies_discarded": 0,
+  "pilot_directory": "F:\\bangdzaihjhj\\dancctt\\results\\runs\\stage7_pilot_20261112T132504192083Z_fa17c198",
+  "reachability_csv_sha256": "7f483de424d787f8c2cd97cefb131c4cd136834babc7482d6d698d29adc021eb",
+  "pilot_source_sha256": "55bb401bac0456e8c1ca5e91efdb98f03395a82338da583450ea84998ee824a8"
+}
