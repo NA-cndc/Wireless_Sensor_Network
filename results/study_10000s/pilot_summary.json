@@ -1,0 +1,29 @@
+{
+  "git_commit": "4f8a73b23638942f993e069f7fe5b358d8c02264",
+  "selected_radius_m": 300.0,
+  "minimum_routable_fraction": 0.95,
+  "selected_meets_majority_criterion": true,
+  "results": [
+    {
+      "radius_m": 250,
+      "topologies": 30,
+      "passing": 30,
+      "failing": 0,
+      "passing_fraction": 1.0
+    },
+    {
+      "radius_m": 300,
+      "topologies": 30,
+      "passing": 30,
+      "failing": 0,
+      "passing_fraction": 1.0
+    },
+    {
+      "radius_m": 350,
+      "topologies": 30,
+      "passing": 30,
+      "failing": 0,
+      "passing_fraction": 1.0
+    }
+  ]
+}

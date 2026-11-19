@@ -2,7 +2,7 @@
 
 ## Điều kiện ban đầu
 
-- Đang ở repository `Wireless_Sensor_Network` và branch `XB`.
+- Đang ở repository `Wireless_Sensor_Network` hoặc worktree dùng để chạy mô phỏng.
 - Python 3.10 trở lên và `pip` đã được cài.
 - Không dùng `sudo pip install` và không nâng cấp Python hệ thống.
 
@@ -42,7 +42,7 @@ test bằng:
 ```bash
 python -m pip install -e ".[dev]"
 python -m pip check
-python -c "import networkx, simpy, numpy, pandas, matplotlib; print('imports=OK')"
+python -c "import networkx, simpy, numpy, pandas, matplotlib, scipy; print('imports=OK')"
 ```
 
 Hai file requirements chỉ là entry point tương đương:

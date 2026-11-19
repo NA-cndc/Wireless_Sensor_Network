@@ -1,0 +1,119 @@
+{
+  "configuration": {
+    "area_width_m": 3000,
+    "area_height_m": 3000,
+    "num_sensors": 450,
+    "num_sinks": 7,
+    "initial_energy_j": 5.0,
+    "packet_size_bytes": 128,
+    "packet_interval_s": 10,
+    "communication_ranges_m": [
+      250,
+      300,
+      350
+    ],
+    "seed": 36,
+    "duration_s": 10000,
+    "emhr_alpha": 0.2,
+    "channel_loss_probability": 0.05,
+    "traffic_seed": null,
+    "channel_seed": null
+  },
+  "stage1": [
+    {
+      "radius_m": 250.0,
+      "algorithm": "EMHR",
+      "timeseries": "csv/simulation_log_EMHR_range_250m.csv",
+      "manifest": "csv/simulation_log_EMHR_range_250m.json",
+      "git_commit": "4f8a73b23638942f993e069f7fe5b358d8c02264",
+      "elapsed_s": 10000.0,
+      "stop_reason": "duration_limit",
+      "timeseries_sha256": "ffa26fe3eb905ec974324df98b9ce8f7b0538e02d6eefd8ae5eef7984e6777f4",
+      "manifest_sha256": "43b009c0015274db6e4a005920a4dc30af8d0d9d4a8d44e2c45485b4b6a071a5"
+    },
+    {
+      "radius_m": 300.0,
+      "algorithm": "EMHR",
+      "timeseries": "csv/simulation_log_EMHR_range_300m.csv",
+      "manifest": "csv/simulation_log_EMHR_range_300m.json",
+      "git_commit": "4f8a73b23638942f993e069f7fe5b358d8c02264",
+      "elapsed_s": 10000.0,
+      "stop_reason": "duration_limit",
+      "timeseries_sha256": "cfffdff30064906de02c47c514422994bbb1f01d74c5472cfa94529f2b55bbd5",
+      "manifest_sha256": "53c3d1d4883b4eac9a13c5187bfcdb5b639731739ad5eaab39613c62c900e902"
+    },
+    {
+      "radius_m": 350.0,
+      "algorithm": "EMHR",
+      "timeseries": "csv/simulation_log_EMHR_range_350m.csv",
+      "manifest": "csv/simulation_log_EMHR_range_350m.json",
+      "git_commit": "4f8a73b23638942f993e069f7fe5b358d8c02264",
+      "elapsed_s": 10000.0,
+      "stop_reason": "duration_limit",
+      "timeseries_sha256": "62a45d0ffca62ea334ee98e1f494bee5eb43e92169c2009a1a52b90628c0d987",
+      "manifest_sha256": "fbd042ba93bd33abd5656f5c3bfa45f64d36ee421bc04baae7e3efc9f80a1608"
+    }
+  ],
+  "stage2": [
+    {
+      "radius_m": 300.0,
+      "algorithm": "EMHR",
+      "timeseries": "csv/simulation_log_EMHR_range_300m.csv",
+      "manifest": "csv/simulation_log_EMHR_range_300m.json",
+      "git_commit": "4f8a73b23638942f993e069f7fe5b358d8c02264",
+      "elapsed_s": 10000.0,
+      "stop_reason": "duration_limit",
+      "timeseries_sha256": "cfffdff30064906de02c47c514422994bbb1f01d74c5472cfa94529f2b55bbd5",
+      "manifest_sha256": "53c3d1d4883b4eac9a13c5187bfcdb5b639731739ad5eaab39613c62c900e902"
+    },
+    {
+      "radius_m": 300.0,
+      "algorithm": "MHR",
+      "timeseries": "csv/simulation_log_MHR_range_300m.csv",
+      "manifest": "csv/simulation_log_MHR_range_300m.json",
+      "git_commit": "4f8a73b23638942f993e069f7fe5b358d8c02264",
+      "elapsed_s": 10000.0,
+      "stop_reason": "duration_limit",
+      "timeseries_sha256": "7a6b2fe22f106c84a6f52eee88d6c5cc502fb125f0271ca0f529b20d02d79fe9",
+      "manifest_sha256": "bc75df89d6a2ddbc440c2b0fd0dbbc4ac55c5bac2d5c8e821d3985988d3280f1"
+    },
+    {
+      "radius_m": 300.0,
+      "algorithm": "Weighted_Dijkstra",
+      "timeseries": "csv/simulation_log_Weighted_Dijkstra_range_300m.csv",
+      "manifest": "csv/simulation_log_Weighted_Dijkstra_range_300m.json",
+      "git_commit": "4f8a73b23638942f993e069f7fe5b358d8c02264",
+      "elapsed_s": 10000.0,
+      "stop_reason": "duration_limit",
+      "timeseries_sha256": "c27707c5966be94db73cf07a857cbcb90ae36c24001bfba6ccdf9b4218d04d82",
+      "manifest_sha256": "4600563082b0daccee5691ac061a544b1e01f70a220c99c042e7891b5345ba4c"
+    },
+    {
+      "radius_m": 300.0,
+      "algorithm": "MMBCR",
+      "timeseries": "csv/simulation_log_MMBCR_range_300m.csv",
+      "manifest": "csv/simulation_log_MMBCR_range_300m.json",
+      "git_commit": "4f8a73b23638942f993e069f7fe5b358d8c02264",
+      "elapsed_s": 10000.0,
+      "stop_reason": "duration_limit",
+      "timeseries_sha256": "4efe8c0b776b605d98f59a030a4aa557fceebad4fba20a76d66c484550cbf06d",
+      "manifest_sha256": "71e1975605ba781991b23b6f3f490d37a9ee625352e78952336147f6b3409f6c"
+    },
+    {
+      "radius_m": 300.0,
+      "algorithm": "GPSR",
+      "timeseries": "csv/simulation_log_GPSR_range_300m.csv",
+      "manifest": "csv/simulation_log_GPSR_range_300m.json",
+      "git_commit": "209a097a98e76704dccac3da722499d15d00dbd9",
+      "elapsed_s": 10000.0,
+      "stop_reason": "duration_limit",
+      "timeseries_sha256": "a697b7b1a0fd0dd1becbc1c1004902f59a5ba30fb428c63ae62b61bb4af04b69",
+      "manifest_sha256": "812ca1255ae0ca05c485107603bbe1c628b391031d9127f5ccb7e1566e7d8679"
+    }
+  ],
+  "topology_radii_m": [
+    250,
+    300,
+    350
+  ]
+}

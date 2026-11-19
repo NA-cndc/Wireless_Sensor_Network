@@ -111,14 +111,14 @@ def plot_range_selection(ranges, csv_dir, fig_dir, algo="EMHR", initial_energy_j
         c = colors.get(float(r), "black")
         label_name = f"R = {int(r)}m"
 
-        r_t = (df["Routable_Nodes"] / df["Alive_Nodes"].replace(0, 1)) * 100
-        r_t[df["Alive_Nodes"] == 0] = 0
+        r_t = 100 * df["Routable_Nodes"] / df["Alive_Nodes"].where(df["Alive_Nodes"] > 0)
         ax_life.plot(df["Time_s"], r_t, label=label_name, color=c, linestyle="-", linewidth=2.2)
 
         dead_nodes = actual_sensors - df["Alive_Nodes"]
         ax_dead.plot(df["Time_s"], dead_nodes, label=label_name, color=c, linestyle="-", linewidth=2.2)
         ax_energy.plot(df["Time_s"], df["Total_Energy_J"], label=label_name, color=c, linestyle="-", linewidth=2.2)
-        ax_lat.plot(df["Time_s"], df["Avg_Latency_s"], label=label_name, color=c, linestyle="-", linewidth=2.2)
+        latency = df["Avg_Latency_s"].where(df["Delivered_Packets"] > 0)
+        ax_lat.plot(df["Time_s"], latency, label=label_name, color=c, linestyle="-", linewidth=2.2)
 
     # Đường ngưỡng và cố định trục tung từ mốc 0
     ax_life.axhline(y=50, color="red", linestyle=":", linewidth=1.5, label="Ngưỡng Lifetime (50%)")
@@ -207,14 +207,14 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
             ls = "-"
             label_name = algo
 
-        r_t = (df["Routable_Nodes"] / df["Alive_Nodes"].replace(0, 1)) * 100
-        r_t[df["Alive_Nodes"] == 0] = 0
+        r_t = 100 * df["Routable_Nodes"] / df["Alive_Nodes"].where(df["Alive_Nodes"] > 0)
         ax_life.plot(df["Time_s"], r_t, label=label_name, color=c, linestyle=ls, linewidth=2.2)
 
         dead_nodes = actual_sensors - df["Alive_Nodes"]
         ax_dead.plot(df["Time_s"], dead_nodes, label=label_name, color=c, linestyle=ls, linewidth=2.2)
         ax_energy.plot(df["Time_s"], df["Total_Energy_J"], label=label_name, color=c, linestyle=ls, linewidth=2.2)
-        ax_lat.plot(df["Time_s"], df["Avg_Latency_s"], label=label_name, color=c, linestyle=ls, linewidth=2.2)
+        latency = df["Avg_Latency_s"].where(df["Delivered_Packets"] > 0)
+        ax_lat.plot(df["Time_s"], latency, label=label_name, color=c, linestyle=ls, linewidth=2.2)
 
     # Đường ngưỡng và cố định trục tung từ mốc 0
     ax_life.axhline(y=50, color="red", linestyle=":", linewidth=1.5, label="Ngưỡng Lifetime (50%)")

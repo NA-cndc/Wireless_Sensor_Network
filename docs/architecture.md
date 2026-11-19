@@ -53,22 +53,23 @@ lớp domain.
 
 ### `simulation.py`
 
-`Simulation` sở hữu hoặc nhận `simpy.Environment`. Giai đoạn hiện tại chỉ đưa
-một process chứa `env.timeout()` vào hàng đợi và xác nhận đồng hồ mô phỏng tăng;
-chưa sinh traffic và chưa chuyển packet qua route.
+`Simulation` sở hữu hoặc nhận `simpy.Environment`. Nó điều phối thời điểm chốt,
+ghi mốc tử vong theo thời gian sự kiện và gom chuỗi mẫu theo round. `TrafficGenerator`
+sinh dữ liệu, xử lý hàng đợi anten, ghi TX/RX và truy vấn tuyến từ
+`RoutingEngine`. Lệnh `run_for()` chạy tới giới hạn cấu hình hoặc LND. Lệnh
+`run_for(duration_s)` hỗ trợ tăng thời gian tương đối cho các điểm gọi cũ.
 
 ### `metrics.py`, `storage.py`, `visualization.py`
 
 `metrics.py` biến các summary thành `pandas.DataFrame` theo schema ổn định.
-`storage.py` lưu CSV/JSON bằng `pathlib.Path`, đồng thời tạo run manifest từ cấu
-hình, phiên bản thư viện và các lệnh Git chỉ đọc. `visualization.py` dùng backend
+`storage.py` ghi CSV chuỗi thời gian, CSV tải relay, CSV gói nén và JSON từng lượt
+với cấu hình, seed, commit và lý do dừng. `visualization.py` dùng backend
 Matplotlib `Agg`, biểu diễn sensor, sink và cạnh, rồi luôn đóng figure sau khi
 lưu.
 
 ## Quan hệ đối tượng
 
-`Network` sở hữu collection `Sensor`, `Sink` và graph. `Packet` hiện là model
-độc lập; `Sink.receive(packet, time)` là điểm tương tác tối thiểu để quản lý giao
-nhận. `Simulation` nhận một `Network` thay vì tự tạo topology, cho phép test và
-thí nghiệm truyền vào đúng graph đã chọn. Lớp routing tương lai nên nhận graph,
-trạng thái sensor và nguồn/đích, sau đó trả route cho `Packet.assign_route()`.
+`Network` sở hữu các `Sensor`, `Sink` và graph. `Simulation` nhận cấu hình hoặc
+một `Network` đã dựng. `RoutingEngine` chọn đường từ nguồn đến sink và
+`TrafficGenerator` truyền gói qua tuyến. `Sink.receive(packet, time)` ghi ID gói
+và chốt trạng thái nhận. CSV gói sử dụng số hop đã đi để xuất đường đi thực tế.

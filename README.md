@@ -1,4 +1,4 @@
-# WSN Chủ đề 3 — Kiến trúc mô phỏng ban đầu
+# WSN Chủ đề 3 — Mô phỏng định tuyến
 
 Repository cung cấp nền tảng Python có khả năng tái lập cho mô phỏng Wireless
 Sensor Network (WSN). Giai đoạn này mô hình hóa 450 sensor, 7 sink đứng yên
@@ -14,7 +14,7 @@ Wireless_Sensor_Network/
 │   ├── models/                    # Sensor, Sink, Packet
 │   ├── config.py                  # Nạp và kiểm tra cấu hình
 │   ├── network.py                 # Sinh node và đồ thị NetworkX
-│   ├── simulation.py              # Smoke process SimPy
+│   ├── simulation.py              # Điều phối mô phỏng SimPy
 │   ├── metrics.py                 # Bảng tổng hợp pandas
 │   ├── storage.py                 # CSV, JSON và run manifest
 │   └── visualization.py           # Hình topology Matplotlib
@@ -54,7 +54,7 @@ python -m pytest -q
 python scripts/run_demo.py
 ```
 
-Demo dùng `seed=42` để sinh đúng một bộ tọa độ, sau đó xây lại graph độc lập
+Demo dùng `seed=36` để sinh đúng một bộ tọa độ, sau đó xây lại graph độc lập
 cho từng bán kính mà không di chuyển node. Các đầu ra gồm:
 
 - `results/csv/topology_summary.csv`: ba hàng tổng hợp topology.
@@ -63,7 +63,20 @@ cho từng bán kính mà không di chuyển node. Các đầu ra gồm:
 - `results/run_manifest.json`: cấu hình, phiên bản môi trường, Git metadata và
   danh sách file đã sinh.
 
-Các đầu ra sinh tự động được `.gitignore` loại khỏi commit.
+## Chạy hồ sơ 10.000 giây
+
+```bash
+python main.py
+python run_analysis.py --plots-only
+python scripts/run_foundation_study.py --workers 8
+```
+
+`python run_analysis.py` chạy mô phỏng và vẽ toàn bộ biểu đồ trong cùng một lệnh.
+Demo ở trên chạy smoke test một chu kỳ. Lượt đầy đủ đọc `duration_s` từ
+`configs/default.json`. Kết quả bảy kịch bản chuẩn nằm trong `results/csv/` và
+biểu đồ nằm trong `results/figures/`. Ma trận ghép cặp lưu trong
+`results/study_10000s/`. Xem [quy tắc đo và dữ liệu đầu ra](docs/experiment_parameters.md)
+và [bảng nghiệm thu](docs/foundation_acceptance_10000s.md).
 
 ## Phạm vi đã hoàn thành
 
@@ -71,13 +84,12 @@ Các đầu ra sinh tự động được `.gitignore` loại khỏi commit.
   `dataclass`.
 - Sinh topology tái lập bằng NumPy và xây đồ thị vô hướng bằng NetworkX.
 - Truy vấn neighbor, sensor cô lập và sensor liên thông tới ít nhất một sink.
-- Smoke test SimPy, tổng hợp pandas, lưu CSV/JSON và vẽ Matplotlib headless.
+- MHR, EMHR, Weighted Dijkstra, MMBCR và GPSR trên SimPy.
+- Traffic định kỳ, mô hình radio hai miền, chỉ số năng lượng và dữ liệu gói.
+- Tổng hợp pandas, lưu CSV/JSON và vẽ Matplotlib headless.
 - Unit test, integration test và tài liệu vận hành/kiến trúc.
 
-## Chưa thực hiện
+## Phạm vi bảo mật
 
-Giai đoạn này chưa triển khai MHR, EMHR/S-EMHR, radio-energy chi tiết,
-Selective Forwarding, trust/forwarding ratio, traffic đầy đủ, FND/HND/LND,
-PDR, throughput chính thức, ns-3/OMNeT++, dashboard web hoặc mô hình phần cứng.
-Các nội dung đó có thể được bổ sung ở các module routing và simulation trong
-giai đoạn sau mà không đặt thuật toán vào lớp `Network` hay `Sensor`.
+Hồ sơ nền trên nhánh này nghiên cứu định tuyến trong điều kiện không có tấn công.
+Kịch bản Selective Forwarding, S-EMHR và đánh giá bộ phát hiện thuộc nhánh bảo mật.
