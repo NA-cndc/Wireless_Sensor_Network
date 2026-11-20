@@ -102,7 +102,7 @@ def verify(out, source_root):
     if errors:
         raise SystemExit(1)
 if __name__ == '__main__':
-    out = ROOT / 'results/security_crosscheck_20261117'
+    out = ROOT / 'results/security_audit'
     lock = read(ROOT / 'configs/detector_long_horizon_20261117.lock.json')
     with tempfile.TemporaryDirectory() as tmp, zipfile.ZipFile(out / 'source_snapshot.zip') as archive:
         snapshot = Path(tmp)

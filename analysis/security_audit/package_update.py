@@ -15,8 +15,8 @@ def main():
     original = zipfile.ZipFile(ROOT / 'evidence/baseline/original_source.zip')
     before_files = original.namelist()
     modified = ['src/wsn_sim/calibration.py', 'README.md', 'RUN_GUIDE.md', 'configs/README.md', 'docs/security_crosscheck_20261117.md', 'tests/test_long_horizon_audit.py', 'configs/detector_long_horizon_20261117.json', 'configs/detector_long_horizon_20261117.lock.json']
-    modified += [p.relative_to(ROOT).as_posix() for p in (ROOT / 'analysis/security_crosscheck').glob('*.py')]
-    out = ROOT / 'results/security_crosscheck_20261117'
+    modified += [p.relative_to(ROOT).as_posix() for p in (ROOT / 'analysis/security_audit').glob('*.py')]
+    out = ROOT / 'results/security_audit'
     for p in out.rglob('*'):
         if p.is_file() and p.suffix not in {'.jsonl'}:
             modified.append(p.relative_to(ROOT).as_posix())

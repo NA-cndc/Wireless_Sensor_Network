@@ -15,4 +15,4 @@
 # Preserve the recorded bytes of the 10,000-second study artifacts.
 /.wsn-foundation-10000s/** -text
 /results/csv/simulation_log_* -text
-/results/security_crosscheck_20261117/validation_gate.json text eol=crlf
+/results/security_audit/validation_gate.json text eol=crlf

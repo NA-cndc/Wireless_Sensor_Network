@@ -192,7 +192,7 @@ def report(out):
 def main():
     parser = ArgumentParser()
     parser.add_argument('action', choices=['validate', 'freeze', 'evaluate', 'report', 'verify-freeze'])
-    parser.add_argument('--output', type=Path, default=ROOT / 'results/security_crosscheck_20261117')
+    parser.add_argument('--output', type=Path, default=ROOT / 'results/security_audit')
     parser.add_argument('--workers', type=int, default=6)
     args = parser.parse_args()
     out = args.output.resolve()
