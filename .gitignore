@@ -27,6 +27,14 @@ results/*
 !results/figures/.gitkeep
 !results/logs/
 !results/logs/.gitkeep
+!results/security_audit/
+results/security_audit/*
+!results/security_audit/fit_candidates.csv
+!results/security_audit/protocol.json
+!results/security_audit/reference_replay_checks.json
+!results/security_audit/registration.json
+!results/security_audit/selection_before_validation.json
+!results/security_audit/validation_gate.json
 !results/study_10000s/
 results/study_10000s/*
 !results/study_10000s/paired_differences.csv

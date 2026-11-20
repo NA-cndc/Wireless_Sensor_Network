@@ -9,7 +9,7 @@ from wsn_sim.calibration import validate_protocol
 from wsn_sim.config import DetectorConfig
 from wsn_sim.detection import ForwardingDetector
 ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location('security_crosscheck_study', ROOT / 'analysis/security_crosscheck/study.py')
+spec = importlib.util.spec_from_file_location('security_crosscheck_study', ROOT / 'analysis/security_audit/study.py')
 study = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(study)
 
@@ -70,7 +70,7 @@ def test_registered_long_protocol_requires_disjoint_seeds_and_declared_predictio
         validate_protocol(p)
 
 def test_counterfactual_overhead_uses_radio_units_and_does_not_claim_simulated_cost():
-    module_spec = importlib.util.spec_from_file_location('overhead', ROOT / 'analysis/security_crosscheck/overhead.py')
+    module_spec = importlib.util.spec_from_file_location('overhead', ROOT / 'analysis/security_audit/overhead.py')
     overhead = importlib.util.module_from_spec(module_spec)
     module_spec.loader.exec_module(overhead)
     unspecified = overhead.estimate(100, 128, 250000)
