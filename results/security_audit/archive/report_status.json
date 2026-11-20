@@ -1,0 +1,11 @@
+{
+  "main_physical_runs": 180,
+  "comparison_rows": 300,
+  "groups": 10,
+  "independent_seeds_per_configuration": 30,
+  "source_sha256": "2f09d21c8d67505f0f74f238286cba6d3005cc7faf9798038b0d895456a74ff1",
+  "statistics": "sample std ddof=1; Student-t CI95 over seed; paired differences on same seeds",
+  "calibration_source_unchanged": true,
+  "monitoring_costs": "not dynamically modeled; parameterized estimate separate",
+  "evaluation_retuning": false
+}

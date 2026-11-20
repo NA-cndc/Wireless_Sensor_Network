@@ -1,0 +1,39 @@
+{
+  "area_width_m": 3000,
+  "area_height_m": 3000,
+  "num_sensors": 450,
+  "num_sinks": 7,
+  "initial_energy_j": 5.0,
+  "packet_size_bytes": 128,
+  "packet_interval_s": 10,
+  "communication_ranges_m": [
+    250,
+    300,
+    350
+  ],
+  "seed": 174021,
+  "communication_range_m": 300,
+  "energy_threshold_ratio": 0.2,
+  "energy_epsilon_j": 1e-12,
+  "max_rounds": 1000,
+  "routing_algorithm": "EMHR",
+  "wire_size_bytes": null,
+  "bandwidth_bps": 250000,
+  "attacker_ratio": 0,
+  "attacker_ids": [],
+  "attacker_selection": "random",
+  "p_drop": 0,
+  "channel_loss_probability": 0.01,
+  "detector": {
+    "beta_trust": 0.8,
+    "window_size_s": 80,
+    "forwarding_timeout_s": 0.02,
+    "min_observations": 10,
+    "trust_threshold": 0.95,
+    "consecutive_bad_windows": 2,
+    "initial_trust": 1.0,
+    "isolation_duration_s": 60.0,
+    "calibration_status": "CALIBRATED"
+  },
+  "config_profile": "CUSTOM"
+}

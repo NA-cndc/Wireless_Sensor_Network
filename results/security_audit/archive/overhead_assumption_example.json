@@ -1,0 +1,33 @@
+{
+  "measurement_status": "counterfactual_estimate_without_energy_or_timing_feedback",
+  "simulated_monitoring_energy_j": null,
+  "simulated_control_packets": null,
+  "forwarded_transit_TX_observed": 187979,
+  "assumptions": {
+    "observers_per_transit_TX": 1,
+    "full_frame_bytes": 128,
+    "bandwidth_bps": 250000,
+    "ACK_bytes": 16,
+    "ACK_distance_m": 10.0,
+    "ACK_rule": "hypothetical_one_ACK_TX_plus_one_RX_per_observed_transit_TX; perfect_control_channel; no_retry"
+  },
+  "estimated_overhearing_RX_count": 187979,
+  "estimated_overhearing_energy_j": 9.6245248,
+  "estimated_active_RX_time_s": 769.961984,
+  "estimated_ACK_packets": 187979,
+  "estimated_system_ACK_energy_j": 2.4301925119999996,
+  "estimated_ACK_airtime_s": 96.245248,
+  "not_included": [
+    "idle_listening",
+    "MAC_contention",
+    "CPU_processing",
+    "lost_overhearing",
+    "ACK_loss",
+    "retransmission",
+    "control_route_advertisements",
+    "battery_feedback",
+    "observer_assignment_geometry"
+  ],
+  "not_a_lifetime_or_total_security_overhead_measurement": true,
+  "source_run": "results\\security_crosscheck_20261117\\eval_benign\\ch_0\\seed_174001"
+}

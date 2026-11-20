@@ -21,6 +21,9 @@ evidence/
 
 results/*
 !results/.gitkeep
+!results/backup/
+!results/kiem-chung/
+!results/runs/
 !results/csv/
 !results/csv/.gitkeep
 !results/figures/
@@ -35,6 +38,8 @@ results/security_audit/*
 !results/security_audit/registration.json
 !results/security_audit/selection_before_validation.json
 !results/security_audit/validation_gate.json
+!results/security_audit/archive/
+!results/security_audit/archive/*.md
 !results/study_10000s/
 results/study_10000s/*
 !results/study_10000s/paired_differences.csv

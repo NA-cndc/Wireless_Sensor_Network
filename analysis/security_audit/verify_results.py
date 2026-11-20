@@ -16,7 +16,7 @@ from wsn_sim.calibration import source_fingerprint, verify_freeze, json_digest
 def read(p):
     return json.loads(p.read_text(encoding='utf-8-sig'))
 
-def verify(out, source_root):
+def verify(out, source_root, detector_config):
     errors = []
     hashed = 0
     classifiers = 0
@@ -95,15 +95,16 @@ def verify(out, source_root):
                 errors.append([row['group'], row['metric'], key])
     if physical != 223:
         errors.append(['physical_count', physical])
-    freeze = verify_freeze(ROOT / 'configs/detector_long_horizon_20261117.json', source_root)
+    freeze = verify_freeze(detector_config, source_root)
     result = {'status': 'PASS' if not errors else 'FAIL', 'physical_runs_checked': physical, 'file_hashes_checked': hashed, 'classifier_instances_checked': classifiers, 'SF3_matched_seed_pairs': len(paired), 'aggregate_rows_recomputed': len(aggregate), 'freeze_verified': freeze['verified'], 'errors': errors, 'retuned_after_evaluation': False}
-    (out / 'independent_verification.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
+    (out.parent / 'independent_verification.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
     print(json.dumps(result))
     if errors:
         raise SystemExit(1)
 if __name__ == '__main__':
-    out = ROOT / 'results/security_audit'
-    lock = read(ROOT / 'configs/detector_long_horizon_20261117.lock.json')
+    out = ROOT / 'results/security_audit/archive'
+    detector_config = out / 'configuration/detector_long_horizon_20261117.json'
+    lock = read(detector_config.with_suffix('.lock.json'))
     with tempfile.TemporaryDirectory() as tmp, zipfile.ZipFile(out / 'source_snapshot.zip') as archive:
         snapshot = Path(tmp)
         for name, expected in lock['source_fingerprint']['files'].items():
@@ -117,5 +118,5 @@ if __name__ == '__main__':
         if not (snapshot / evidence).resolve().is_relative_to(snapshot.resolve()):
             raise ValueError('Invalid evidence path')
         (snapshot / evidence).parent.mkdir(parents=True, exist_ok=True)
-        (snapshot / evidence).write_bytes((ROOT / evidence).read_bytes())
-        verify(out, snapshot)
+        (snapshot / evidence).write_bytes((out / 'validation_gate.json').read_bytes())
+        verify(out, snapshot, detector_config)

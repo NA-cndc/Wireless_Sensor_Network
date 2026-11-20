@@ -1,0 +1,19 @@
+{
+  "recorded_at_utc": "2026-11-17T06:22:24.106817+00:00",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "executable": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "dependencies": {
+    "networkx": "3.4.2",
+    "simpy": "4.1.1",
+    "numpy": "2.2.6",
+    "pandas": "2.2.3",
+    "scipy": "1.15.3",
+    "matplotlib": "3.10.3",
+    "pytest": "8.3.5"
+  },
+  "git_base_HEAD": "5d2287a0b5540fb54e30fb432a90e986b36d35dd",
+  "git_dirty_worktree_record": "evidence/baseline/git_status_reconstructed.txt",
+  "dependency_changes_during_task": false,
+  "note": "Common runtime for this session, recorded at export; individual raw job files are not rewritten."
+}

@@ -1,0 +1,129 @@
+{
+  "version": "long_horizon_benign_v1",
+  "duration_s": 10000.0,
+  "channel_loss_probabilities": [
+    0,
+    0.01,
+    0.05
+  ],
+  "seed_partitions": {
+    "calibration_fit": [
+      171001,
+      171002,
+      171003,
+      171004,
+      171005,
+      171006
+    ],
+    "benign_validation": [
+      172001,
+      172002,
+      172003,
+      172004
+    ],
+    "attack_validation_reserved": [
+      173001,
+      173002,
+      173003,
+      173004
+    ],
+    "evaluation_reserved": [
+      174001,
+      174002,
+      174003,
+      174004,
+      174005,
+      174006,
+      174007,
+      174008,
+      174009,
+      174010,
+      174011,
+      174012,
+      174013,
+      174014,
+      174015,
+      174016,
+      174017,
+      174018,
+      174019,
+      174020,
+      174021,
+      174022,
+      174023,
+      174024,
+      174025,
+      174026,
+      174027,
+      174028,
+      174029,
+      174030
+    ]
+  },
+  "grid": {
+    "window_size_s": [
+      20,
+      40,
+      80
+    ],
+    "min_observations": [
+      2,
+      5,
+      10
+    ],
+    "beta_trust": [
+      0.5,
+      0.8
+    ],
+    "trust_threshold": [
+      0.7,
+      0.8,
+      0.9,
+      0.95
+    ],
+    "consecutive_bad_windows": [
+      1,
+      2,
+      3
+    ]
+  },
+  "fixed": {
+    "forwarding_timeout_s": 0.02,
+    "initial_trust": 1.0,
+    "isolation_duration_s": 60.0,
+    "calibration_status": "TEST_ONLY"
+  },
+  "observation_model": "ideal_observer_deadline_cohorts_v1",
+  "routing_algorithm": "EMHR",
+  "prediction": "ever_suspected_by_cutoff_all_sensors",
+  "max_empirical_fpr": 0.05,
+  "max_empirical_conditional_fpr": 0.05,
+  "min_seed_coverage": 0.2,
+  "selection_order": [
+    "highest_tau_within_fpr_budget",
+    "lowest_worst_conditional_fpr",
+    "highest_min_seed_coverage",
+    "K_closest_to_2",
+    "shortest_window",
+    "candidate_id"
+  ],
+  "K_policy": "K controls isolation only; suspicion FPR must not be claimed to improve from K alone",
+  "attack_validation": {
+    "rho": 0.05,
+    "p_drop_values": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "channel_loss_probability": 0.01,
+    "min_conditional_tpr": 0.5,
+    "min_unconditional_tpr": 0.3,
+    "max_mean_capped_detection_delay_s": 5000
+  },
+  "validation_policy": "fit selection saved before validation; reject without reselection on any gate failure",
+  "evaluation_policy": "freeze before evaluation; 30 new matched seeds; no evaluation tuning",
+  "independent_unit": "seed",
+  "FPR_scope": "ever_suspected over 10000s, not instantaneous",
+  "overhead_policy": "ideal observer retains NA; parameterized counterfactual estimates reported separately without battery feedback",
+  "original_plan_horizon": "10000 rounds = 100000s; this study is a separate 10000s audit"
+}

@@ -1,0 +1,159 @@
+{
+  "timestamp_utc": "2026-11-19T18:08:35.624608+00:00",
+  "metric_schema": "wsn_metrics_event_ordered_v2",
+  "seed": 51001,
+  "stream_seeds": {
+    "topology": 51001,
+    "traffic": 10730676846570740333,
+    "routing": 6376088470655309752,
+    "attacker_selection": 16348765639876975967,
+    "attack_decision": 9938237153692696620,
+    "channel_loss": 12646980518143918709
+  },
+  "randomness": {
+    "event_key_schema": "wsn_event_keys_v2",
+    "hash_encoding": "sha256_canonical_json_first_64_bits",
+    "stream_usage": {
+      "topology": "seeded_coordinates",
+      "traffic": "deterministic_periodic_no_draws",
+      "routing": "deterministic_lexicographic_no_draws",
+      "attacker_selection": "seeded_sample_for_random_mode",
+      "attack_decision": "event_keyed_bernoulli",
+      "channel_loss": "event_keyed_bernoulli"
+    },
+    "attack_decision_key": [
+      "packet_id",
+      "relay_id",
+      "attempt_index"
+    ],
+    "channel_loss_key": [
+      "packet_id",
+      "sender_id",
+      "receiver_id",
+      "attempt_index"
+    ],
+    "simulated_attempt_index": 0,
+    "retransmission_modeled": false
+  },
+  "energy_threshold_j": 1.0,
+  "energy_configuration": {
+    "initial_energy_j": 5.0,
+    "energy_threshold_ratio": 0.2,
+    "energy_threshold_j": 1.0
+  },
+  "config_profile": "CUSTOM",
+  "configuration": {
+    "area_width_m": 3000,
+    "area_height_m": 3000,
+    "num_sensors": 450,
+    "num_sinks": 7,
+    "initial_energy_j": 5.0,
+    "packet_size_bytes": 128,
+    "packet_interval_s": 10,
+    "communication_ranges_m": [
+      250,
+      300,
+      350
+    ],
+    "seed": 51001,
+    "communication_range_m": 300,
+    "energy_threshold_ratio": 0.2,
+    "energy_epsilon_j": 1e-12,
+    "max_rounds": 1000,
+    "routing_algorithm": "EMHR",
+    "wire_size_bytes": null,
+    "bandwidth_bps": 250000,
+    "attacker_ratio": 0,
+    "attacker_ids": [],
+    "attacker_selection": "random",
+    "p_drop": 0,
+    "channel_loss_probability": 0.01,
+    "detector": null,
+    "config_profile": "CUSTOM"
+  },
+  "python_version": "3.12.10",
+  "library_versions": {
+    "networkx": "3.4.2",
+    "simpy": "4.1.1",
+    "numpy": "2.2.6",
+    "pandas": "2.2.3",
+    "matplotlib": "3.10.3",
+    "scipy": "1.15.3"
+  },
+  "git_commit": "d6fe6a7e298fe810c978e845fff81ec3a717a5ff",
+  "git_branch": "fix/nghiem-thu-10000s",
+  "working_tree_clean": false,
+  "generated_files": [
+    "F:\\bangdzaihjhj\\dancctt\\.wsn Clean Before\\results\\check\\EMHR\\final_sensor_states.json",
+    "F:\\bangdzaihjhj\\dancctt\\.wsn Clean Before\\results\\check\\EMHR\\lifetime.json",
+    "F:\\bangdzaihjhj\\dancctt\\.wsn Clean Before\\results\\check\\EMHR\\recording.json",
+    "F:\\bangdzaihjhj\\dancctt\\.wsn Clean Before\\results\\check\\EMHR\\summary.json",
+    "F:\\bangdzaihjhj\\dancctt\\.wsn Clean Before\\results\\check\\EMHR\\timeseries.csv",
+    "F:\\bangdzaihjhj\\dancctt\\.wsn Clean Before\\results\\check\\EMHR\\topology.json"
+  ],
+  "run_id": "3dbb2deef780cefd6d129fd8",
+  "case": {
+    "scenario": "EMHR",
+    "rho": 0,
+    "p_drop": 0,
+    "placement": "random",
+    "case_id": "EMHR_r0_d0_random"
+  },
+  "scope": "EVALUATION_FIXED_HORIZON_10000S",
+  "pairing_hash": "d3e33c6ec3dc950d2d5d6697310a25eacb55aab26b7081bb5c8db042f14b2c62",
+  "source_sha256": "82df24844bc8b6ecca3f70d7de4a668a845bb75994d06adb3940dacbe7ea94f1",
+  "topology_hash": "461f99cf6b0f7c753029457f6ca1f83c47208d76cbabd287f4e12ef652fef2bf",
+  "attack": {
+    "attacker_ids": [],
+    "attacker_count": 0,
+    "requested_count_from_ratio": 0,
+    "requested_ratio": 0,
+    "actual_ratio": 0.0,
+    "requested_selection": "random",
+    "selection": "explicit",
+    "selection_rule": "explicit_sensor_ids_override_ratio_and_selection",
+    "rounding": "half_up",
+    "nearest_sink_distances_m": {}
+  },
+  "frozen_detector": {
+    "verified": true,
+    "config": "F:\\bangdzaihjhj\\dancctt\\.wsn Clean Before\\configs\\detector_stage78.json",
+    "lock": "F:\\bangdzaihjhj\\dancctt\\.wsn Clean Before\\configs\\detector_stage78.lock.json",
+    "config_file_sha256": "63b9e52e5a7a805a3e90ed0df913ae0de67249dc5553494178814d26ab3c5dfb",
+    "scope": "stage7-8 final source; 450 sensors, 7 sinks, pilot-selected R=300m, E0=5J; benign ideal TX observer; finite 120.5s horizon; no real overhearing or full-lifetime FPR guarantee"
+  },
+  "status": "COMPLETE",
+  "actual_duration_s": 10000.0,
+  "requested_horizon_s": 10000,
+  "wall_clock_s": 19.11842820001766,
+  "peak_working_set_bytes": 85827584,
+  "output_bytes_before_manifest": 322991,
+  "command": [
+    "analysis/security_10000s/study.py",
+    "sample",
+    "--scenario",
+    "EMHR",
+    "--output",
+    "results/check/EMHR"
+  ],
+  "recording": {
+    "mode": "bounded_active_state_streaming",
+    "full_trace": false,
+    "packet_id_rule": "unique_sensor_sequence_ids_single_path_terminal_guard_no_MAC_replay",
+    "detector_history": "pending_and_unclosed_cohorts_only",
+    "historical_evaluator_queries": false,
+    "bulk_unreachable": true,
+    "max_active_packets_sampled": 449,
+    "max_live_observations_sampled": 0,
+    "files": [
+      "final_sensor_states.json",
+      "lifetime.json",
+      "summary.json",
+      "timeseries.csv"
+    ],
+    "active_packets_at_end": 66,
+    "live_observations_at_end": 0,
+    "route_cache_hits": 168038,
+    "cache_policy": "unique_primary_paths_selective_monotone_removal_global_gain_invalidation"
+  }
+}

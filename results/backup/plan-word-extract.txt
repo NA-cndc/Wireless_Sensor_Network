@@ -1,0 +1,3487 @@
+Tóm t
+ắ
+t đ
+ề
+ tài
+Đ
+ề
+ tài xây d
+ự
+ng mô hình mô ph
+ỏ
+ng m
+ộ
+t m
+ạ
+ng c
+ả
+m bi
+ế
+n vô tuy
+ế
+n đa sink trên h
+ệ
+ t
+ọ
+a đ
+ộ
+ ph
+ẳ
+ng 
+. B
+ố
+n trăm năm mươi sensor node và b
+ả
+y sink node đư
+ợ
+c sinh ng
+ẫ
+u nhiên trong vùng 
+. Các sensor truy
+ề
+n d
+ữ
+ li
+ệ
+u đ
+ế
+n m
+ộ
+t trong các sink thông qua các sensor láng gi
+ề
+ng theo cơ ch
+ế
+ multi-hop c
+ộ
+ng tác.
+Nghiên c
+ứ
+u so sánh đ
+ị
+nh tuy
+ế
+n minimum-hop v
+ớ
+i cơ ch
+ế
+ đ
+ề
+ xu
+ấ
+t có ràng bu
+ộ
+c năng lư
+ợ
+ng: ưu tiên đư
+ờ
+ng đi qua ít sensor trung gian nh
+ấ
+t, s
+ử
+ d
+ụ
+ng quãng đư
+ờ
+ng và năng lư
+ợ
+ng còn l
+ạ
+i đ
+ể
+ phá hòa, đ
+ồ
+ng th
+ờ
+i tìm tuy
+ế
+n thay th
+ế
+ khi m
+ộ
+t node chuy
+ể
+n ti
+ế
+p có năng lư
+ợ
+ng th
+ấ
+p hơn ngư
+ỡ
+ng. Mô hình còn b
+ổ
+ sung t
+ấ
+n công Selec
+tive Forwarding, trong đó node đ
+ộ
+c h
+ạ
+i ch
+ỉ
+ lo
+ạ
+i b
+ỏ
+ m
+ộ
+t ph
+ầ
+n gói tin quá c
+ả
+nh đ
+ể
+ làm suy gi
+ả
+m kh
+ả
+ năng chuy
+ể
+n d
+ữ
+ li
+ệ
+u nhưng khó b
+ị
+ phát hi
+ệ
+n hơn t
+ấ
+n công Black Hole.
+Các k
+ế
+t qu
+ả
+ đư
+ợ
+c đánh giá b
+ằ
+ng lư
+ợ
+ng d
+ữ
+ li
+ệ
+u đ
+ế
+n sink trư
+ớ
+c các m
+ố
+c c
+ạ
+n pin, th
+ờ
+i gian s
+ố
+ng
+ c
+ủ
+a m
+ạ
+ng, throughput, t
+ố
+c đ
+ộ
+ sinh d
+ữ
+ li
+ệ
+u, goodput, Packet Delivery Ratio (PDR), năng lư
+ợ
+ng trên m
+ỗ
+i bit nh
+ậ
+n thành công, s
+ố
+ hop, đ
+ộ
+ tr
+ễ
+, t
+ả
+i chuy
+ể
+n ti
+ế
+p và đ
+ộ
+ chính xác phát hi
+ệ
+n node t
+ấ
+n công. M
+ỗ
+i c
+ấ
+u hình đư
+ợ
+c ch
+ạ
+y v
+ớ
+i t
+ố
+i thi
+ể
+u 30 random seed đ
+ể
+ báo c
+áo trung bình, đ
+ộ
+ l
+ệ
+ch chu
+ẩ
+n và kho
+ả
+ng tin c
+ậ
+y 95%.
+Lý do ch
+ọ
+n đ
+ề
+ tài
+M
+ạ
+ng c
+ả
+m bi
+ế
+n vô tuy
+ế
+n là n
+ề
+n t
+ả
+ng thu th
+ậ
+p d
+ữ
+ li
+ệ
+u cho giám sát môi trư
+ờ
+ng, nông nghi
+ệ
+p chính xác, công nghi
+ệ
+p, h
+ạ
+ t
+ầ
+ng đô th
+ị
+ và c
+ả
+nh báo s
+ự
+ c
+ố
+. M
+ộ
+t WSN thư
+ờ
+ng g
+ồ
+m nhi
+ề
+u sensor node 
+có năng l
+ự
+c x
+ử
+ lý, băng thông và dung lư
+ợ
+ng pin h
+ạ
+n ch
+ế
+; d
+ữ
+ li
+ệ
+u ph
+ả
+i đư
+ợ
+c chuy
+ể
+n qua nhi
+ề
+u node trung gian đ
+ể
+ đ
+ế
+n sink. Vì v
+ậ
+y, đ
+ị
+nh tuy
+ế
+n không ch
+ỉ
+ quy
+ế
+t đ
+ị
+nh kh
+ả
+ năng giao d
+ữ
+ li
+ệ
+u mà còn quy
+ế
+t đ
+ị
+nh t
+ố
+c đ
+ộ
+ tiêu hao năng lư
+ợ
+ng và th
+ờ
+i gian s
+ố
+ng c
+ủ
+a toàn m
+ạ
+ng .
+Ở
+ góc đ
+ộ
+ c
+ủ
+a m
+ộ
+t sinh viên  ngành M
+ạ
+ng máy tính, 
+chúng
+ em
+ ch
+ọ
+n đ
+ề
+ tài này vì nó k
+ế
+t n
+ố
+i tr
+ự
+c ti
+ế
+p nhi
+ề
+u ki
+ế
+n th
+ứ
+c đã h
+ọ
+c: lý thuy
+ế
+t đ
+ồ
+ th
+ị
+, thu
+ậ
+t toán đư
+ờ
+ng đi ng
+ắ
+n nh
+ấ
+t, giao th
+ứ
+c đ
+ị
+nh tuy
+ế
+n, truy
+ề
+n thông không dây, mô ph
+ỏ
+ng s
+ự
+ ki
+ệ
+n r
+ờ
+i r
+ạ
+c, phân tí
+ch hi
+ệ
+u năng và an toàn m
+ạ
+ng. Thay vì ch
+ỉ
+ d
+ừ
+ng 
+ở
+ c
+ấ
+u hình ho
+ặ
+c mô ph
+ỏ
+ng m
+ộ
+t giao th
+ứ
+c có s
+ẵ
+n, đ
+ề
+ tài yêu c
+ầ
+u xây d
+ự
+ng đ
+ầ
+y đ
+ủ
+ chu trình nghiên c
+ứ
+u: mô hình hóa h
+ệ
+ th
+ố
+ng, đ
+ề
+ xu
+ấ
+t thu
+ậ
+t toán, l
+ậ
+p trình mô ph
+ỏ
+ng, thi
+ế
+t k
+ế
+ thí nghi
+ệ
+m, thu th
+ậ
+p d
+ữ
+ li
+ệ
+u và ki
+ể
+m đ
+ị
+nh k
+ế
+t qu
+ả
+.
+Trong th
+ự
+c t
+ế
+, vi
+ệ
+c luôn ch
+ọ
+n đư
+ờ
+ng ít hop nh
+ấ
+t có th
+ể
+ làm m
+ộ
+t s
+ố
+ node n
+ằ
+m g
+ầ
+n sink ph
+ả
+i chuy
+ể
+n ti
+ế
+p quá nhi
+ề
+u gói, c
+ạ
+n pin s
+ớ
+m và t
+ạ
+o ra vùng đ
+ứ
+t gãy đ
+ị
+nh tuy
+ế
+n. Ngư
+ợ
+c l
+ạ
+i, n
+ế
+u ch
+ỉ
+ ưu tiên năng lư
+ợ
+ng, đư
+ờ
+ng đi có th
+ể
+ dài hơn, làm tăng s
+ố
+ l
+ầ
+n 
+truy
+ề
+n/nh
+ậ
+n, đ
+ộ
+ tr
+ễ
+ và chi phí đi
+ề
+u khi
+ể
+n. Nghiên c
+ứ
+u năm 2024 c
+ủ
+a Yang và c
+ộ
+ng s
+ự
+ ti
+ế
+p t
+ụ
+c cho th
+ấ
+y v
+ị
+ trí node, kho
+ả
+ng cách, năng lư
+ợ
+ng còn l
+ạ
+i và t
+ả
+i chuy
+ể
+n ti
+ế
+p đ
+ề
+u là các y
+ế
+u t
+ố
+ quan tr
+ọ
+ng khi xây d
+ự
+ng đ
+ị
+nh tuy
+ế
+n ti
+ế
+t ki
+ệ
+m năng lư
+ợ
+ng . Đi
+ề
+u này ch
+ứ
+ng 
+t
+ỏ
+ bài toán cân b
+ằ
+ng gi
+ữ
+a s
+ố
+ hop, quãng đư
+ờ
+ng và năng lư
+ợ
+ng v
+ẫ
+n còn giá tr
+ị
+ nghiên c
+ứ
+u.
+Bên c
+ạ
+nh v
+ấ
+n đ
+ề
+ năng lư
+ợ
+ng, WSN còn có r
+ủ
+i ro an toàn đ
+ị
+nh tuy
+ế
+n. Karlof và Wagner đã ch
+ỉ
+ ra r
+ằ
+ng node b
+ị
+ xâm nh
+ậ
+p có th
+ể
+ th
+ự
+c hi
+ệ
+n Selective Forwarding b
+ằ
+ng cách chuy
+ể
+n ti
+ế
+p m
+ộ
+t s
+ố
+ gói nhưng âm th
+ầ
+m lo
+ạ
+i b
+ỏ
+ các gói khác. Hành vi này đ
+ặ
+c bi
+ệ
+t nguy hi
+ể
+m vì m
+ấ
+t gói do t
+ấ
+n công có th
+ể
+ b
+ị
+ nh
+ầ
+m v
+ớ
+i m
+ấ
+t gói t
+ự
+ nhiên c
+ủ
+a kênh vô tuy
+ế
+n. Các nghiên c
+ứ
+u g
+ầ
+n đây v
+ẫ
+n ti
+ế
+p t
+ụ
+c đ
+ề
+ xu
+ấ
+t cơ ch
+ế
+ phát hi
+ệ
+n và ph
+ụ
+c h
+ồ
+i m
+ạ
+ng sau Selective F
+orwarding, cho th
+ấ
+y v
+ấ
+n đ
+ề
+ chưa m
+ấ
+t tính th
+ờ
+i s
+ự
+.
+Đ
+ề
+ tài có tác d
+ụ
+ng tr
+ự
+c ti
+ế
+p đ
+ố
+i v
+ớ
+i quá trình h
+ọ
+c t
+ậ
+p c
+ủ
+a tôi 
+ở
+ các đi
+ể
+m sau:
+C
+ủ
+ng c
+ố
+ kh
+ả
+ năng mô hình hóa WSN b
+ằ
+ng đ
+ồ
+ th
+ị
+ và thu
+ậ
+t toán shortest path.
+Rèn luy
+ệ
+n Python, NetworkX, SimPy, x
+ử
+ lý d
+ữ
+ li
+ệ
+u và 
+tr
+ự
+c quan hóa k
+ế
+t qu
+ả
+.
+Hi
+ể
+u đ
+ị
+nh lư
+ợ
+ng m
+ố
+i quan h
+ệ
+ gi
+ữ
+a kho
+ả
+ng cách truy
+ề
+n, s
+ố
+ hop và m
+ứ
+c tiêu hao pin.
+Th
+ự
+c hành xây d
+ự
+ng mô hình t
+ấ
+n công, phát hi
+ệ
+n b
+ấ
+t thư
+ờ
+ng và đ
+ị
+nh tuy
+ế
+n tránh node nghi ng
+ờ
+.
+T
+ạ
+o n
+ề
+n t
+ả
+ng đ
+ể
+ ti
+ế
+p t
+ụ
+c tri
+ể
+n khai th
+ử
+ nghi
+ệ
+m b
+ằ
+ng ns-3/OM
+NeT++ ho
+ặ
+c sensor ph
+ầ
+n c
+ứ
+ng trong nghiên c
+ứ
+u ti
+ế
+p theo.
+V
+ề
+ kh
+ả
+ năng 
+ứ
+ng d
+ụ
+ng, k
+ế
+t qu
+ả
+ có th
+ể
+ dùng làm mô hình ti
+ề
+n tri
+ể
+n khai cho các m
+ạ
+ng giám sát di
+ệ
+n r
+ộ
+ng. Trư
+ớ
+c khi l
+ắ
+p đ
+ặ
+t sensor th
+ậ
+t, ngư
+ờ
+i thi
+ế
+t k
+ế
+ có th
+ể
+ thay đ
+ổ
+i m
+ậ
+t đ
+ộ
+ node, bán kính truy
+ề
+n, năng 
+lư
+ợ
+ng ban đ
+ầ
+u, chu k
+ỳ
+ phát và t
+ỷ
+ l
+ệ
+ node đ
+ộ
+c h
+ạ
+i đ
+ể
+ ư
+ớ
+c lư
+ợ
+ng vùng ph
+ủ
+, th
+ờ
+i gian s
+ố
+ng, lư
+ợ
+ng d
+ữ
+ li
+ệ
+u thu đư
+ợ
+c và r
+ủ
+i ro m
+ấ
+t d
+ữ
+ li
+ệ
+u. Cách ti
+ế
+p c
+ậ
+n này giúp gi
+ả
+m chi phí th
+ử
+ sai trên ph
+ầ
+n c
+ứ
+ng và xác đ
+ị
+nh c
+ấ
+u hình phù h
+ợ
+p trư
+ớ
+c khi tri
+ể
+n khai th
+ự
+c t
+ế
+.
+Tí
+nh c
+ấ
+p thi
+ế
+t c
+ủ
+a đ
+ề
+ tài
+Theo báo cáo công khai tháng 10/2025 c
+ủ
+a IoT Analytics, s
+ố
+ thi
+ế
+t b
+ị
+ IoT k
+ế
+t n
+ố
+i đ
+ạ
+t kho
+ả
+ng 18,5 t
+ỷ
+ trong năm 2024, d
+ự
+ ki
+ế
+n đ
+ạ
+t 21,1 t
+ỷ
+ vào cu
+ố
+i năm 2025 và kho
+ả
+ng 39 t
+ỷ
+ vào năm 2030; phương pháp th
+ố
+ng kê c
+ủ
+a báo cáo tính các node/th
+i
+ế
+t b
+ị
+ ho
+ặ
+c gateway IoT đang ho
+ạ
+t đ
+ộ
+ng. ITU cũng xác đ
+ị
+nh sensor, đ
+ồ
+ng h
+ồ
+ đo và thi
+ế
+t b
+ị
+ k
+ế
+t n
+ố
+i là thành ph
+ầ
+n quan tr
+ọ
+ng đ
+ể
+ thu th
+ậ
+p và phân tích d
+ữ
+ li
+ệ
+u trong đô th
+ị
+ thông minh [11]. Xu hư
+ớ
+ng tăng s
+ố
+ lư
+ợ
+ng thi
+ế
+t b
+ị
+ đ
+ồ
+ng nghĩa lư
+ợ
+ng d
+ữ
+ li
+ệ
+u c
+ả
+m bi
+ế
+n và s
+ố
+ đư
+ờ
+ng truy
+ề
+n ph
+ụ
+ thu
+ộ
+c vào các node tài nguyên h
+ạ
+n ch
+ế
+ ti
+ế
+p t
+ụ
+c tăng.
+Trong b
+ố
+i c
+ả
+nh s
+ố
+ lư
+ợ
+ng thi
+ế
+t b
+ị
+ IoT ti
+ế
+p t
+ụ
+c tăng nhanh và các h
+ệ
+ th
+ố
+ng giám sát ngày càng ph
+ụ
+ thu
+ộ
+c vào d
+ữ
+ li
+ệ
+u c
+ả
+m bi
+ế
+n, vi
+ệ
+c nghiên c
+ứ
+u đ
+ị
+nh tuy
+ế
+n WSN là c
+ấ
+p thi
+ế
+t đ
+ể
+ kéo dài th
+ờ
+i g
+ian ho
+ạ
+t đ
+ộ
+ng, duy trì d
+ữ
+ li
+ệ
+u đ
+ế
+n sink và h
+ạ
+n ch
+ế
+ m
+ấ
+t d
+ữ
+ li
+ệ
+u do node c
+ạ
+n pin ho
+ặ
+c b
+ị
+ xâm nh
+ậ
+p.
+Tính c
+ấ
+p thi
+ế
+t đư
+ợ
+c th
+ể
+ hi
+ệ
+n 
+ở
+:
+Gi
+ớ
+i h
+ạ
+n năng lư
+ợ
+ng: ph
+ầ
+n l
+ớ
+n sensor node ho
+ạ
+t đ
+ộ
+ng b
+ằ
+ng pin; thay pin thư
+ờ
+ng t
+ố
+n chi phí ho
+ặ
+c không kh
+ả
+ thi 
+ở
+ khu v
+ự
+c 
+r
+ộ
+ng, nguy hi
+ể
+m hay khó ti
+ế
+p c
+ậ
+n.
+Đi
+ể
+m ngh
+ẽ
+n chuy
+ể
+n ti
+ế
+p: node n
+ằ
+m trên nhi
+ề
+u đư
+ờ
+ng minimum-hop ch
+ị
+u t
+ả
+i l
+ớ
+n, có th
+ể
+ ch
+ế
+t s
+ớ
+m dù t
+ổ
+ng năng lư
+ợ
+ng toàn m
+ạ
+ng v
+ẫ
+n còn cao.
+Đ
+ộ
+ tin c
+ậ
+y c
+ủ
+a d
+ữ
+ li
+ệ
+u: d
+ữ
+ li
+ệ
+u không đ
+ế
+n đư
+ợ
+c sink làm sai l
+ệ
+ch k
+ế
+t qu
+ả
+ giám sát và gi
+ả
+m giá tr
+ị
+ c
+ủ
+a c
+ả
+ h
+ệ
+ th
+ố
+ng.
+T
+ấ
+n công n
+ộ
+i b
+ộ
+ khó phát hi
+ệ
+n: Selective Forwarding ch
+ỉ
+ b
+ỏ
+ m
+ộ
+t ph
+ầ
+n gói, do đó có th
+ể
+ 
+ẩ
+n trong t
+ỷ
+ l
+ệ
+ m
+ấ
+t gói t
+ự
+ nhiên và ti
+ế
+p t
+ụ
+c t
+ồ
+n t
+ạ
+i lâu trong m
+ạ
+ng [6], [9].
+N
+ế
+u ch
+ỉ
+ t
+ố
+i ưu năng lư
+ợ
+ng mà không xét an toàn, đư
+ờ
+ng đi v
+ẫ
+n có th
+ể
+ ch
+ứ
+a node đ
+ộ
+c h
+ạ
+i. N
+ế
+u ch
+ỉ
+ lo
+ạ
+i node nghi ng
+ờ
+ mà không xét năng lư
+ợ
+ng, cơ ch
+ế
+ b
+ả
+o v
+ệ
+ có th
+ể
+ t
+ạ
+o thêm đư
+ờ
+ng vòng, tăng tiêu hao pin và làm m
+ạ
+ng ch
+ế
+t nhanh hơn. Vì v
+ậ
+y, nghiên c
+ứ
+u c
+ầ
+n đánh giá đ
+ồ
+ng th
+ờ
+i hi
+ệ
+u năng – năng lư
+ợ
+ng – an toàn, thay vì xem ba y
+ế
+u 
+t
+ố
+ này như các bài toán đ
+ộ
+c l
+ậ
+p.
+Hiện trạng nghiên cứu
+1
+.1
+. Thực trạng của chủ đề
+WSN đã phát triển từ các mô hình mạng cảm biến chuyên dụng thành thành phần dữ liệu đầu vào quan trọng của IoT. Tuy nhiên, các đặc điểm nền tảng được Akyildiz và cộng sự tổng hợp—tài nguyên node hạn chế, liên kết không dây dễ mất gói, cấu trúc multi-hop và yêu cầu tiết kiệm năng lượng—vẫn là các ràng buộc chính khi thiết kế mạng.
+Về tiêu chuẩn định tuyến cho mạng công suất thấp và tổn hao cao, RPL cho phép node chọn tuyến thông qua một Objective Function sử dụng các metric và constraint để hình thành Rank đến DODAG root. Điều này xác nhận rằng định tuyến cho mạng cảm biến không nhất thiết chỉ tối ưu một đại lượng; nó có thể kết hợp số hop, chất lượng liên kết, năng lượng hoặc các ràng buộc khác. RFC 6687 cũng đánh giá RPL bằng các kịch bản triển khai ngoài trời và mạng smart meter quy mô lớn, nhấn mạnh nhu cầu đo lường hiệu năng bằng kịch bản gần thực tế.
+Về xu hướng nghiên cứu, các công trình gần đây tiếp tục dùng residual energy, khoảng cách, hướng truyền, tải node và thuật toán tối ưu để kéo dài network lifetime. Song song đó, nghiên cứu an toàn tập trung vào phát hiện hành vi bỏ gói, phân biệt node độc hại với mất gói do môi trường và phục hồi đường truyền. Như vậy, năng lượng và Selective Forwarding vẫn là hai vấn đề thực tế cần được xem xét cùng nhau.
+1.2. Các nghiên cứu liên quan và vấn đề còn tồn tại
+Nghiên cứu
+Đóng góp liên quan
+Giới hạn so với phạm vi đề tài
+Akyildiz và cộng sự (2002) [1]
+Tổng hợp kiến trúc, ứng dụng và các vấn đề thiết kế WSN; xác định năng lượng và định tuyến là ràng buộc cốt lõi.
+Là nghiên cứu nền tảng, chưa cung cấp cơ chế cụ thể cho mô hình 450 sensor, 7 sink và Selective Forwarding.
+Heinzelman, Chandrakasan và Balakrishnan (2000, 2002) [2], [3]
+Đề xuất LEACH và mô hình tiêu thụ năng lượng radio; cho thấy tổ chức truyền dữ liệu ảnh hưởng trực tiếp đến network lifetime.
+Tập trung vào clustering và base station; không trực tiếp giải quyết minimum-hop đa sink có chuyển tuyến khi năng lượng thấp.
+RPL – RFC 6550, RFC 6551 [4], [5]
+Cung cấp khung định tuyến cho Low-Power and Lossy Networks với Objective Function, metric và constraint.
+Là khung giao thức tổng quát; không định nghĩa sẵn cơ chế kết hợp số hop, residual energy và loại node Selective Forwarding theo mô hình đề tài.
+Karlof và Wagner (2003) [6]
+Phân tích các tấn công định tuyến WSN, trong đó có Selective Forwarding, và nêu yêu cầu thiết kế định tuyến có xét an toàn ngay từ đầu.
+Không tập trung đánh giá trade-off giữa phát hiện tấn công, tuyến thay thế và tuổi thọ pin trong mạng đa sink.
+Yang và cộng sự (2024) [7]
+Kết hợp vị trí, năng lượng, khoảng cách và relay trong định tuyến tiết kiệm năng lượng; đánh giá residual energy, lifetime và throughput.
+Dùng mô hình cluster và metaheuristic phức tạp; khác với mục tiêu thuật toán minimum-hop có ràng buộc năng lượng, dễ giải thích và dễ tái lập của đề tài.
+Luo, Lai và Liu (2023) [8]
+Đề xuất phát hiện Selective Forwarding và phục hồi 
+mạng trong software-defined WSN.
+Cần kiến trúc cloud-edge/SDWSN; không phù hợp 
+trực tiếp với mô hình phân tán nhẹ dùng sensor láng giềng.
+Yuvaraja và cộng sự (2024) [9]
+Phát hiện Selective Forwarding trong event-driven WSN; chỉ ra khó khăn khi phân biệt tấn công với mất gói do môi trường.
+Dùng VMD-LSTM và quá trình huấn luyện; chi phí xử lý cao hơn cơ chế forwarding ratio/watchdog phù hợp với phạm vi sinh viên.
+3.3. Nghiên cứu của đề tài
+Đề tài tập trung giải quyết không phải là tạo thêm một giao thức WSN tổng quát, mà là xây dựng và kiểm chứng một khung thí nghiệm tái lập cho đúng cấu hình 
+ sensor – 
+ sink, trong đó:
+Đường đi ưu tiên số hop nhỏ nhất nhưng không sử dụng node có residual energy dưới ngưỡng.
+Quãng đường và năng lượng được dùng để chọn giữa các tuyến có cùng số hop.
+Tuyến được tính lại khi relay cạn năng lượng hoặc bị nghi ngờ Selective Forwarding.
+Hiệu năng, năng lượng và an toàn được đo trên cùng topology, cùng traffic và cùng random seed.
+Kết quả được theo dõi đến các mốc First Node Dies (FND), Half Nodes Die (HND), Last Node Dies (LND) hoặc giới hạn mô phỏng.
+Sự kết hợp này giúp trả lời một câu hỏi thực tiễn: một cơ chế định tuyến ít hop có ràng buộc năng lượng và an toàn có duy trì được nhiều dữ liệu đến sink hơn trước khi mạng cạn pin hay không, và phải đánh đổi bao nhiêu về độ dài tuyến, độ trễ và overhead?
+Mục tiêu, câu hỏi và phạm vi nghiên cứu
+2.1. Mục tiêu tổng quát
+Xây dựng mô hình mô phỏng WSN đa sink có truyền thông cộng tác qua các sensor láng giềng; đề xuất và đánh giá cơ chế định tuyến tối ưu theo số hop, quãng đường và năng lượng, đồng thời mô phỏng, phát hiện và giảm tác động của tấn công Selective Forwarding.
+2.2. Mục tiêu cụ thể
+Sinh ngẫu nhiên 
+ sensor node và 
+ sink node trong vùng 
+.
+Tạo đồ thị kết nối theo bán kính truyền và xác định khả năng đến ít nhất một sink.
+Mô phỏng sensor phát dữ liệu định kỳ và chuyển tiếp multi-hop đến sink.
+Xây dựng thuật toán baseline Minimum-Hop Routing (MHR).
+Xây dựng Energy-aware Minimum-Hop Routing (EMHR), loại node dưới ngưỡng năng lượng và tự động tìm tuyến thay thế.
+Bổ sung Security-aware EMHR (S-EMHR), loại node có dấu hiệu Selective Forwarding khỏi tập relay hợp lệ.
+Đánh giá dữ liệu đến sink, throughput, tốc độ dữ liệu, PDR, năng lượng, network lifetime, số hop và overhead.
+Chạy tối thiểu 30 seed cho mỗi cấu hình, phân tích trung bình, độ lệch chuẩn và khoảng tin cậy 95%.
+2.3. Câu hỏi nghiên cứu
+RQ1:
+ EMHR có tăng lượng dữ liệu đến sink trước FND/HND/LND so với MHR hay không?
+RQ2:
+ Ngưỡng năng lượng ảnh hưởng như thế nào đến network lifetime, số hop, độ trễ và số lần đổi tuyến?
+RQ3:
+ Selective Forwarding làm giảm PDR, throughput và network lifetime ở mức nào theo tỷ lệ node độc hại và xác suất bỏ gói?
+RQ4:
+ Cơ chế phát hiện dựa trên forwarding ratio và định tuyến tránh node nghi ngờ có phục hồi PDR/goodput với overhead chấp nhận được hay không?
+2.4. Phạm vi và giả định
+Vùng 
+ được xem là hệ tọa độ Descartes cục bộ; độ cong Trái Đất được bỏ qua vì phạm vi nhỏ.
+Sensor và sink đứng yên sau khi được triển khai; mỗi node có định danh duy nhất.
+Sensor đồng nhất, có cùng năng lượng ban đầu 
+; sink có nguồn điện ngoài và không bị giới hạn năng lượng.
+Liên kết được giả định đối xứng trong mô hình chính; ảnh hưởng của fading chi tiết không nằm trong phạm vi bắt buộc.
+Mỗi sensor còn sống sinh một gói 
+ byte sau mỗi 
+ giây.
+Mô hình chính nghiên cứu Selective Forwarding độc lập; không xét collusion, Sybil, Wormhole hoặc chiếm quyền sink.
+Mô phỏng dừng tại LND hoặc 
+ round, tùy điều kiện nào xảy ra trước.
+Phương pháp nghiên cứu
+3.1. Quy trình nghiên cứu
+Nghiên cứu sử dụng phương pháp mô hình hóa và mô phỏng thực nghiệm theo sáu bước:
+Nghiên cứu tài liệu: tổng hợp WSN, energy model, multi-hop routing, multi-sink và Selective Forwarding.
+Mô hình hóa: biểu diễn node, liên kết, traffic, pin, routing và attacker bằng các biến và công thức rõ ràng.
+Thiết kế thuật toán: cài đặt MHR, EMHR và S-EMHR.
+Mô phỏng sự kiện rời rạc: dùng SimPy điều phối phát gói, truyền/nhận, cập nhật pin, tấn công, phát hiện và đổi tuyến.
+Thiết kế thí nghiệm: dùng cùng topology, traffic, attacker set và seed cho các thuật toán được so sánh.
+Phân tích thống kê: tổng hợp CSV, vẽ biểu đồ, tính mean, standard deviation, 95% CI và kiểm định cặp khi cần.
+3.2. Mô hình sinh node trên mặt phẳng
+Gọi vùng khảo sát là:
+Vị trí sensor thứ 
+ là 
+, với:
+Vị trí sink thứ 
+ là 
+, với:
+Diện tích khảo sát và mật độ sensor là:
+Random seed phải được lưu cùng kết quả để có thể sinh lại chính xác topology.
+3.3. Mô hình đồ thị kết nối
+Khoảng cách Euclid giữa hai node 
+ và 
+:
+Biểu diễn mạng bằng đồ thị vô hướng:
+Trong đó 
+ là tập sensor, 
+ là tập sink. Một liên kết tồn tại khi hai node nằm trong bán kính truyền 
+:
+Bán kính khởi tạo đề xuất là 
+. Giai đoạn pilot sẽ kiểm tra 
+ và chọn giá trị bảo đảm tối thiểu 95% sensor có đường đến ít nhất một sink trong phần lớn topology. Không xóa các topology thất bại một cách âm thầm; tỷ lệ topology không đạt phải được ghi lại để tránh thiên lệch kết quả.
+Với phân bố gần đồng đều, số láng giềng kỳ vọng có thể ước lượng:
+với 
+ được đổi sang đơn vị kilomet trong công thức trên.
+Để tìm đường đến bất kỳ sink nào, tạo một 
+virtual super-sink
+ 
+ và nối 
+ với cả bảy sink bằng cạnh có chi phí bằng 0. Đường từ sensor đến 
+ sau đó được cắt bỏ cạnh ảo cuối cùng để thu được tuyến đến sink thật.
+3.4. Mô hình năng lượng radio
+Đề tài sử dụng first-order radio energy model thường được dùng trong nghiên cứu WSN [2], [3], [7]. Năng lượng để truyền một gói 
+ bit qua khoảng cách 
+:
+Năng lượng nhận gói:
+Ngưỡng chuyển từ free-space sang multipath:
+Nếu có data aggregation, năng lượng tổng hợp dữ liệu:
+Năng lượng còn lại của node 
+ sau sự kiện truyền/nhận thứ 
+:
+Node được xem là chết khi:
+Ngưỡng không tiếp tục chọn node làm relay:
+Với cấu hình chính, chọn 
+, tức 
+ khi 
+. Thí nghiệm độ nhạy kiểm tra 
+.
+3.5. Mô hình traffic và truyền dữ liệu
+Mỗi sensor còn sống sinh một gói 
+ byte sau mỗi chu kỳ 
+. Tốc độ sinh dữ liệu của một sensor:
+Tổng offered data rate tại thời điểm 
+:
+Mỗi gói được chuyển tiếp theo đường đã chọn. Tại từng hop, mô phỏng thực hiện theo thứ tự: kiểm tra node gửi/nhận còn sống, kiểm tra liên kết, áp dụng mất gói tự nhiên, áp dụng Selective Forwarding nếu relay độc hại, cập nhật bộ đếm và trừ năng lượng.
+Để phân biệt tấn công với chất lượng kênh, dùng các mức mất gói tự nhiên 
+. Xác suất một gói không bị mất tự nhiên trên một liên kết là:
+3.6. Thuật toán định tuyến
+3.6.1. MHR – Minimum-Hop Routing
+MHR là baseline. Trong đồ thị không trọng số, tuyến minimum-hop từ sensor 
+ đến một sink là:
+Trong đó 
+ là tập đường đi từ 
+ đến bất kỳ sink nào, còn:
+là số hop. MHR được cài đặt bằng Breadth-First Search (BFS); với đồ thị adjacency list, độ phức tạp là:
+3.6.2. EMHR – Energy-aware Minimum-Hop Routing
+Tập node relay hợp lệ tại round 
+:
+Tập đường khả thi:
+Với mỗi đường 
+, tổng quãng đường là:
+Hàm phạt năng lượng của các sensor chuyển tiếp:
+với 
+ rất nhỏ để tránh chia cho 0. EMHR chọn tuyến theo thứ tự ưu tiên từ trái sang phải:
+Cách chọn lexicographic này bảo đảm nguyên tắc chính là ít hop nhất; nếu nhiều tuyến có cùng số hop thì ưu tiên quãng đường ngắn hơn, sau đó ưu tiên các node có năng lượng còn lại cao hơn.
+Tuyến được tính lại khi xảy ra ít nhất một điều kiện:
+Nếu không tồn tại tuyến hợp lệ, gói được ghi nhận là unreachable, không tự động quay lại sử dụng node dưới ngưỡng.
+3.6.3. S-EMHR – Security-aware EMHR
+S-EMHR mở rộng EMHR bằng cách loại các node bị đánh dấu nghi ngờ Selective Forwarding. Tập relay hợp lệ trở thành:
+Sau khi phát hiện node nghi ngờ, thuật toán xóa node đó khỏi đồ thị định tuyến tạm thời và tìm tuyến thay thế đến một trong bảy sink. Cần ghi riêng chi phí bảo vệ gồm số lần đổi tuyến, số gói kiểm tra/ACK và năng lượng theo dõi láng giềng.
+3.7. Nội dung bổ sung  - Mô phỏng, phát hiện và giảm thiểu tấn công Selective Forwarding
+3.7.1. Khái ni
+ệ
+m và m
+ụ
+c tiêu
+Selective Forwarding là t
+ấ
+n công t
+ừ
+ ch
+ố
+i d
+ị
+ch v
+ụ
+ 
+ở
+ t
+ầ
+ng m
+ạ
+ng. M
+ộ
+t sensor node n
+ộ
+i b
+ộ
+ đã b
+ị
+ chi
+ế
+m quy
+ề
+n v
+ẫ
+n qu
+ả
+ng bá và tham gia đ
+ị
+nh tuy
+ế
+n như node h
+ợ
+p l
+ệ
+, nhưng ch
+ỉ
+ chuy
+ể
+n ti
+ế
+p m
+ộ
+t s
+ố
+ gó
+i và c
+ố
+ ý lo
+ạ
+i b
+ỏ
+ các gói còn l
+ạ
+i. Vì đư
+ờ
+ng truy
+ề
+n không b
+ị
+ ng
+ắ
+t hoàn toàn, hành vi này khó phân bi
+ệ
+t v
+ớ
+i m
+ấ
+t gói t
+ự
+ nhiên c
+ủ
+a kênh vô tuy
+ế
+n [6], [15], [16].
+Selective Forwarding khác Black Hole 
+ở
+ t
+ỷ
+ l
+ệ
+ lo
+ạ
+i b
+ỏ
+: v
+ớ
+i 0 < p_drop < 1, node ch
+ỉ
+ b
+ỏ
+ m
+ộ
+t ph
+ầ
+n gói
+; khi p_drop = 1, node b
+ỏ
+ toàn b
+ộ
+ gói quá c
+ả
+nh và đư
+ợ
+c xem là Black Hole. Ph
+ạ
+m vi chính c
+ủ
+a đ
+ề
+ tài ch
+ỉ
+ kh
+ả
+o sát Selective Forwarding đơn l
+ẻ
+, chưa xét nhi
+ề
+u node đ
+ộ
+c h
+ạ
+i ph
+ố
+i h
+ợ
+p ho
+ặ
+c t
+ấ
+n công đ
+ồ
+ng th
+ờ
+i vào sink.
+M
+ụ
+c tiêu th
+ự
+c hi
+ệ
+n n
+ộ
+i dung 18 g
+ồ
+m:
+ Mô ph
+ỏ
+ng hành vi b
+ỏ
+ gói có ch
+ọ
+n l
+ọ
+c theo t
+ỷ
+ l
+ệ
+ node đ
+ộ
+c h
+ạ
+i và xác su
+ấ
+t p_drop có th
+ể
+ c
+ấ
+u hình.
+ Đ
+ị
+nh lư
+ợ
+ng m
+ứ
+c suy gi
+ả
+m PDR, throughput, goodput, đ
+ộ
+ tr
+ễ
+, năng lư
+ợ
+ng và th
+ờ
+i gian s
+ố
+ng c
+ủ
+a m
+ạ
+ng.
+ Phát hi
+ệ
+n node có forwarding ratio th
+ấ
+p b
+ấ
+t thư
+ờ
+ng nhưng h
+ạ
+n
+ ch
+ế
+ nh
+ầ
+m l
+ẫ
+n v
+ớ
+i m
+ấ
+t gói t
+ự
+ nhiên.
+ Cô l
+ậ
+p t
+ạ
+m th
+ờ
+i node nghi ng
+ờ
+ và tìm tuy
+ế
+n thay th
+ế
+ đ
+ế
+n m
+ộ
+t trong b
+ả
+y sink.
+ So sánh tr
+ạ
+ng thái bình thư
+ờ
+ng, b
+ị
+ t
+ấ
+n công không phòng v
+ệ
+ và b
+ị
+ t
+ấ
+n công có cơ ch
+ế
+ S-EMHR.
+3.7.2. Mô hình node t
+ấ
+n công
+Một tỷ lệ 
+ sensor được chọn ngẫu nhiên làm node độc hại sau khi topology được tạo. Chỉ node độc hại đang đóng vai trò relay mới bỏ gói quá cảnh. Các mức thí nghiệm:
+ρ_m 
+∈
+ {0; 0,02; 0,05; 0,10}
+Mỗi node độc hại bỏ một gói với xác suất 
+:
+p_drop 
+∈
+ {0,25; 0,50; 0,75}
+Xác suất node độc hại vẫn chuyển tiếp gói:
+Điều kiện mô phỏng hành vi:
+3.7.3. Thông tin gói 
+tin và trình t
+ự
+ mô ph
+ỏ
+ng
+M
+ỗ
+i gói c
+ầ
+n lưu đ
+ủ
+ thông tin đ
+ể
+ truy v
+ế
+t tuy
+ế
+n, phân bi
+ệ
+t nguyên nhân m
+ấ
+t và tính các ch
+ỉ
+ s
+ố
+ đ
+ầ
+u cu
+ố
+i. C
+ấ
+u trúc t
+ố
+i thi
+ể
+u đư
+ợ
+c đ
+ề
+ xu
+ấ
+t như sau:
+Trư
+ờ
+ng
+Ý nghĩa
+packet_id
+Đ
+ị
+nh danh duy nh
+ấ
+t c
+ủ
+a gói.
+sequence_number
+S
+ố
+ th
+ứ
+ t
+ự
+ đ
+ể
+ 
+sink phát hi
+ệ
+n gói b
+ị
+ thi
+ế
+u.
+source_id
+Sensor node t
+ạ
+o d
+ữ
+ li
+ệ
+u.
+current_node / next_hop
+Node đang gi
+ữ
+ gói và node chuy
+ể
+n ti
+ế
+p k
+ế
+ ti
+ế
+p.
+sink_id
+Sink đích đư
+ợ
+c thu
+ậ
+t toán ch
+ọ
+n.
+timestamp
+Th
+ờ
+i đi
+ể
+m t
+ạ
+o, chuy
+ể
+n ti
+ế
+p và nh
+ậ
+n gói.
+payload_size
+Kích thư
+ớ
+c pa
+yload dùng đ
+ể
+ tính goodput và năng lư
+ợ
+ng.
+path
+Danh sách node gói đã đi qua.
+status / drop_reason
+Tr
+ạ
+ng thái và nguyên nhân: delivered, natural_link_loss, selective_forwarding, energy_depletion, queue_drop ho
+ặ
+c unreachable.
+Trình t
+ự
+ x
+ử
+ lý m
+ộ
+t l
+ầ
+n 
+truy
+ề
+n đư
+ợ
+c cài đ
+ặ
+t theo th
+ứ
+ t
+ự
+ sau:
+Sensor còn s
+ố
+ng sinh gói d
+ữ
+ li
+ệ
+u và g
+ắ
+n packet_id, sequence_number, source_id và timestamp.
+Thu
+ậ
+t toán ch
+ọ
+n sink và tuy
+ế
+n multi-hop; tuy
+ế
+n ph
+ả
+i lo
+ạ
+i relay dư
+ớ
+i ngư
+ỡ
+ng năng lư
+ợ
+ng.
+T
+ạ
+i t
+ừ
+ng hop, ki
+ể
+m tra node g
+ử
+i, node nh
+ậ
+n và liên k
+ế
+t còn ho
+ạ
+t đ
+ộ
+ng.
+Áp d
+ụ
+ng xác su
+ấ
+t m
+ấ
+t gói t
+ự
+ nhiên c
+ủ
+a liên k
+ế
+t và ghi natural_link_loss n
+ế
+u gói b
+ị
+ m
+ấ
+t.
+N
+ế
+u relay là node đ
+ộ
+c h
+ạ
+i và gói chưa b
+ị
+ m
+ấ
+t t
+ự
+ nhiên, sinh s
+ố
+ ng
+ẫ
+u nhiên r trong [0,1].
+N
+ế
+u r < p_drop, lo
+ạ
+i gói và ghi selective_forward
+ing; ngư
+ợ
+c l
+ạ
+i ti
+ế
+p t
+ụ
+c chuy
+ể
+n ti
+ế
+p.
+C
+ậ
+p nh
+ậ
+t b
+ộ
+ đ
+ế
+m giám sát, năng lư
+ợ
+ng TX/RX và đư
+ờ
+ng đi th
+ự
+c t
+ế
+ c
+ủ
+a gói.
+Sink ghi nh
+ậ
+n gói đ
+ế
+n, đ
+ộ
+ tr
+ễ
+, s
+ố
+ hop, payload và các sequence_number b
+ị
+ thi
+ế
+u.
+Sau m
+ỗ
+i c
+ử
+a s
+ổ
+ W quan sát, c
+ậ
+p nh
+ậ
+t forwarding ratio và EWMA trust 
+score.
+N
+ế
+u node b
+ị
+ đánh d
+ấ
+u nghi ng
+ờ
+, S-EMHR c
+ậ
+p nh
+ậ
+t blacklist và tính l
+ạ
+i tuy
+ế
+n.
+3.7.4. Cơ ch
+ế
+ phát hi
+ệ
+n node Selective Forwarding
+Mỗi node giám sát lưu:
+: số gói quan sát node 
+ nhận để chuyển tiếp;
+: số gói quan sát node 
+ đã chuyển tiếp;
+: trust score của node 
+;
+: số quan sát tối thiểu trước khi ra quyết định.
+Forwarding ratio:
+Trust score cập nhật theo Exponentially Weighted Moving Average (EWMA):
+Node được đánh dấu nghi ngờ khi:
+Ngưỡng 
+ không đặt tùy ý. Nó được hiệu chỉnh bằng các lần chạy không có attacker để tỷ lệ false positive thấp; một lựa chọn là phân vị 5% của forwarding ratio trong điều kiện benign:
+Thiết kế này trực tiếp xử lý vấn đề mất gói tự nhiên có thể bị nhầm với Selective Forwarding. Các giá trị 
+, 
+ và 
+ phải được công bố trong file cấu hình và kiểm tra độ nhạy.
+3.7.5. Cô l
+ậ
+p node và đ
+ị
+nh tuy
+ế
+n ph
+ụ
+c h
+ồ
+i
+Khi trust score c
+ủ
+a node i th
+ấ
+p hơn ngư
+ỡ
+ng T_threshold sau t
+ố
+i thi
+ể
+u n_min quan sát và duy trì trong K c
+ử
+a s
+ổ
+ liên ti
+ế
+p, node đư
+ợ
+c đưa vào blacklist t
+ạ
+m t
+h
+ờ
+i. Vi
+ệ
+c yêu c
+ầ
+u nhi
+ề
+u c
+ử
+a s
+ổ
+ liên ti
+ế
+p giúp gi
+ả
+m false positive do fading, nhi
+ễ
+u ho
+ặ
+c va ch
+ạ
+m gói.
+Lo
+ạ
+i node nghi ng
+ờ
+ kh
+ỏ
+i t
+ậ
+p relay h
+ợ
+p l
+ệ
+ c
+ủ
+a S-EMHR.
+Tính l
+ạ
+i đư
+ờ
+ng ít hop nh
+ấ
+t đ
+ế
+n sink hi
+ệ
+n t
+ạ
+i trên đ
+ồ
+ th
+ị
+ còn l
+ạ
+i.
+N
+ế
+u sink hi
+ệ
+n t
+ạ
+i không còn ti
+ế
+p c
+ậ
+n
+ đư
+ợ
+c, th
+ử
+ l
+ầ
+n lư
+ợ
+t các sink khác thông qua virtual super-sink.
+N
+ế
+u không t
+ồ
+n t
+ạ
+i tuy
+ế
+n h
+ợ
+p l
+ệ
+, đánh d
+ấ
+u gói unreachable; không t
+ự
+ đ
+ộ
+ng quay l
+ạ
+i dùng node đang b
+ị
+ cách ly.
+Sau th
+ờ
+i gian cách ly T_isolation, đánh giá l
+ạ
+i node đ
+ể
+ tránh khóa vĩnh vi
+ễ
+n m
+ộ
+t nod
+e b
+ị
+ suy gi
+ả
+m liên k
+ế
+t t
+ạ
+m th
+ờ
+i.
+Ghi riêng s
+ố
+ l
+ầ
+n đ
+ổ
+i tuy
+ế
+n, s
+ố
+ gói giám sát/ACK, năng lư
+ợ
+ng giám sát và đ
+ộ
+ tr
+ễ
+ phát hi
+ệ
+n đ
+ể
+ đo security overhead.
+Đ
+ị
+nh tuy
+ế
+n đa đư
+ờ
+ng r
+ờ
+i nhau có th
+ể
+ đư
+ợ
+c dùng làm k
+ị
+ch b
+ả
+n m
+ở
+ r
+ộ
+ng vì tăng xác su
+ấ
+t m
+ộ
+t b
+ả
+n sao đ
+ế
+n đư
+ợ
+c sink
+, nhưng ph
+ả
+i báo cáo chi phí năng lư
+ợ
+ng và lưu lư
+ợ
+ng b
+ổ
+ sung. Theo RFC 7416, đ
+ị
+nh tuy
+ế
+n đa đư
+ờ
+ng và l
+ự
+a ch
+ọ
+n đ
+ộ
+ng next-hop là hai nhóm bi
+ệ
+n pháp có th
+ể
+ gi
+ả
+m tác đ
+ộ
+ng c
+ủ
+a Selective Forwarding [15].
+3.7.6. K
+ị
+ch b
+ả
+n thí nghi
+ệ
+m riêng cho n
+ộ
+i dung 18
+K
+ị
+ch 
+b
+ả
+n
+T
+ấ
+n công
+Cơ ch
+ế
+ b
+ả
+o v
+ệ
+M
+ụ
+c đích
+SF-0
+Không
+Không
+Thi
+ế
+t l
+ậ
+p hi
+ệ
+u năng cơ s
+ở
+ và hi
+ệ
+u ch
+ỉ
+nh m
+ấ
+t gói t
+ự
+ nhiên.
+SF-1
+Có
+Không
+Đo tác đ
+ộ
+ng tr
+ự
+c ti
+ế
+p c
+ủ
+a Selective Forwarding lên MHR.
+SF-2
+Có
+Ch
+ỉ
+ phát hi
+ệ
+n
+Đo Precision, Recall, TPR, FPR và 
+detection delay.
+SF-3
+Có
+Phát hi
+ệ
+n + S-EMHR
+Đánh giá kh
+ả
+ năng ph
+ụ
+c h
+ồ
+i PDR/goodput và chi phí đ
+ổ
+i tuy
+ế
+n.
+SF-4
+Có
+Đa đư
+ờ
+ng - m
+ở
+ r
+ộ
+ng
+So sánh đ
+ộ
+ tin c
+ậ
+y giao gói v
+ớ
+i m
+ứ
+c tiêu hao năng lư
+ợ
+ng.
+V
+ớ
+i N = 450, thí nghi
+ệ
+m dùng t
+ỷ
+ l
+ệ
+ node đ
+ộ
+c h
+ạ
+i 2%, 5% và 10% (
+x
+ấ
+p x
+ỉ
+ 9, 23 và 45 node), k
+ế
+t h
+ợ
+p p_drop = 0,25; 0,50; 0,75. Node đ
+ộ
+c h
+ạ
+i không đư
+ợ
+c ch
+ọ
+n t
+ừ
+ t
+ậ
+p sink. M
+ỗ
+i c
+ấ
+u hình ch
+ạ
+y t
+ố
+i thi
+ể
+u 30 seed; các thu
+ậ
+t toán so sánh ph
+ả
+i dùng cùng topology, traffic, natural-link-loss seed và attacker set. Các ch
+ỉ
+ s
+ố
+ chi ti
+ế
+t
+ đư
+ợ
+c xác đ
+ị
+nh t
+ạ
+i M
+ụ
+c 3.8.
+3.8. Chỉ số đánh giá
+3.8.1. Dữ liệu truyền đến sink
+Tổng dữ liệu hợp lệ nhận tại tất cả sink đến thời điểm 
+:
+Trong đó 
+ là tập gói nhận thành công đến thời điểm 
+. Báo cáo riêng lượng dữ liệu tại FND, HND và LND:
+3.8.2. Thời gian sống và trạng thái chết của mạng
+Thời điểm node đầu tiên chết:
+Thời điểm ít nhất một nửa sensor chết:
+Thời điểm sensor cuối cùng chết:
+Ngoài ba mốc pin, báo cáo 
+functional network death
+ khi dưới 50% sensor còn sống có đường đến ít nhất một sink:
+3.8.3. Throughput, tốc độ truyền và goodput
+Throughput tại sink trong khoảng đo 
+:
+Tốc độ dữ liệu do sensor sinh ra là 
+ ở Mục 5.5. Goodput chỉ tính payload ứng dụng đến sink, không tính retransmission hoặc control packet:
+3.8.4. Packet Delivery Ratio
+Phải ghi riêng nguyên nhân mất gói: unreachable, energy_depletion, natural_link_loss, queue_drop và selective_forwarding.
+3.8.5. Năng lượng trên mỗi bit nhận thành công
+3.8.6. Số hop và độ trễ
+Số hop trung bình của các gói nhận thành công:
+Độ trễ đầu cuối trung bình:
+3.8.7. Cân bằng tải relay
+Với 
+ là số gói node 
+ đã chuyển tiếp, Jain's fairness index:
+ gần 1 thể hiện tải chuyển tiếp được phân bố cân bằng hơn.
+3.8.8. Hiệu quả phát hiện Selective Forwarding
+Đồng thời đo detection delay, số route change và security overhead để tránh kết luận chỉ dựa trên độ chính xác phát hiện.
+3.9. Thiết kế thí nghiệm và phân tích thống kê
+Nhóm thuật toán so sánh
+Ký hiệu
+Cơ chế
+Mục đích
+MHR
+Minimum-hop, không xét ngưỡng năng lượng
+Baseline
+EMHR
+Minimum-hop + loại relay dưới ngưỡng + tie-break quãng đường/năng lượng
+Đánh giá hiệu quả cân bằng năng lượng
+MHR-SF
+MHR trong điều kiện Selective Forwarding, không phòng vệ
+Đo tác động tấn công
+S-EMHR
+EMHR + phát hiện forwarding ratio/EWMA + reroute tránh node nghi ngờ
+Đánh giá cơ chế giảm thiểu
+Nguyên tắc công bằng
+Các thuật toán trong cùng một cặp so sánh phải dùng cùng topology seed, traffic seed, link-loss seed và attacker set.
+Chỉ thay đổi một yếu tố tại một thời điểm trong thí nghiệm độ nhạy.
+Mỗi cấu hình chạy tối thiểu 
+ seed độc lập.
+Lưu cấu hình, seed, phiên bản mã nguồn và kết quả raw CSV của từng lần chạy.
+Trung bình mẫu:
+Độ lệch chuẩn mẫu:
+Khoảng tin cậy 95%:
+Với so sánh cặp MHR–EMHR hoặc MHR-SF–S-EMHR, dùng paired 
+-test khi chênh lệch gần phân phối chuẩn; nếu không, dùng Wilcoxon signed-rank test. Ngoài 
+-value, báo cáo chênh lệch tuyệt đối, phần trăm thay đổi và effect size.
+3.10. Công cụ thực hiện
+Công cụ
+Chức năng
+Python 3
+Ngôn ngữ cài đặt mô hình và thuật toán
+NetworkX
+Biểu diễn đồ thị, BFS, Dijkstra và kiểm tra connectivity [13]
+SimPy
+Mô phỏng sự kiện rời rạc cho traffic, hàng đợi, truyền/nhận và cập nhật năng lượng [14]
+NumPy, pandas
+Sinh số ngẫu nhiên, xử lý ma trận và tổng hợp dữ liệu
+SciPy
+Khoảng tin cậy, kiểm định thống kê
+Matplotlib, seaborn
+Vẽ topology và biểu đồ kết quả
+pytest
+Kiểm thử topology, routing, energy accounting và attack model
+Git
+Quản lý phiên bản và gắn commit với từng kết quả thí nghiệm
+ns-3 hoặc OMNeT++
+Kiểm chứng bổ sung một số kịch bản nhỏ nếu tiến độ cho phép; không thay thế mô hình Python chính
+Dự kiến kết quả nghiên cứu đạt được
+4.1. Sản phẩm kỹ thuật
+Bộ mã nguồn Python có cấu trúc module rõ ràng cho topology, routing, energy, traffic, attack, detection, metrics và experiment runner.
+Trình sinh topology tái lập đúng 
+ sensor và 
+ sink trong vùng 
+.
+Đồ thị kết nối và hình trực quan thể hiện sensor, sink, liên kết và các tuyến đang sử dụng.
+Ba cơ chế định tuyến MHR, EMHR và S-EMHR.
+Mô hình Selective Forwarding điều chỉnh được tỷ lệ attacker và xác suất bỏ gói.
+Cơ chế phát hiện forwarding ratio/EWMA, cô lập tạm thời và tìm tuyến an toàn thay thế.
+Dữ liệu raw ở định dạng CSV/JSON, file cấu hình và random seed cho toàn bộ thí nghiệm.
+Bộ biểu đồ về dữ liệu đến sink, FND/HND/LND, functional death, throughput, goodput, PDR, energy/bit, hop count, delay, load balance, TPR và FPR.
+Báo cáo nghiên cứu, slide trình bày và kịch bản demo.
+4.2. Kết quả khoa học dự kiến
+Xác định được điều kiện mà minimum-hop gây tập trung tải và làm một số relay cạn pin sớm.
+Định lượng ảnh hưởng của ngưỡng 
+ lên dữ liệu đến sink, network lifetime, số hop và route-change overhead.
+Định lượng mức suy giảm PDR/throughput theo 
+ và 
+.
+Đánh giá được khả năng khôi phục dữ liệu của S-EMHR và chi phí phải trả về năng lượng, độ trễ và control overhead.
+Xác định vùng tham số phù hợp cho 
+, 
+, 
+, 
+ và 
+ thay vì kết luận từ một cấu hình duy nhất.
+Kỳ vọng nghiên cứu là EMHR và S-EMHR giúp phân bố tải tốt hơn, trì hoãn các mốc chết của mạng và duy trì nhiều dữ liệu đến sink hơn baseline. Tuy nhiên, đây là 
+giả thuyết cần kiểm chứng
+, không đặt trước tỷ lệ cải thiện. Nếu cơ chế đề xuất không cải thiện một metric, báo cáo phải chỉ rõ nguyên nhân và trade-off thay vì loại bỏ kết quả bất lợi.
+4.3. Tiêu chí nghiệm thu
+Sinh đúng 450 sensor, 7 sink; mọi tọa độ nằm trong 
+ và tái lập được bằng seed.
+Mọi cạnh thật thỏa 
+; mọi tuyến kết thúc tại một sink thật.
+EMHR không chọn relay có 
+; S-EMHR không chọn relay đang nằm trong 
+.
+Energy accounting không tạo năng lượng âm và tổng tiêu hao khớp với các sự kiện truyền/nhận.
+Mỗi gói mất được gán đúng một nguyên nhân chính để không đếm lặp.
+Mỗi cấu hình chính có ít nhất 30 seed hợp lệ và CI 95%.
+Kết quả có raw data, cấu hình, commit mã nguồn và script vẽ biểu đồ để tái lập.
+Báo cáo không chỉ nêu mean; phải có standard deviation/CI và phân tích trade-off.
+Kế hoạch chi tiết từ 20/08/2026 đến 15/11/2026
+Thời gian
+Công việc thực hiện
+Kết quả cần đạt
+20/08 – 23/08
+Chốt tên đề tài, mục tiêu, câu hỏi nghiên cứu, phạm vi, giả định, cấu hình 450 sensor – 7 sink và tiêu chí đánh giá.
+Đề cương nghiên cứu phiên bản 1; danh sách biến, metric và tiêu chí nghiệm thu.
+24/08 – 31/08
+Đọc và phân loại tài liệu về WSN, first-order radio model, minimum-hop, energy-aware routing, multi-sink, RPL và Selective Forwarding.
+Bảng tổng quan nghiên cứu liên quan; bibliography; xác định rõ research gap.
+01/09 – 07/09
+Tạo repository và môi trường Python; xây cấu trúc module; cài NetworkX, SimPy, NumPy, pandas, SciPy, Matplotlib, seaborn và pytest.
+Môi trường chạy được; file cấu hình; CI/test cơ bản; chương trình hello simulation.
+08/09 – 14/09
+Cài đặt trình sinh 450 sensor, 7 sink trong vùng 3 × 3 km; quản lý random seed; vẽ topology; kiểm tra mật độ và tọa độ.
+Module topology; hình mạng; unit test số node, phạm vi tọa độ và khả năng tái lập.
+15/09 – 21/09
+Xây đồ thị theo 
+; thử 
+ m; đo degree, connected component, reachability đến sink; tạo virtual super-sink.
+Báo cáo pilot chọn 
+; module connectivity; tỷ lệ sensor có tuyến đến sink.
+22/09 – 28/09
+Cài MHR bằng BFS; kiểm tra tuyến ít hop đến bất kỳ sink; ghi hop count và total distance.
+Baseline MHR hoàn chỉnh; unit test tính hợp lệ và tối ưu số hop.
+29/09 – 05/10
+Cài first-order radio model, traffic định kỳ 128 byte/10 giây và SimPy event loop; cập nhật pin cho từng lần TX/RX.
+Mô phỏng truyền end-to-end hoạt động; log packet; energy accounting test.
+06/10 – 12/10
+Cài EMHR: ngưỡng 
+, lọc relay, tie-break distance/energy, tự tính lại tuyến.
+EMHR hoàn chỉnh; test node dưới ngưỡng, node chết, route failure và reroute.
+13/10 – 19/10
+Cài metrics: dữ liệu đến sink, FND/HND/LND, functional death, throughput, offered rate, goodput, PDR, energy/bit, hop, delay, fairness và overhead.
+File kết quả CSV/JSON chuẩn hóa; dashboard biểu đồ thử nghiệm; đối chiếu công thức bằng test nhỏ.
+20/10 – 26/10
+Cài mô hình Selective Forwarding: ch
+ọ
+n 
+attacker theo 2%/5%/10%, p_drop = 0,25/0,50/0,75; b
+ổ
+ sung packet_id, sequence_number, path, status và drop_reason; tách natural loss v
+ớ
+i malicious drop; xây MHR-SF.
+Attack model tái l
+ậ
+p b
+ằ
+ng seed; log xác đ
+ị
+nh đúng node và nguyên nhân b
+ỏ
+ gói; có bi
+ể
+u đ
+ồ
+ PD
+R/throughput khi chưa phòng v
+ệ
+.
+27/10 – 02/11
+Cài forwarding ratio, EWMA trust, n_min, K c
+ử
+a s
+ổ
+ liên ti
+ế
+p, blacklist t
+ạ
+m th
+ờ
+i và S-EMHR reroute; hi
+ệ
+u ch
+ỉ
+nh T_threshold b
+ằ
+ng d
+ữ
+ li
+ệ
+u benign; đo TPR, FPR, detection delay và security overhead.
+Cơ ch
+ế
+ phát hi
+ệ
+n và ph
+ụ
+c h
+ồ
+i m
+ạ
+ng; test false positive, route avoidance, đ
+ổ
+i sink và trư
+ờ
+ng h
+ợ
+p không còn tuy
+ế
+n h
+ợ
+p l
+ệ
+.
+03/11 – 08/11
+Thiết kế ma trận thí nghiệm; chạy tối thiểu 30 seed/cấu hình; bảo đảm so 
+sánh cặp cùng topology, traffic và attacker set.
+Bộ raw data đầy đủ; manifest seed/config/commit; log các lần chạy lỗi.
+09/11 – 12/11
+Phân tích mean, standard deviation, CI 95%, kiểm định cặp và effect size; vẽ biểu đồ; phân tích RQ1–RQ4 và trade-off.
+Bảng/biểu đồ chính; nội dung kết quả và thảo luận; trả lời bốn câu hỏi nghiên cứu.
+13/11 – 14/11
+Hoàn thiện báo cáo, slide, sơ đồ kiến trúc, lưu đồ thuật toán, hướng dẫn chạy và kịch bản demo.
+Báo cáo gần cuối; slide; README; demo tái lập từ một seed đã công bố.
+15/11
+Kiểm tra chéo công thức, trích dẫn, số liệu, mã nguồn và file kết quả; đóng gói bản nộp.
+Phiên bản cuối: source code, report, slides, dataset, charts và checklist nghiệm thu.
+K
+ế
+ ho
+ạ
+ch tri
+ể
+n khai riêng cho N
+ộ
+i dung 
+bổ
+ sung
+B
+ả
+ng sau tách riêng toàn b
+ộ
+ công vi
+ệ
+c liên quan đ
+ế
+n Selective Forwarding trong kho
+ả
+ng 20/08/2026-15/11/2026. Các đ
+ầ
+u vi
+ệ
+c đ
+ầ
+u k
+ỳ
+ t
+ạ
+o n
+ề
+n t
+ả
+ng d
+ữ
+ li
+ệ
+u và kh
+ả
+ năng quan sát; ph
+ầ
+n cài đ
+ặ
+t t
+ấ
+n công, phát 
+hi
+ệ
+n và ph
+ụ
+c h
+ồ
+i đư
+ợ
+c t
+ậ
+p trung trong giai đo
+ạ
+n 20/10-02/11.
+Th
+ờ
+i gian
+Công vi
+ệ
+c chi ti
+ế
+t cho N
+ộ
+i dung 18
+K
+ế
+t qu
+ả
+/tiêu chí hoàn thành
+20/08-23/08
+Xác đ
+ị
+nh threat model, m
+ụ
+c tiêu, ph
+ạ
+m vi, gi
+ả
+ đ
+ị
+nh và tiêu chí nghi
+ệ
+m thu riêng cho n
+ộ
+i dung .
+Đ
+ặ
+c t
+ả
+ 
+attacker n
+ộ
+i b
+ộ
+; phân bi
+ệ
+t Selective Forwarding v
+ớ
+i Black Hole; danh sách metric an toàn.
+24/08-31/08
+Đ
+ọ
+c tài li
+ệ
+u v
+ề
+ Selective Forwarding, watchdog/forwarding ratio, trust score, đ
+ị
+nh tuy
+ế
+n đa đư
+ờ
+ng và ph
+ụ
+c h
+ồ
+i tuy
+ế
+n.
+B
+ả
+ng t
+ổ
+ng quan phương pháp; ch
+ọ
+n cơ 
+ch
+ế
+ nh
+ẹ
+ forwarding ratio + EWMA phù h
+ợ
+p ph
+ạ
+m vi đ
+ề
+ tài.
+01/09-07/09
+Thi
+ế
+t k
+ế
+ module attack, detector và recovery; khai báo tham s
+ố
+ rho_A, p_drop, W, n_min, alpha, K và T_threshold trong file c
+ấ
+u hình.
+Giao di
+ệ
+n module và c
+ấ
+u hình tái l
+ậ
+p; test kh
+ở
+i t
+ạ
+o at
+tacker set b
+ằ
+ng seed.
+08/09-14/09
+B
+ổ
+ sung node_id, attacker flag và cơ ch
+ế
+ lưu seed vào topology 450 sensor - 7 sink.
+Topology có th
+ể
+ tái t
+ạ
+o đúng attacker set; sink không bao gi
+ờ
+ b
+ị
+ ch
+ọ
+n làm attacker.
+15/09-21/09
+B
+ổ
+ sung kh
+ả
+ năng truy v
+ế
+t đư
+ờ
+ng 
+truy
+ề
+n trên đ
+ồ
+ th
+ị
+; xác đ
+ị
+nh các node có vai trò relay và vùng t
+ậ
+p trung lưu lư
+ợ
+ng g
+ầ
+n sink.
+Danh sách relay; th
+ố
+ng kê s
+ố
+ tuy
+ế
+n đi qua t
+ừ
+ng node; cơ s
+ở
+ t
+ạ
+o k
+ị
+ch b
+ả
+n attacker ng
+ẫ
+u nhiên và g
+ầ
+n sink.
+22/09-28/09
+M
+ở
+ r
+ộ
+ng MHR đ
+ể
+ ghi packet_id, sequence_number
+, source, sink, path và tr
+ạ
+ng thái t
+ừ
+ng hop.
+Log end-to-end đ
+ủ
+ d
+ữ
+ li
+ệ
+u xác đ
+ị
+nh gói nh
+ậ
+n, gói m
+ấ
+t và v
+ị
+ trí m
+ấ
+t.
+29/09-05/10
+Tích h
+ợ
+p tr
+ạ
+ng thái gói v
+ớ
+i mô hình năng lư
+ợ
+ng; b
+ả
+o đ
+ả
+m gói b
+ị
+ lo
+ạ
+i b
+ỏ
+ không ti
+ế
+p t
+ụ
+c tiêu th
+ụ
+ TX/RX 
+ở
+ các hop sau.
+Energy account
+ing đúng cho delivered, natural loss, attack drop và node c
+ạ
+n pin.
+06/10-12/10
+Tích h
+ợ
+p blacklist/trust constraint vào EMHR; thi
+ế
+t k
+ế
+ thao tác xóa node nghi ng
+ờ
+ và tìm tuy
+ế
+n ho
+ặ
+c sink thay th
+ế
+.
+Khung S-EMHR ch
+ạ
+y đư
+ợ
+c v
+ớ
+i blacklist gi
+ả
+ l
+ậ
+p; test reroute và
+ unreachable.
+13/10-19/10
+Cài metric PDR, PLR, throughput, goodput, detection delay, Precision, Recall, TPR, FPR, route change và security overhead.
+CSV/JSON có đ
+ủ
+ c
+ộ
+t; công th
+ứ
+c đư
+ợ
+c ki
+ể
+m th
+ử
+ b
+ằ
+ng topology nh
+ỏ
+ có k
+ế
+t qu
+ả
+ bi
+ế
+t trư
+ớ
+c.
+20/10-26/10
+Cài Selective Forwarding v
+ớ
+i rho_A = 2%/5%/10% và p_drop = 0,25/0,50/0,75; tách natural_link_loss kh
+ỏ
+i selective_forwarding.
+Hoàn thành k
+ị
+ch b
+ả
+n SF-0 và SF-1; bi
+ể
+u đ
+ồ
+ tác đ
+ộ
+ng khi chưa có phòng v
+ệ
+.
+27/10-02/11
+Cài forwarding ratio, EWMA, n_min
+, K c
+ử
+a s
+ổ
+, hi
+ệ
+u ch
+ỉ
+nh T_threshold, blacklist t
+ạ
+m th
+ờ
+i và S-EMHR ph
+ụ
+c h
+ồ
+i tuy
+ế
+n.
+Hoàn thành SF-2 và SF-3; đo đúng node phát hi
+ệ
+n, false positive, detection delay và route avoidance.
+03/11-08/11
+Ch
+ạ
+y ma tr
+ậ
+n thí nghi
+ệ
+m t
+ố
+i thi
+ể
+u 30 seed/c
+ấ
+u hình v
+ớ
+i 
+cùng topology, traffic, natural-loss seed và attacker set cho các thu
+ậ
+t toán so sánh.
+Raw data, log l
+ỗ
+i, manifest seed/config/commit và b
+ộ
+ k
+ế
+t qu
+ả
+ đ
+ầ
+y đ
+ủ
+ cho n
+ộ
+i dung 18.
+09/11-12/11
+Tính mean, standard deviation, CI 95%, ki
+ể
+m đ
+ị
+nh c
+ặ
+p và effect size; phâ
+n tích trade-off gi
+ữ
+a ph
+ụ
+c h
+ồ
+i d
+ữ
+ li
+ệ
+u, năng lư
+ợ
+ng và overhead.
+B
+ả
+ng/bi
+ể
+u đ
+ồ
+ PDR, throughput, goodput, energy/bit, lifetime, TPR/FPR và detection delay.
+13/11-14/11
+Vi
+ế
+t ph
+ầ
+n phương pháp, k
+ế
+t qu
+ả
+, th
+ả
+o lu
+ậ
+n; hoàn thi
+ệ
+n lưu đ
+ồ
+ t
+ấ
+n công-phát hi
+ệ
+n-reroute và
+ k
+ị
+ch b
+ả
+n demo.
+N
+ộ
+i dung 18 trong báo cáo, slide và demo có th
+ể
+ tái l
+ậ
+p t
+ừ
+ seed công b
+ố
+.
+15/11
+Ki
+ể
+m tra chéo mã ngu
+ồ
+n, log, s
+ố
+ li
+ệ
+u, công th
+ứ
+c, trích d
+ẫ
+n và tiêu chí nghi
+ệ
+m thu; đóng gói b
+ả
+n n
+ộ
+p.
+B
+ả
+n cu
+ố
+i không thi
+ế
+u c
+ấ
+u hình, raw data, bi
+ể
+u đ
+ồ
+, tài 
+li
+ệ
+u hư
+ớ
+ng d
+ẫ
+n và b
+ằ
+ng ch
+ứ
+ng ch
+ạ
+y th
+ử
+.
+Mốc kiểm soát chính
+14/09:
+ sinh topology đúng và tái lập được.
+28/09:
+ MHR chạy đúng.
+12/10:
+ EMHR và reroute theo năng lượng chạy đúng.
+26/10:
+ mô hình Selective Forwarding chạy đúng.
+02/11:
+ S-EMHR phát hiện và tránh node nghi ngờ.
+08/11:
+ hoàn tất dữ liệu thí nghiệm.
+15/11:
+ hoàn tất toàn bộ sản phẩm nghiên cứu.
+Rủi ro và biện pháp xử lý
+Rủi ro
+Ảnh hưởng
+Biện pháp xử lý
+Topology có nhiều sensor không đến được sink
+Không đủ gói để so sánh routing
+Chạy pilot theo 
+; báo cáo reachability và tỷ lệ topology không đạt; không âm thầm loại dữ liệu.
+Không phân biệt mất gói tự nhiên với tấn công
+FPR cao, kết luận sai
+Chạy benign calibration; dùng 
+, EWMA và ngưỡng theo phân vị.
+Số cấu hình quá lớn
+Không hoàn tất trước 15/11
+Ưu tiên ma trận chính 30 seed; độ nhạy mở rộng chỉ chạy sau khi các cấu hình chính hoàn tất.
+Kết quả giữa thuật toán không công bằng
+So sánh bị sai lệch
+Dùng paired seed cho topology, traffic, link loss và attacker set.
+Lỗi tính năng lượng tích lũy
+Sai FND/HND/LND
+Viết unit test cho một hop, nhiều hop, TX, RX và node chết; kiểm tra conservation bằng log.
+Watchdog gây overhead quá lớn
+Bảo vệ làm giảm lifetime
+Đo riêng energy/control overhead; thay đổi cửa sổ quan sát và 
+.
+Kết quả không đạt giả thuyết
+Khó trình bày đóng góp
+Báo cáo trung thực trade-off, phân tích điều kiện thất bại và đề xuất cải tiến; không xóa kết quả bất lợi.
+Tài liệu tham khảo
+[1] I. F. Akyildiz, W. Su, Y. Sankarasubramaniam và E. Cayirci, “Wireless sensor networks: a survey,” 
+Computer Networks
+, vol. 38, no. 4, pp. 393–422, 2002. 
+https://doi.org/10.1016/S1389-1286(01)00302-4
+[2] W. R. Heinzelman, A. Chandrakasan và H. Balakrishnan, “Energy-Efficient Communication Protocol for Wireless Microsensor Networks,” 
+Proceedings of the 33rd Hawaii International Conference on System Sciences
+, 2000. 
+https://doi.org/10.1109/HICSS.2000.926982
+[3] W. B. Heinzelman, A. P. Chandrakasan và H. Balakrishnan, “An Application-Specific Protocol Architecture for Wireless Microsensor Networks,” 
+IEEE Transactions on Wireless Communications
+, vol. 1, no. 4, pp. 660–670, 2002. 
+https://doi.org/10.1109/TWC.2002.804190
+[4] T. Winter và cộng sự, “RPL: IPv6 Routing Protocol for Low-Power and Lossy Networks,” RFC 6550, 2012. 
+https://www.rfc-editor.org/rfc/rfc6550.html
+[5] J. P. Vasseur và cộng sự, “Routing Metrics Used for Path Calculation in Low-Power and Lossy Networks,” RFC 6551, 2012. 
+https://www.rfc-editor.org/rfc/rfc6551.html
+[6] C. Karlof và D. Wagner, “Secure routing in wireless sensor networks: attacks and countermeasures,” 
+Ad Hoc Networks
+, vol. 1, no. 2–3, pp. 293–315, 2003. 
+https://doi.org/10.1016/S1570-8705(03)00008-8
+[7] L. Yang và cộng sự, “Energy efficient cluster-based routing protocol for WSN using multi-strategy fusion snake optimizer and minimum spanning tree,” 
+Scientific Reports
+, vol. 14, article 16786, 2024. 
+https://doi.org/10.1038/s41598-024-66703-9
+[8] S. Luo, Y. Lai và J. Liu, “Selective forwarding attack detection and network recovery mechanism based on cloud-edge cooperation in software-defined wireless sensor network,” 
+Computers & Security
+, vol. 126, article 103083, 2023. 
+https://doi.org/10.1016/j.cose.2022.103083
+[9] T. Yuvaraja, S. Sumithra, M. Jeyalakshmi và M. Premkumar, “A Combined Scheme Based on Artificial Immune System for Selective Forwarding Attack Detection in Event Driven Wireless Sensor Networks,” 
+Tehnički vjesnik
+, vol. 31, no. 1, pp. 156–161, 2024. 
+https://doi.org/10.17559/TV-20230613000723
+[10] S. Sinha, “State of IoT 2025: Number of connected IoT devices growing 14% to 21.1 billion globally,” IoT Analytics, 28/10/2025. 
+https://iot-analytics.com/number-connected-iot-devices/
+[11] International Telecommunication Union, “Internet of Things (IoT) – more resources,” Digital Transformation Resource Hub. 
+https://www.itu.int/cities/internet-of-things-iot-more-resources/
+[12] J. Tripathi và cộng sự, “Performance Evaluation of the Routing Protocol for Low-Power and Lossy Networks (RPL),” RFC 6687, 2012. 
+https://www.rfc-editor.org/rfc/rfc6687.html
+[13] NetworkX Developers, “Shortest Paths — NetworkX documentation.” 
+https://networkx.org/documentation/stable/reference/algorithms/shortest_paths.html
+[14] SimPy Developers, “SimPy documentation.” 
+https://simpy.readthedocs.io/
+[15] T. Tsao và c
+ộ
+ng s
+ự
+, “A Security Threat Analysis for the Routing Protocol for Low-Power and Lossy Networks (RPLs),” RFC 7416, 2015. 
+https://www.rfc-editor.org/rfc/rfc7416.ht
+ml#section-7.3.3
+[16] Q. Zhang và W. Zhang, “Accurate detection of selective forwarding attack in wireless sensor networks,” International Journal of Distributed Sensor Networks, 2019. 
+https://doi.or
+g/10.1177/1550147718824008

@@ -1,0 +1,192 @@
+{
+  "metric_schema": "wsn_metrics_event_ordered_v2",
+  "config_profile": "CUSTOM",
+  "energy_configuration": {
+    "initial_energy_j": 5.0,
+    "energy_threshold_ratio": 0.2,
+    "energy_threshold_j": 1.0
+  },
+  "time_s": 10000.0,
+  "rounds": 1000,
+  "stop_reason": "max_rounds",
+  "performance": {
+    "metric_schema": "wsn_metrics_event_ordered_v2",
+    "generated": 402642,
+    "delivered": 93703,
+    "received_unique_at_sink": 93703,
+    "dropped": 308895,
+    "pending_in_flight": 44,
+    "queued_packets": null,
+    "conservation_ok": true,
+    "duplicate_delivery_events": 0,
+    "duplicate_created_events": 0,
+    "received_payload_bits": 95951872,
+    "received_wire_bits": 95951872,
+    "pdr": 0.2327203818776978,
+    "throughput_bps": 9595.1872,
+    "goodput_bps": 9595.1872,
+    "mean_actual_hops": 2.5727991633138747,
+    "mean_latency_s": 0.010538185372887865,
+    "drop_reasons": {
+      "natural_link_loss": 14300,
+      "unreachable": 294526,
+      "energy_depletion": 69
+    },
+    "reroute_count": 2286,
+    "reroute_decision_count": 3172,
+    "reroute_failed_count": 886,
+    "reroute_reasons": {
+      "relay_energy": 2286
+    },
+    "reroute_decision_reasons": {
+      "relay_energy": 3172
+    },
+    "reroute_decision_categories": {
+      "energy": 3172
+    },
+    "route_edges_added": 9603,
+    "route_edges_removed": 7695,
+    "route_edges_changed": 17298,
+    "na_reasons": {
+      "queued_packets": "queues_not_modeled"
+    },
+    "remaining_energy_j": 1183.9890977136827,
+    "consumed_energy_j": 1066.0109022863173,
+    "pre_simulation_depletion_j": 0.0,
+    "consumed_since_start_j": 1066.0109022863173,
+    "energy_from_events_j": 1066.0109022878933,
+    "radio_energy_j": 1066.0109022878933,
+    "energy_conservation_ok": true,
+    "energy_per_payload_bit_j": 1.1109849970267566e-05,
+    "energy_per_bit_numerator": "sensor_depletion_since_simulation_start",
+    "routing_overhead": {
+      "decision_count": 3172,
+      "successful_decisions": 2286,
+      "failed_decisions": 886,
+      "changed_directed_edges": 17298,
+      "control_packets": null,
+      "control_energy_j": null,
+      "control_time_s": null,
+      "measurement_status": "control_protocol_not_modeled"
+    },
+    "security_overhead": {
+      "logical_state_events": {},
+      "control_packets": null,
+      "monitoring_energy_j": null,
+      "monitoring_time_s": null,
+      "measurement_status": "ideal_observer_cost_not_modeled"
+    },
+    "control_packets": null,
+    "monitoring_energy_j": null,
+    "monitoring_time_s": null,
+    "unmodeled": [
+      "MAC",
+      "queues",
+      "retransmission",
+      "ACK",
+      "overhearing",
+      "control_cost"
+    ],
+    "units": {
+      "payload_and_wire_size": "bytes",
+      "received_data": "bits",
+      "throughput_and_goodput": "bit/s",
+      "energy": "J",
+      "energy_per_payload_bit": "J/bit",
+      "time": "s"
+    }
+  },
+  "lifetime": {
+    "FND": {
+      "time_s": 1150.0,
+      "censored": false,
+      "received_payload_bits": 40275968
+    },
+    "HND": {
+      "time_s": null,
+      "censored": true,
+      "received_payload_bits": null
+    },
+    "LND": {
+      "time_s": null,
+      "censored": true,
+      "received_payload_bits": null
+    },
+    "functional_network_death": {
+      "time_s": 6290.0,
+      "censored": false,
+      "received_payload_bits": 79911936
+    },
+    "functional_routing_network_death": {
+      "time_s": 1290.0204799999995,
+      "censored": false,
+      "received_payload_bits": 43500544
+    }
+  },
+  "lifetime_metadata": {
+    "payload_na_reasons": {},
+    "death_time_na_reasons": {},
+    "boundary_rule": "cumulative_deliveries_in_event_prefix_at_death_before_later_same_time_events",
+    "observation_end_s": 10000.0,
+    "censoring_reason": "max_rounds",
+    "round_duration_s": 10
+  },
+  "reachability": {
+    "status": "alive_population",
+    "alive_sensors": 381,
+    "physical_reachable_alive": 44,
+    "routing_reachable_alive": 44,
+    "physical_reachable_ratio": 0.11548556430446194,
+    "routing_reachable_ratio": 0.11548556430446194,
+    "routing_algorithm": "EMHR",
+    "source_policy": "alive_origin_may_send_own_traffic_but_is_not_transit_exception"
+  },
+  "security": null,
+  "detector": null,
+  "attack": {
+    "attacker_ids": [],
+    "attacker_count": 0,
+    "requested_count_from_ratio": 0,
+    "requested_ratio": 0,
+    "actual_ratio": 0.0,
+    "requested_selection": "random",
+    "selection": "explicit",
+    "selection_rule": "explicit_sensor_ids_override_ratio_and_selection",
+    "rounding": "half_up",
+    "nearest_sink_distances_m": {}
+  },
+  "stream_seeds": {
+    "topology": 171004,
+    "traffic": 5291467383718050332,
+    "routing": 3433672093563583402,
+    "attacker_selection": 9970787311362663088,
+    "attack_decision": 1239832742795022640,
+    "channel_loss": 17076952454524395263
+  },
+  "randomness": {
+    "event_key_schema": "wsn_event_keys_v2",
+    "hash_encoding": "sha256_canonical_json_first_64_bits",
+    "stream_usage": {
+      "topology": "seeded_coordinates",
+      "traffic": "deterministic_periodic_no_draws",
+      "routing": "deterministic_lexicographic_no_draws",
+      "attacker_selection": "seeded_sample_for_random_mode",
+      "attack_decision": "event_keyed_bernoulli",
+      "channel_loss": "event_keyed_bernoulli"
+    },
+    "attack_decision_key": [
+      "packet_id",
+      "relay_id",
+      "attempt_index"
+    ],
+    "channel_loss_key": [
+      "packet_id",
+      "sender_id",
+      "receiver_id",
+      "attempt_index"
+    ],
+    "simulated_attempt_index": 0,
+    "retransmission_modeled": false
+  },
+  "detector_status": "NEEDS_CALIBRATION"
+}

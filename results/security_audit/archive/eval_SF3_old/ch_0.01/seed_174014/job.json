@@ -1,0 +1,21 @@
+{
+  "directory": "C:\\Users\\Admin\\Documents\\ChatGPT\\Hhh\\wsn_security_fix_20261117\\results\\security_crosscheck_20261117\\eval_SF3_old\\ch_0.01\\seed_174014",
+  "seed": 174014,
+  "channel": 0.01,
+  "rho": 0.05,
+  "p_drop": 0.5,
+  "algorithm": "S_EMHR",
+  "detector": {
+    "beta_trust": 0.8,
+    "window_size_s": 40,
+    "forwarding_timeout_s": 0.02,
+    "min_observations": 2,
+    "trust_threshold": 0.95,
+    "consecutive_bad_windows": 1,
+    "initial_trust": 1,
+    "isolation_duration_s": 60,
+    "calibration_status": "TEST_ONLY"
+  },
+  "collect": false,
+  "paired_old": false
+}

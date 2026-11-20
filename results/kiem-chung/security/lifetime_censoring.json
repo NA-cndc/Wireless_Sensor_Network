@@ -1,0 +1,1618 @@
+{
+  "MHR_r0_d0_random": {
+    "FND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 30,
+      "censored": 0,
+      "event_coverage": 1.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 152.01338026666667,
+        "sample_std_ddof1": 45.9656295116675,
+        "ci95_low": 134.8495321270608,
+        "ci95_high": 169.17722840627255,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 152.01338026666667,
+        "sample_std_ddof1": 45.9656295116675,
+        "ci95_low": 134.8495321270608,
+        "ci95_high": 169.17722840627255,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "HND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 1,
+      "censored": 29,
+      "event_coverage": 0.03333333333333333,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 9910.0,
+        "sample_std_ddof1": 492.9503017546495,
+        "ci95_low": 9725.929332208058,
+        "ci95_high": 10094.070667791942,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 1,
+        "n_missing": 29,
+        "coverage": 0.03333333333333333,
+        "mean": 7300.0,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "LND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    }
+  },
+  "EMHR_r0_d0_random": {
+    "FND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 30,
+      "censored": 0,
+      "event_coverage": 1.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1195.3333333333333,
+        "sample_std_ddof1": 103.08126467228068,
+        "ci95_low": 1156.8421565199178,
+        "ci95_high": 1233.8245101467487,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1195.3333333333333,
+        "sample_std_ddof1": 103.08126467228068,
+        "ci95_low": 1156.8421565199178,
+        "ci95_high": 1233.8245101467487,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "HND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "LND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    }
+  },
+  "MHR_SF_r0.05_d0.5_random": {
+    "FND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 30,
+      "censored": 0,
+      "event_coverage": 1.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 157.3453482666667,
+        "sample_std_ddof1": 47.11627223159791,
+        "ci95_low": 139.7518430742228,
+        "ci95_high": 174.9388534591106,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 157.3453482666667,
+        "sample_std_ddof1": 47.11627223159791,
+        "ci95_low": 139.7518430742228,
+        "ci95_high": 174.9388534591106,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "HND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 4,
+      "censored": 26,
+      "event_coverage": 0.13333333333333333,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 9631.666939733333,
+        "sample_std_ddof1": 1041.1298993933153,
+        "ci95_low": 9242.902646137527,
+        "ci95_high": 10020.43123332914,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 4,
+        "n_missing": 26,
+        "coverage": 0.13333333333333333,
+        "mean": 7237.502048,
+        "sample_std_ddof1": 1288.292165912787,
+        "ci95_low": 5187.541726232095,
+        "ci95_high": 9287.462369767905,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "LND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    }
+  },
+  "EMHR_SF_r0.05_d0.5_random": {
+    "FND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 30,
+      "censored": 0,
+      "event_coverage": 1.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1211.6666666666667,
+        "sample_std_ddof1": 101.54269811379785,
+        "ci95_low": 1173.7500000479995,
+        "ci95_high": 1249.583333285334,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1211.6666666666667,
+        "sample_std_ddof1": 101.54269811379785,
+        "ci95_low": 1173.7500000479995,
+        "ci95_high": 1249.583333285334,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "HND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "LND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    }
+  },
+  "SF2_r0.05_d0.5_random": {
+    "FND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 30,
+      "censored": 0,
+      "event_coverage": 1.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1211.6666666666667,
+        "sample_std_ddof1": 101.54269811379785,
+        "ci95_low": 1173.7500000479995,
+        "ci95_high": 1249.583333285334,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1211.6666666666667,
+        "sample_std_ddof1": 101.54269811379785,
+        "ci95_low": 1173.7500000479995,
+        "ci95_high": 1249.583333285334,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "HND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "LND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    }
+  },
+  "SF3_r0.05_d0.5_random": {
+    "FND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 30,
+      "censored": 0,
+      "event_coverage": 1.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1203.6666666666667,
+        "sample_std_ddof1": 98.6279436284049,
+        "ci95_low": 1166.8383872599884,
+        "ci95_high": 1240.494946073345,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1203.6666666666667,
+        "sample_std_ddof1": 98.6279436284049,
+        "ci95_low": 1166.8383872599884,
+        "ci95_high": 1240.494946073345,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "HND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "LND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    }
+  },
+  "EMHR_SF_r0.02_d0.5_random": {
+    "FND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 30,
+      "censored": 0,
+      "event_coverage": 1.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1199.3333333333333,
+        "sample_std_ddof1": 102.45043657312051,
+        "ci95_low": 1161.0777116033835,
+        "ci95_high": 1237.588955063283,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1199.3333333333333,
+        "sample_std_ddof1": 102.45043657312051,
+        "ci95_low": 1161.0777116033835,
+        "ci95_high": 1237.588955063283,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "HND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "LND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    }
+  },
+  "SF3_r0.02_d0.5_random": {
+    "FND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 30,
+      "censored": 0,
+      "event_coverage": 1.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1194.6666666666667,
+        "sample_std_ddof1": 99.7145350776261,
+        "ci95_low": 1157.4326473447004,
+        "ci95_high": 1231.900685988633,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1194.6666666666667,
+        "sample_std_ddof1": 99.7145350776261,
+        "ci95_low": 1157.4326473447004,
+        "ci95_high": 1231.900685988633,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "HND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "LND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    }
+  },
+  "EMHR_SF_r0.1_d0.5_random": {
+    "FND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 30,
+      "censored": 0,
+      "event_coverage": 1.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1234.6666666666667,
+        "sample_std_ddof1": 99.7836740614185,
+        "ci95_low": 1197.406830423863,
+        "ci95_high": 1271.9265029094704,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1234.6666666666667,
+        "sample_std_ddof1": 99.7836740614185,
+        "ci95_low": 1197.406830423863,
+        "ci95_high": 1271.9265029094704,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "HND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "LND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    }
+  },
+  "SF3_r0.1_d0.5_random": {
+    "FND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 30,
+      "censored": 0,
+      "event_coverage": 1.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1216.3333333333333,
+        "sample_std_ddof1": 95.79012019220345,
+        "ci95_low": 1180.5647146127685,
+        "ci95_high": 1252.101952053898,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1216.3333333333333,
+        "sample_std_ddof1": 95.79012019220345,
+        "ci95_low": 1180.5647146127685,
+        "ci95_high": 1252.101952053898,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "HND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "LND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    }
+  },
+  "EMHR_SF_r0.05_d0.25_random": {
+    "FND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 30,
+      "censored": 0,
+      "event_coverage": 1.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1202.0,
+        "sample_std_ddof1": 101.72308590922982,
+        "ci95_low": 1164.015975471522,
+        "ci95_high": 1239.984024528478,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1202.0,
+        "sample_std_ddof1": 101.72308590922982,
+        "ci95_low": 1164.015975471522,
+        "ci95_high": 1239.984024528478,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "HND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "LND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    }
+  },
+  "SF3_r0.05_d0.25_random": {
+    "FND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 30,
+      "censored": 0,
+      "event_coverage": 1.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1205.0,
+        "sample_std_ddof1": 99.4380763816495,
+        "ci95_low": 1167.8692120516714,
+        "ci95_high": 1242.1307879483286,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1205.0,
+        "sample_std_ddof1": 99.4380763816495,
+        "ci95_low": 1167.8692120516714,
+        "ci95_high": 1242.1307879483286,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "HND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "LND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    }
+  },
+  "EMHR_SF_r0.05_d0.75_random": {
+    "FND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 30,
+      "censored": 0,
+      "event_coverage": 1.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1217.0,
+        "sample_std_ddof1": 101.40903856879956,
+        "ci95_low": 1179.1332426756715,
+        "ci95_high": 1254.8667573243285,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1217.0,
+        "sample_std_ddof1": 101.40903856879956,
+        "ci95_low": 1179.1332426756715,
+        "ci95_high": 1254.8667573243285,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "HND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "LND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    }
+  },
+  "SF3_r0.05_d0.75_random": {
+    "FND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 30,
+      "censored": 0,
+      "event_coverage": 1.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1205.0,
+        "sample_std_ddof1": 99.26453684907852,
+        "ci95_low": 1167.9340127781036,
+        "ci95_high": 1242.0659872218964,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1205.0,
+        "sample_std_ddof1": 99.26453684907852,
+        "ci95_low": 1167.9340127781036,
+        "ci95_high": 1242.0659872218964,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "HND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "LND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    }
+  },
+  "EMHR_SF_r0.05_d0.5_near_sink": {
+    "FND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 30,
+      "censored": 0,
+      "event_coverage": 1.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1195.3333333333333,
+        "sample_std_ddof1": 103.08126467228068,
+        "ci95_low": 1156.8421565199178,
+        "ci95_high": 1233.8245101467487,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1195.3333333333333,
+        "sample_std_ddof1": 103.08126467228068,
+        "ci95_low": 1156.8421565199178,
+        "ci95_high": 1233.8245101467487,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "HND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "LND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    }
+  },
+  "SF3_r0.05_d0.5_near_sink": {
+    "FND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 30,
+      "censored": 0,
+      "event_coverage": 1.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1198.0,
+        "sample_std_ddof1": 101.21332882103268,
+        "ci95_low": 1160.2063218965109,
+        "ci95_high": 1235.7936781034891,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 1198.0,
+        "sample_std_ddof1": 101.21332882103268,
+        "ci95_low": 1160.2063218965109,
+        "ci95_high": 1235.7936781034891,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "HND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    },
+    "LND": {
+      "estimand": "mean_min_lifetime_horizon_not_unrestricted_lifetime",
+      "horizon_s": 10000,
+      "common_administrative_horizon": true,
+      "observed_events": 0,
+      "censored": 30,
+      "event_coverage": 0.0,
+      "restricted": {
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10000.0,
+        "sample_std_ddof1": 0.0,
+        "ci95_low": 10000.0,
+        "ci95_high": 10000.0,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      "observed_only_conditional": {
+        "n_expected": 30,
+        "n_used": 0,
+        "n_missing": 30,
+        "coverage": 0.0,
+        "mean": null,
+        "sample_std_ddof1": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "ci_method": "not_available_fewer_than_two_seeds",
+        "meets_30_seed_requirement": false
+      },
+      "unrestricted_mean_claimed": false
+    }
+  }
+}
