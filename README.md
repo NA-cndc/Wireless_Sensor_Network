@@ -48,6 +48,13 @@ Get-FileHash -Algorithm SHA256 data/security_10000s.zip
 
 SHA-256 của `data/security_10000s.zip` là `55be594df949a03501e1063acbcbd21d9d1ba7757be441aef01c711e335a476b`. Gói có chỉ mục tương đối `report/portable_run_index.json`, dữ liệu tại `raw/<run_id>/` và mã nguồn nguyên gốc tại `batch/source_snapshot.zip`. Dùng `Expand-Archive -LiteralPath data/security_10000s.zip -DestinationPath results/security-package` nếu muốn mở gói thủ công. Giữ các thư mục xuất ở trên là đường dẫn mới khi chạy lại.
 
+Bộ kiểm toán detector gồm 223 lượt chạy và bản khóa nguồn gốc trong [results/security_audit/archive](results/security_audit/archive/). Hai lệnh dưới đây kiểm chứng dữ liệu lưu trữ và dựng lại báo cáo vào `results/security_audit/`.
+
+```powershell
+& $py analysis/security_audit/verify_results.py
+& $py analysis/security_audit/build_report.py
+```
+
 ## Chạy lại ma trận 10.000 giây
 
 ```powershell

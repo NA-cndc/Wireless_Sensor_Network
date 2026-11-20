@@ -1,0 +1,105 @@
+{
+  "timestamp_utc": "2026-11-19T13:54:10.632935+00:00",
+  "seed": 2303770111913239115,
+  "configuration": {
+    "area_width_m": 3000,
+    "area_height_m": 3000,
+    "num_sensors": 450,
+    "num_sinks": 7,
+    "initial_energy_j": 5.0,
+    "packet_size_bytes": 128,
+    "packet_interval_s": 10,
+    "communication_ranges_m": [
+      250,
+      300,
+      350
+    ],
+    "seed": 2303770111913239115,
+    "duration_s": 10000,
+    "emhr_alpha": 0.2,
+    "channel_loss_probability": 0.01,
+    "traffic_seed": 8341788595052063478,
+    "channel_seed": 15606708954197433203
+  },
+  "python_version": "3.12.10",
+  "library_versions": {
+    "networkx": "3.4.2",
+    "simpy": "4.1.1",
+    "numpy": "2.2.6",
+    "pandas": "2.2.3",
+    "matplotlib": "3.10.3",
+    "scipy": "1.15.3"
+  },
+  "git_commit": "4f8a73b23638942f993e069f7fe5b358d8c02264",
+  "git_branch": "fix/wsn-foundation-10000s",
+  "working_tree_clean": true,
+  "generated_files": [
+    "simulation_log_EMHR_range_300m.csv",
+    "simulation_log_EMHR_range_300m_relays.csv",
+    "simulation_log_EMHR_range_300m_packets.csv.gz",
+    "simulation_log_EMHR_range_300m.json"
+  ],
+  "routing_algorithm": "EMHR",
+  "communication_range_m": 300.0,
+  "topology_seed": 2303770111913239115,
+  "traffic_seed": 8341788595052063478,
+  "channel_seed": 15606708954197433203,
+  "metrics": {
+    "stop_reason": "duration_limit",
+    "elapsed_s": 10000.0,
+    "rounds": 1000,
+    "alive_sensors": 343,
+    "routable_sensors": 335,
+    "generated_packets": 386083,
+    "delivered_packets": 115649,
+    "dropped_packets": 270434,
+    "pending_packets": 0,
+    "drop_reasons": {
+      "unreachable": 266869,
+      "energy_depletion": 88,
+      "natural_link_loss": 3449,
+      "queue_drop": 0,
+      "simulation_end_duration_limit": 28,
+      "simulation_end_lnd": 0
+    },
+    "data_tx_attempts": 341791,
+    "route_changes": 5199,
+    "delivered_payload_bits": 118424576,
+    "milestones": {
+      "FND": {
+        "time_s": 1220.0,
+        "payload_bits": 49169408
+      },
+      "HND": {
+        "time_s": null,
+        "payload_bits": null
+      },
+      "LND": {
+        "time_s": null,
+        "payload_bits": null
+      },
+      "functional_death": {
+        "time_s": null,
+        "payload_bits": null
+      }
+    },
+    "pdr_percent": 29.954439848426375,
+    "throughput_bps": 11842.4576,
+    "goodput_bps": 11842.4576,
+    "mean_offered_bps": 39534.8992,
+    "energy_consumed_j": 1378.431030491925,
+    "energy_initial_j": 2250.0,
+    "energy_residual_j": 871.5689695080752,
+    "energy_ledger_j": {
+      "beacon_tx_j": 156.8639452695303,
+      "beacon_rx_j": 8.837030021788744,
+      "data_tx_j": 1201.006578104256,
+      "data_rx_j": 11.401881599947606,
+      "data_tx_depletion_j": 0.3215954960673225
+    },
+    "energy_j_per_delivered_bit": 1.1639737941657692e-05,
+    "mean_hops": 2.8367128120433382,
+    "mean_end_to_end_latency_s": 0.036784381429907684,
+    "relay_load_jain": 0.3336820237807494
+  }
+}

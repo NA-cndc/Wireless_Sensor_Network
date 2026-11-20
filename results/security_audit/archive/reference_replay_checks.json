@@ -1,0 +1,56 @@
+{
+  "checks": [
+    {
+      "trace_directory": "C:\\Users\\Admin\\Documents\\ChatGPT\\Hhh\\wsn_security_fix_20261117\\results\\security_crosscheck_20261117\\fit\\ch_0\\seed_171001",
+      "parameters": {
+        "beta_trust": 0.8,
+        "window_size_s": 80,
+        "forwarding_timeout_s": 0.02,
+        "min_observations": 10,
+        "trust_threshold": 0.95,
+        "consecutive_bad_windows": 2,
+        "initial_trust": 1.0,
+        "isolation_duration_s": 60.0,
+        "calibration_status": "TEST_ONLY"
+      },
+      "nodes_compared": 450,
+      "mismatch": [],
+      "core_replay_conservation": true
+    },
+    {
+      "trace_directory": "C:\\Users\\Admin\\Documents\\ChatGPT\\Hhh\\wsn_security_fix_20261117\\results\\security_crosscheck_20261117\\fit\\ch_0.01\\seed_171001",
+      "parameters": {
+        "beta_trust": 0.8,
+        "window_size_s": 80,
+        "forwarding_timeout_s": 0.02,
+        "min_observations": 10,
+        "trust_threshold": 0.95,
+        "consecutive_bad_windows": 2,
+        "initial_trust": 1.0,
+        "isolation_duration_s": 60.0,
+        "calibration_status": "TEST_ONLY"
+      },
+      "nodes_compared": 450,
+      "mismatch": [],
+      "core_replay_conservation": true
+    },
+    {
+      "trace_directory": "C:\\Users\\Admin\\Documents\\ChatGPT\\Hhh\\wsn_security_fix_20261117\\results\\security_crosscheck_20261117\\fit\\ch_0.05\\seed_171001",
+      "parameters": {
+        "beta_trust": 0.8,
+        "window_size_s": 80,
+        "forwarding_timeout_s": 0.02,
+        "min_observations": 10,
+        "trust_threshold": 0.95,
+        "consecutive_bad_windows": 2,
+        "initial_trust": 1.0,
+        "isolation_duration_s": 60.0,
+        "calibration_status": "TEST_ONLY"
+      },
+      "nodes_compared": 450,
+      "mismatch": [],
+      "core_replay_conservation": true
+    }
+  ],
+  "all_match": true
+}

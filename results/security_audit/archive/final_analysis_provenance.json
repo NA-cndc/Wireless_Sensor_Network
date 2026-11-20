@@ -1,0 +1,15 @@
+{
+  "study_at_registration_sha256": "ecfd0afc44b1616dbdcb776ffe88e0a758412222b794d7224ffe7fe57a89bf7e",
+  "current_analysis_files": {
+    "analysis/security_crosscheck/build_report.py": "94c5451aad5c24853ba351570380aa0c1d30e61175334ab4bafa8d2bc98425db",
+    "analysis/security_crosscheck/overhead.py": "6a324cb6fa60f50ac0152e831460f48e13d31cd7ca29eec337472fd4054c647c",
+    "analysis/security_crosscheck/package_update.py": "cc27faf3cf779d619b04fd310f5734cb3cd8c13fd73d6b050e25179dcd712084",
+    "analysis/security_crosscheck/pipeline.py": "140ce756286fc0d8d02e26c898e11147d3e707cd6eee5d1d64089d3cb1ff1c96",
+    "analysis/security_crosscheck/study.py": "8ac18c80a348e82b98e22386e1a6a399de928f14f1a7e2691d4b5caecbac7f0f",
+    "analysis/security_crosscheck/verify_results.py": "b8b884685b635790b59dac680152a6e3e5cd64c2d1a316aca0315d40ee9c6d80"
+  },
+  "runtime_model_changed": false,
+  "core_change": "calibration protocol and freeze verification only",
+  "registered_study_unchanged": false,
+  "analysis_only_change_after_fit": "strict decimal deadline hardening, zero affected fit observations, see analysis_boundary_fix.json"
+}

@@ -16,3 +16,7 @@
 /.wsn-foundation-10000s/** -text
 /results/csv/simulation_log_* -text
 /results/security_audit/validation_gate.json text eol=crlf
+/results/backup/** -text
+/results/kiem-chung/** -text
+/results/runs/** -text
+/results/security_audit/archive/** -text

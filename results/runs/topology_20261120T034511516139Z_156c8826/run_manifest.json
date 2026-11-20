@@ -1,0 +1,93 @@
+{
+  "timestamp_utc": "2026-11-20T03:45:12.842323+00:00",
+  "metric_schema": "wsn_metrics_event_ordered_v2",
+  "seed": 42,
+  "stream_seeds": {
+    "topology": 42,
+    "traffic": 13967600216242497882,
+    "routing": 6399484953710828118,
+    "attacker_selection": 17725495500793412327,
+    "attack_decision": 16548052598583811675,
+    "channel_loss": 12554364898027986198
+  },
+  "randomness": {
+    "event_key_schema": "wsn_event_keys_v2",
+    "hash_encoding": "sha256_canonical_json_first_64_bits",
+    "stream_usage": {
+      "topology": "seeded_coordinates",
+      "traffic": "deterministic_periodic_no_draws",
+      "routing": "deterministic_lexicographic_no_draws",
+      "attacker_selection": "seeded_sample_for_random_mode",
+      "attack_decision": "event_keyed_bernoulli",
+      "channel_loss": "event_keyed_bernoulli"
+    },
+    "attack_decision_key": [
+      "packet_id",
+      "relay_id",
+      "attempt_index"
+    ],
+    "channel_loss_key": [
+      "packet_id",
+      "sender_id",
+      "receiver_id",
+      "attempt_index"
+    ],
+    "simulated_attempt_index": 0,
+    "retransmission_modeled": false
+  },
+  "energy_threshold_j": 1.0,
+  "energy_configuration": {
+    "initial_energy_j": 5.0,
+    "energy_threshold_ratio": 0.2,
+    "energy_threshold_j": 1.0
+  },
+  "config_profile": "PLAN",
+  "configuration": {
+    "area_width_m": 3000,
+    "area_height_m": 3000,
+    "num_sensors": 450,
+    "num_sinks": 7,
+    "initial_energy_j": 5.0,
+    "packet_size_bytes": 128,
+    "packet_interval_s": 10,
+    "communication_ranges_m": [
+      250,
+      300,
+      350
+    ],
+    "seed": 42,
+    "communication_range_m": 300,
+    "energy_threshold_ratio": 0.2,
+    "energy_epsilon_j": 1e-12,
+    "max_rounds": 10000,
+    "routing_algorithm": "EMHR",
+    "wire_size_bytes": null,
+    "bandwidth_bps": 250000,
+    "attacker_ratio": 0,
+    "attacker_ids": null,
+    "attacker_selection": "random",
+    "p_drop": 0.5,
+    "channel_loss_probability": 0,
+    "detector": null,
+    "config_profile": "PLAN"
+  },
+  "python_version": "3.12.10",
+  "library_versions": {
+    "networkx": "3.4.2",
+    "simpy": "4.1.1",
+    "numpy": "2.2.6",
+    "pandas": "2.2.3",
+    "matplotlib": "3.10.3",
+    "scipy": "1.15.3"
+  },
+  "git_commit": "d6fe6a7e298fe810c978e845fff81ec3a717a5ff",
+  "git_branch": "main",
+  "working_tree_clean": false,
+  "generated_files": [
+    "F:\\bangdzaihjhj\\dancctt\\results\\runs\\topology_20261120T034511516139Z_156c8826\\topology_summary.csv",
+    "F:\\bangdzaihjhj\\dancctt\\results\\runs\\topology_20261120T034511516139Z_156c8826\\figures\\topology_R250.png",
+    "F:\\bangdzaihjhj\\dancctt\\results\\runs\\topology_20261120T034511516139Z_156c8826\\figures\\topology_R300.png",
+    "F:\\bangdzaihjhj\\dancctt\\results\\runs\\topology_20261120T034511516139Z_156c8826\\figures\\topology_R350.png",
+    "F:\\bangdzaihjhj\\dancctt\\results\\runs\\topology_20261120T034511516139Z_156c8826\\run_manifest.json"
+  ]
+}
