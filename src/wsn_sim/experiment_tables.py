@@ -38,6 +38,9 @@ def flatten_records(records):
         job, summary, manifest = (record['job'], record['summary'], record['manifest'])
         case, security, performance = (job['case'], summary['security'], summary['performance'])
         row = {**case, 'seed': job['seed'], 'run_id': job['run_id'], 'directory': str(record['directory']), 'pairing_hash': job['pairing_hash'], 'topology_hash': manifest['topology_hash'], 'source_sha256': job['source_sha256'], 'actual_attacker_count': manifest['attack']['attacker_count'], 'actual_attacker_ratio': manifest['attack']['actual_ratio'], 'wall_clock_s': manifest['wall_clock_s'], 'peak_working_set_bytes': manifest['peak_working_set_bytes'], 'actual_duration_s': summary['time_s'], 'requested_horizon_s': manifest['requested_horizon_s'], 'stop_reason': summary['stop_reason']}
+        for name in ('actual_num_sensors', 'topology_seed', 'log_end_s'):
+            if name in manifest:
+                row[name] = manifest[name]
         row.update({name: performance[name] for name in PERFORMANCE_METRICS})
         row.update({name: security.get(name) for name in SECURITY_METRICS})
         for name in ('TP', 'FP', 'TN', 'FN'):

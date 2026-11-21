@@ -147,8 +147,9 @@ def test_foundation_check_writes_measured_reachability_and_known_graph(project_r
     assert report['reachability']['selected_main_range_m'] is None
     assert report['legacy']['performance_run'] is False
     for row in report['reachability']['rows']:
-        assert row['reachable_ratio'] == row['routable_sensors'] / 450
-        assert row['fully_reachable'] == (row['routable_sensors'] == 450)
+        assert row['sensors'] == 409
+        assert row['reachable_ratio'] == row['routable_sensors'] / row['sensors']
+        assert row['fully_reachable'] == (row['routable_sensors'] == row['sensors'])
     directory = Path(report['output_directory'])
     assert (directory / 'foundation_check.json').exists()
     manifest = json.loads((directory / 'run_manifest.json').read_text(encoding='utf-8'))

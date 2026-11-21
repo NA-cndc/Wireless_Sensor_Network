@@ -2,6 +2,7 @@ from collections import Counter
 import csv
 import json
 from pathlib import Path
+from wsn_sim.topology import terminal_log_sample
 
 class EventJournal(list):
 
@@ -30,6 +31,8 @@ class RunRecorder:
         self.handles = {}
         self.series_file = None
         self.series_writer = None
+        self.log_end_s = None
+        self.log_finished = False
         self.max_active_packets = 0
         self.max_live_observations = 0
 
@@ -59,19 +62,44 @@ class RunRecorder:
 
     def snapshot(self, simulation):
         summary = simulation.summary()
-        performance, network = (summary['performance'], simulation.network)
+        self.max_active_packets = max(self.max_active_packets, len(simulation.traffic_gen.active_packets))
+        if simulation.detector is not None:
+            self.max_live_observations = max(self.max_live_observations, len(simulation.detector.observations))
+        if self.log_finished:
+            return summary
+        performance, reachability = summary['performance'], summary['reachability']
         states = list(simulation.detector.states.values()) if simulation.detector is not None else []
-        row = {'time_s': summary['time_s'], 'alive_sensors': sum((node.is_alive for node in network.sensors.values())), 'remaining_energy_j': performance['remaining_energy_j'], 'generated': performance['generated'], 'delivered': performance['delivered'], 'dropped': performance['dropped'], 'in_flight': performance['pending_in_flight'], 'received_payload_bits': performance['received_payload_bits'], 'received_wire_bits': performance['received_wire_bits'], 'trust_mean_all_sensors': sum((state.trust for state in states)) / len(states) if states else None, 'cohort_observations_since_sample': self.cohort['observations'], 'cohort_forwarded_since_sample': self.cohort['forwarded'], 'cohort_FR_since_sample': self.cohort['forwarded'] / self.cohort['observations'] if self.cohort['observations'] else None, 'suspected_current': sum((state.suspected for state in states)), 'isolated_current': sum((state.isolated_until is not None for state in states)), 'observable_nodes': sum((state.valid_windows > 0 for state in states)), 'reroute_decisions': performance['reroute_decision_count'], 'route_edges_changed': performance['route_edges_changed'], 'physical_reachable_alive': summary['reachability']['physical_reachable_alive'], 'routing_reachable_alive': summary['reachability']['routing_reachable_alive']}
+        row = {
+            'time_s': summary['time_s'],
+            'alive_sensors': reachability['alive_sensors'],
+            'remaining_energy_j': performance['remaining_energy_j'],
+            'generated': performance['generated'],
+            'delivered': performance['delivered'],
+            'dropped': performance['dropped'],
+            'in_flight': performance['pending_in_flight'],
+            'received_payload_bits': performance['received_payload_bits'],
+            'received_wire_bits': performance['received_wire_bits'],
+            'trust_mean_all_sensors': sum(state.trust for state in states) / len(states) if states else None,
+            'cohort_observations_since_sample': self.cohort['observations'],
+            'cohort_forwarded_since_sample': self.cohort['forwarded'],
+            'cohort_FR_since_sample': self.cohort['forwarded'] / self.cohort['observations'] if self.cohort['observations'] else None,
+            'suspected_current': sum(state.suspected for state in states),
+            'isolated_current': sum(state.isolated_until is not None for state in states),
+            'observable_nodes': sum(state.valid_windows > 0 for state in states),
+            'reroute_decisions': performance['reroute_decision_count'],
+            'route_edges_changed': performance['route_edges_changed'],
+            'physical_reachable_alive': reachability['physical_reachable_alive'],
+            'routing_reachable_alive': reachability['routing_reachable_alive'],
+        }
         if self.series_file is None:
             self.series_file = (self.directory / 'timeseries.csv').open('x', encoding='utf-8', newline='')
             self.series_writer = csv.DictWriter(self.series_file, fieldnames=list(row))
             self.series_writer.writeheader()
         self.series_writer.writerow(row)
         self.series_file.flush()
+        self.log_end_s = row['time_s']
+        self.log_finished = terminal_log_sample(row['alive_sensors'], row['physical_reachable_alive'])
         self.cohort.clear()
-        self.max_active_packets = max(self.max_active_packets, len(simulation.traffic_gen.active_packets))
-        if simulation.detector is not None:
-            self.max_live_observations = max(self.max_live_observations, len(simulation.detector.observations))
         return summary
 
     def close(self):

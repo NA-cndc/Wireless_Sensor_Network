@@ -5,6 +5,7 @@ from math import isfinite
 from pathlib import Path
 from typing import Any, Mapping
 from wsn_sim.randomness import stable_seed
+from wsn_sim.topology import TOPOLOGY_MODELS
 REQUIRED_COMMUNICATION_RANGES_M = {250.0, 300.0, 350.0}
 DEFAULT_CONFIG_PATH = Path(__file__).resolve().parents[2] / 'configs/plan.json'
 
@@ -89,6 +90,7 @@ class SimulationConfig:
     channel_loss_probability: float = 0.0
     detector: DetectorConfig | None = None
     config_profile: str = 'CUSTOM'
+    topology_model: str = 'uniform'
 
     def __post_init__(self) -> None:
         for name in ('area_width_m', 'area_height_m', 'initial_energy_j', 'packet_interval_s', 'communication_range_m', 'energy_epsilon_j', 'bandwidth_bps'):
@@ -125,6 +127,8 @@ class SimulationConfig:
             raise TypeError('config_profile must be a string')
         if self.config_profile not in {'PLAN', 'LEGACY_ENERGY_REGRESSION', 'TEST_ONLY', 'CUSTOM'}:
             raise ValueError('invalid config_profile')
+        if self.topology_model not in TOPOLOGY_MODELS:
+            raise ValueError('invalid topology_model')
 
     @property
     def energy_threshold_j(self) -> float:
@@ -173,6 +177,8 @@ class SimulationConfig:
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
+        if self.topology_model == 'uniform':
+            del data['topology_model']
         for name in ('communication_ranges_m', 'attacker_ids'):
             if data[name] is not None:
                 data[name] = list(data[name])

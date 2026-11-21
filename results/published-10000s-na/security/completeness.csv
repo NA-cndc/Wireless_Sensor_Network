@@ -1,0 +1,17 @@
+scenario,rho,p_drop,placement,case_id,expected,completed,failed,pending,meets_30_independent_seeds
+MHR,0.0,0.0,random,MHR_r0_d0_random,30,30,0,0,True
+EMHR,0.0,0.0,random,EMHR_r0_d0_random,30,30,0,0,True
+MHR_SF,0.05,0.5,random,MHR_SF_r0.05_d0.5_random,30,30,0,0,True
+EMHR_SF,0.05,0.5,random,EMHR_SF_r0.05_d0.5_random,30,30,0,0,True
+SF2,0.05,0.5,random,SF2_r0.05_d0.5_random,30,30,0,0,True
+SF3,0.05,0.5,random,SF3_r0.05_d0.5_random,30,30,0,0,True
+EMHR_SF,0.02,0.5,random,EMHR_SF_r0.02_d0.5_random,30,30,0,0,True
+SF3,0.02,0.5,random,SF3_r0.02_d0.5_random,30,30,0,0,True
+EMHR_SF,0.1,0.5,random,EMHR_SF_r0.1_d0.5_random,30,30,0,0,True
+SF3,0.1,0.5,random,SF3_r0.1_d0.5_random,30,30,0,0,True
+EMHR_SF,0.05,0.25,random,EMHR_SF_r0.05_d0.25_random,30,30,0,0,True
+SF3,0.05,0.25,random,SF3_r0.05_d0.25_random,30,30,0,0,True
+EMHR_SF,0.05,0.75,random,EMHR_SF_r0.05_d0.75_random,30,30,0,0,True
+SF3,0.05,0.75,random,SF3_r0.05_d0.75_random,30,30,0,0,True
+EMHR_SF,0.05,0.5,near_sink,EMHR_SF_r0.05_d0.5_near_sink,30,30,0,0,True
+SF3,0.05,0.5,near_sink,SF3_r0.05_d0.5_near_sink,30,30,0,0,True

@@ -48,7 +48,8 @@ def test_mhr_matches_virtual_super_sink(config, radius):
                 left, right = network.graph.nodes[a], network.graph.nodes[b]
                 assert hypot(left["x"] - right["x"], left["y"] - right["y"]) <= radius
     other = Network(replace(config, seed=config.seed + 1), radius)
-    assert all(other.coordinates()[sink] != network.coordinates()[sink] for sink in network.sinks)
+    assert all(other.coordinates()[sink] == network.coordinates()[sink] for sink in network.sinks)
+    assert other.coordinates()["sensor_000"] != network.coordinates()["sensor_000"]
 
 
 def test_emhr_threshold_priority_and_no_fallback(config):
@@ -101,6 +102,7 @@ def test_lnd_stops_simpy_before_limit_and_closes_samples(config):
     for name in ("FND", "HND", "LND"):
         assert summary["milestones"][name] == {"time_s": 10.0, "payload_bits": 0}
     assert sim.samples[-1]["Time_s"] == 10
+    assert sum(row["Alive_Nodes"] == 0 for row in sim.samples) == 1
 
 
 @pytest.mark.parametrize("loss", [0, 1])

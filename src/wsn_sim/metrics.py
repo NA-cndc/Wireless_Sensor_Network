@@ -163,7 +163,7 @@ class LifetimeTracker:
                 self.metadata['payload_na_reasons'][name] = 'no_exact_payload_observation_at_death'
             self._mark(name, death_time, payload)
         alive = sum((sensor.is_alive for sensor in sensors))
-        physical_ids = self.network.routable_sensor_ids()
+        physical_ids = self.network.routable_sensor_ids(alive_only=True)
         routing_ids = self.router.reachable_sensor_ids(time_s)
         state = {'status': 'alive_population' if alive else 'no_alive_sensors', 'alive_sensors': alive, 'physical_reachable_alive': len(physical_ids), 'routing_reachable_alive': len(routing_ids), 'physical_reachable_ratio': len(physical_ids) / alive if alive else None, 'routing_reachable_ratio': len(routing_ids) / alive if alive else None, 'routing_algorithm': self.network.config.routing_algorithm, 'source_policy': 'alive_origin_may_send_own_traffic_but_is_not_transit_exception'}
         if state != self.reachability:

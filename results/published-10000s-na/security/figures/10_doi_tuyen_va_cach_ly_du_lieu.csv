@@ -1,0 +1,15 @@
+﻿scenario,rho,p_drop,placement,case_id,metric,estimand,n_not_completed,n_undefined_among_completed,n_expected,n_used,n_missing,coverage,mean,sample_std_ddof1,ci95_low,ci95_high,ci_method,meets_30_seed_requirement
+MHR,0.0,0.0,random,MHR_r0_d0_random,reroute_decision_count,mean_per_independent_seed,0,0,30,30,0,1.0,853.8333333333334,177.87695928275298,787.4129851492828,920.2536815173839,Student_t_pointwise,True
+EMHR,0.0,0.0,random,EMHR_r0_d0_random,reroute_decision_count,mean_per_independent_seed,0,0,30,30,0,1.0,1639.7,371.47099483001364,1500.9904509028365,1778.4095490971636,Student_t_pointwise,True
+MHR_SF,0.05,0.5,random,MHR_SF_r0.05_d0.5_random,reroute_decision_count,mean_per_independent_seed,0,0,30,30,0,1.0,815.2666666666667,142.2990860302956,762.1313146878855,868.4020186454478,Student_t_pointwise,True
+EMHR_SF,0.05,0.5,random,EMHR_SF_r0.05_d0.5_random,reroute_decision_count,mean_per_independent_seed,0,0,30,30,0,1.0,1464.6,294.8227521281453,1354.5113750994383,1574.6886249005615,Student_t_pointwise,True
+SF2,0.05,0.5,random,SF2_r0.05_d0.5_random,reroute_decision_count,mean_per_independent_seed,0,0,30,30,0,1.0,1464.6,294.8227521281453,1354.5113750994383,1574.6886249005615,Student_t_pointwise,True
+SF3,0.05,0.5,random,SF3_r0.05_d0.5_random,reroute_decision_count,mean_per_independent_seed,0,0,30,30,0,1.0,1685.6,325.9990057103517,1563.8699706907157,1807.330029309284,Student_t_pointwise,True
+MHR,0.0,0.0,random,MHR_r0_d0_random,route_edges_changed,mean_per_independent_seed,0,0,30,30,0,1.0,5288.733333333334,1439.8116719122374,4751.098819265364,5826.367847401303,Student_t_pointwise,True
+EMHR,0.0,0.0,random,EMHR_r0_d0_random,route_edges_changed,mean_per_independent_seed,0,0,30,30,0,1.0,6236.766666666666,2005.659366742593,5487.841150878618,6985.692182454715,Student_t_pointwise,True
+MHR_SF,0.05,0.5,random,MHR_SF_r0.05_d0.5_random,route_edges_changed,mean_per_independent_seed,0,0,30,30,0,1.0,4897.9,1121.5455884165171,4479.107994631298,5316.692005368701,Student_t_pointwise,True
+EMHR_SF,0.05,0.5,random,EMHR_SF_r0.05_d0.5_random,route_edges_changed,mean_per_independent_seed,0,0,30,30,0,1.0,5504.133333333333,1488.3283317159912,4948.382400759637,6059.88426590703,Student_t_pointwise,True
+SF2,0.05,0.5,random,SF2_r0.05_d0.5_random,route_edges_changed,mean_per_independent_seed,0,0,30,30,0,1.0,5504.133333333333,1488.3283317159912,4948.382400759637,6059.88426590703,Student_t_pointwise,True
+SF3,0.05,0.5,random,SF3_r0.05_d0.5_random,route_edges_changed,mean_per_independent_seed,0,0,30,30,0,1.0,6351.366666666667,1989.6868837589243,5608.405374043984,7094.32795928935,Student_t_pointwise,True
+SF2,0.05,0.5,random,SF2_r0.05_d0.5_random,detector_isolation_events,mean_per_independent_seed,0,0,30,30,0,1.0,677.0333333333333,115.4939865081305,633.9071700125402,720.1594966541264,Student_t_pointwise,True
+SF3,0.05,0.5,random,SF3_r0.05_d0.5_random,detector_isolation_events,mean_per_independent_seed,0,0,30,30,0,1.0,1048.9,214.13762091154177,968.9396982408508,1128.8603017591495,Student_t_pointwise,True

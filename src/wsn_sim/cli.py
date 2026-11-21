@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from wsn_sim.calibration import verify_freeze
 from wsn_sim.config import DEFAULT_CONFIG_PATH, DetectorConfig, SimulationConfig
+from wsn_sim.experiment_plan import validate_calibration_basis
 from wsn_sim.simulation import Simulation
 from wsn_sim.storage import create_run_directory, save_simulation
 
@@ -31,6 +32,9 @@ def main() -> None:
         if changes['detector'].calibration_status == 'CALIBRATED':
             calibration_verification = verify_freeze(args.detector_config.resolve(), root)
     config = replace(config, **changes)
+    if calibration_verification is not None and config.topology_model == 'na':
+        lock_path = Path(calibration_verification['lock'])
+        validate_calibration_basis(config.to_dict(), json.loads(lock_path.read_text(encoding='utf-8')))
     simulation = Simulation(config)
     if args.duration is None:
         summary = simulation.run()

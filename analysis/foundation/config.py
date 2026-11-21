@@ -8,6 +8,8 @@ from math import isfinite
 from pathlib import Path
 from typing import Any, Mapping
 
+from wsn_sim.topology import TOPOLOGY_MODELS
+
 
 REQUIRED_COMMUNICATION_RANGES_M = {250.0, 300.0, 350.0}
 
@@ -44,6 +46,7 @@ class SimulationConfig:
     channel_loss_probability: float = 0.05
     traffic_seed: int | None = None
     channel_seed: int | None = None
+    topology_model: str = "uniform"
 
     def __post_init__(self) -> None:
         """Validate types, positive values, and required communication ranges."""
@@ -55,6 +58,8 @@ class SimulationConfig:
         _require_positive_integer("packet_size_bytes", self.packet_size_bytes)
         _require_positive_number("packet_interval_s", self.packet_interval_s)
         _require_positive_number("duration_s", self.duration_s)
+        if self.topology_model not in TOPOLOGY_MODELS:
+            raise ValueError("invalid topology_model")
 
         for name in ("seed", "traffic_seed", "channel_seed"):
             value = getattr(self, name)
@@ -132,7 +137,7 @@ class SimulationConfig:
             **{
                 name: data[name]
                 for name in ("duration_s", "emhr_alpha", "channel_loss_probability",
-                             "traffic_seed", "channel_seed")
+                             "traffic_seed", "channel_seed", "topology_model")
                 if name in data
             },
         )
@@ -163,5 +168,7 @@ class SimulationConfig:
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-serializable representation of the configuration."""
         data = asdict(self)
+        if self.topology_model == "uniform":
+            del data["topology_model"]
         data["communication_ranges_m"] = list(self.communication_ranges_m)
         return data

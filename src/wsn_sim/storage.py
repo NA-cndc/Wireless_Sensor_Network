@@ -12,6 +12,8 @@ import pandas as pd
 from wsn_sim.config import SimulationConfig
 from wsn_sim.metrics import METRIC_SCHEMA
 from wsn_sim.randomness import randomness_metadata
+from wsn_sim.provenance import source_fingerprint
+from wsn_sim.topology import topology_record
 RUNTIME_LIBRARIES = ('networkx', 'simpy', 'numpy', 'pandas', 'matplotlib', 'scipy')
 
 def save_csv(frame: pd.DataFrame, path: str | Path) -> Path:
@@ -91,8 +93,8 @@ def save_simulation(simulation, directory: str | Path, repository_root: str | Pa
     manifest = create_run_manifest(simulation.config, [*files, manifest_path], repository_root)
     manifest['attack'] = simulation.traffic_gen.attack.to_dict()
     manifest['communication_range_m'] = simulation.network.communication_range_m
-    manifest['coordinates'] = simulation.network.coordinates()
-    manifest['physical_edges'] = sorted((sorted(edge) for edge in simulation.network.graph.edges))
+    manifest.update(topology_record(simulation.network))
+    manifest['source_sha256'] = source_fingerprint(Path(repository_root))['sha256']
     manifest['observer'] = None if simulation.detector is None else simulation.detector.model_metadata()
     save_json(manifest, manifest_path)
     return directory

@@ -38,6 +38,15 @@ METRICS = {
     "detector_isolation_events": ("Đề xuất cách ly của detector", "Số sự kiện trong một lượt", 1),
 }
 PERFORMANCE = ["pdr", "energy_per_payload_bit_j", "throughput_bps", "goodput_bps", "mean_latency_s", "mean_actual_hops"]
+PLOT_TIMES_S = (0, 2500, 5000, 7500, 10000)
+PACKET_CATEGORIES = (
+    ("delivered_fraction", "Giao thành công", "#168875"),
+    ("unreachable_fraction", "Không có tuyến", "#9ba5b1"),
+    ("selective_forwarding_fraction", "Selective Forwarding", "#ca522a"),
+    ("natural_link_loss_fraction", "Mất kênh tự nhiên", "#d5a023"),
+    ("energy_depletion_fraction", "Cạn năng lượng", "#70509b"),
+    ("in_flight_fraction", "Đang truyền", "#2b6eae"),
+)
 
 
 def is_center(row):
@@ -46,17 +55,19 @@ def is_center(row):
 
 def number_label(value, ylabel):
     if "%" in ylabel:
-        return f"{value:.2f}%".replace(".", ",")
+        digits = 4 if 0 < value < .1 else 2
+        return f"{value:.{digits}f}%".replace(".", ",")
     digits = 3 if any(unit in ylabel for unit in ("µJ", "kbit/s", "hop", "ms")) else 2
     text = f"{value:,.{digits}f}".replace(",", " ").replace(".", ",")
     return text
 
 
 class FigureWriter:
-    def __init__(self, directory):
+    def __init__(self, directory, *, labeled_bars=False):
         self.directory = Path(directory)
         self.directory.mkdir(parents=True, exist_ok=True)
         self.manifest = []
+        self.labeled_bars = labeled_bars
         plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 10, "axes.titlesize": 11, "axes.labelsize": 10, "axes.spines.top": False, "axes.spines.right": False, "axes.grid": True, "axes.axisbelow": True, "grid.alpha": .18, "savefig.dpi": 170, "svg.fonttype": "none"})
 
     def layout(self, title, nrows=2, ncols=3):
@@ -70,6 +81,8 @@ class FigureWriter:
         from wsn_sim.experiment_execution import file_hash
         annotations, bars = [], []
         for index, axis in enumerate(fig.axes):
+            if self.labeled_bars:
+                axis.xaxis.grid(False)
             columns = {}
             for rectangle in axis.patches:
                 if not isinstance(rectangle, plt.Rectangle) or rectangle.get_height() < 0:
@@ -142,7 +155,6 @@ class FigureWriter:
                         raise ValueError(f"point label outside panel: {name}")
                     placed.append(box)
                     point_labels.append({"axis": axis_index, "series": line.get_gid(), "x": float(annotation.xy[0]), "y": float(annotation.xy[1]), "label": annotation.get_text(), "ylabel": axis.get_ylabel()})
-        # All nonempty rendered text must fit in the exported image, including ticks/legend.
         for text in fig.findobj(matplotlib.text.Text):
             if not text.get_visible() or not text.get_text():
                 continue
@@ -166,6 +178,8 @@ class FigureWriter:
         fig.savefig(svg, facecolor="white")
         plt.close(fig)
         lines = [{"axis": index, "series": line.get_gid(), "x": np.asarray(line.get_xdata(), dtype=float).tolist(), "y": np.asarray(line.get_ydata(), dtype=float).tolist()} for index, axis in enumerate(fig.axes) for line in axis.lines]
+        if self.labeled_bars and (not bars or lines):
+            raise ValueError(f"expected a labeled bar chart: {name}")
         self.manifest.append({"figure": png.name, "vector": svg.name, "data_csv": data_path.name, "data_sha256": file_hash(data_path), "png_sha256": file_hash(png), "svg_sha256": file_hash(svg), "script_sha256": file_hash(Path(__file__)), "source_csv": "../aggregate.csv", "source_sha256": file_hash(self.directory.parent / "aggregate.csv"), "extra_sources": [{"path": str(path), "sha256": file_hash(path)} for path in sources], "bars": bars, "lines": lines, "point_labels": point_labels, "language": "vi", "layout_checks": {"legend_outside_all_axes": True, "labels_above_bars": True, "numeric_labels_do_not_overlap": True, "all_text_inside_figure": True, "point_labels_fit_axes": True, "configuration_subtitle_count": 0, "footnote_count": 0, "error_bar_count": 0}})
 
 
@@ -176,6 +190,18 @@ def format_axis(axis, metric):
     axis.set_ylim(bottom=0)
     axis.margins(y=.22)
     axis.yaxis.set_major_locator(MaxNLocator(nbins=5))
+
+
+def draw_mean_bar(axis, row, x, width):
+    metric, scenario = row["metric"], row["scenario"]
+    if row["mean"] is None:
+        raise ValueError(f"undefined mean: {scenario}/{metric}")
+    factor = METRICS[metric][2]
+    rectangle, = axis.bar(x, row["mean"] * factor, width=width, color=COLORS[scenario])
+    rectangle._source_record = {
+        "case_id": row["case_id"], "scenario": scenario, "metric": metric,
+        "mean": row["mean"], "unit_factor": factor, "n_used": row["n_used"], "reason": "measured_mean",
+    }
 
 
 def center_bars(writer, aggregates, name, title, metrics, scenarios=ORDER, scenario_groups=None, columns=3):
@@ -189,11 +215,7 @@ def center_bars(writer, aggregates, name, title, metrics, scenarios=ORDER, scena
             row = next(row for row in aggregates if row["scenario"] == scenario and row["metric"] == metric and is_center(row))
             counts.append(row["n_used"])
             used.append(row)
-            if row["mean"] is not None:
-                bars = axis.bar(index, row["mean"] * METRICS[metric][2], width=.65, color=COLORS[scenario])
-                bars[0]._source_record = {"case_id": row["case_id"], "scenario": scenario, "metric": metric, "mean": row["mean"], "unit_factor": METRICS[metric][2], "n_used": row["n_used"], "reason": "measured_mean"}
-            else:
-                raise ValueError(f"main figure has undefined mean: {name}/{scenario}/{metric}")
+            draw_mean_bar(axis, row, index, .65)
         format_axis(axis, metric)
         ticklabels = [SHORT[key] + (f"\nn={count}" if count != 30 else "") for key, count in zip(selected, counts)]
         axis.set_xticks(range(len(selected)), ticklabels, rotation=25 if len(selected) > 3 else 0, ha="right" if len(selected) > 3 else "center")
@@ -237,6 +259,30 @@ def factor_lines(writer, aggregates, name, title, variable, levels, condition):
     writer.save(fig, name, used, handles, [LABELS[key] for key in ("EMHR_SF", "SF3")])
 
 
+def factor_bars(writer, aggregates, name, title, variable, levels, condition):
+    fig, axes = writer.layout(title)
+    used = []
+    scenarios = ("EMHR_SF", "SF3")
+    for axis, metric in zip(axes.flat, PERFORMANCE):
+        counts = []
+        for index, level in enumerate(levels):
+            level_counts = []
+            for scenario, offset in zip(scenarios, (-.18, .18)):
+                row = next(row for row in aggregates if row["scenario"] == scenario
+                           and row["metric"] == metric and row[variable] == level and condition(row))
+                used.append(row)
+                level_counts.append(row["n_used"])
+                draw_mean_bar(axis, row, index + offset, .33)
+            label = f"{level * 100:g}%" if variable == "rho" else f"{level:.2f}".replace(".", ",")
+            sizes = [f"n={count}" for count in level_counts if count != 30]
+            counts.append(label + ("\n" + " / ".join(sizes) if sizes else ""))
+        format_axis(axis, metric)
+        axis.set_xticks(range(len(levels)), counts)
+        axis.set_xlabel("Tỷ lệ nút tấn công yêu cầu" if variable == "rho" else "Xác suất bỏ gói P_drop")
+    writer.save(fig, name, used, [plt.Rectangle((0, 0), 1, 1, color=COLORS[key]) for key in scenarios],
+                [LABELS[key] for key in scenarios])
+
+
 def placement_bars(writer, aggregates):
     fig, axes = writer.layout("Ảnh hưởng của vị trí nút tấn công")
     used = []
@@ -245,38 +291,45 @@ def placement_bars(writer, aggregates):
             for index, placement in enumerate(("random", "near_sink")):
                 row = next(row for row in aggregates if row["scenario"] == scenario and row["rho"] == .05 and row["p_drop"] == .5 and row["placement"] == placement and row["metric"] == metric)
                 used.append(row)
-                bars = axis.bar(index + offset, row["mean"] * METRICS[metric][2], width=.33, color=COLORS[scenario])
-                bars[0]._source_record = {"case_id": row["case_id"], "scenario": scenario, "metric": metric, "mean": row["mean"], "unit_factor": METRICS[metric][2], "n_used": row["n_used"], "reason": "measured_mean"}
+                draw_mean_bar(axis, row, index + offset, .33)
         format_axis(axis, metric)
         axis.set_xticks([0, 1], ["Ngẫu nhiên", "Gần sink"])
     writer.save(fig, "06_vi_tri_attacker", used, [plt.Rectangle((0, 0), 1, 1, color=COLORS[key]) for key in ("EMHR_SF", "SF3")], [LABELS[key] for key in ("EMHR_SF", "SF3")])
 
 
-def time_curves(writer, records):
+def time_data(records):
     from wsn_sim.experiment_statistics import sample_summary
-    fig, axes = writer.layout("Diễn biến mạng trong 10.000 giây", 1, 2)
-    used, sources, handles = [], [], []
+    used, sources = [], []
     for scenario in ORDER:
         group = [record for record in records if record["job"]["case"]["scenario"] == scenario and is_center(record["job"]["case"])]
         frames = []
         for record in group:
             source = record["directory"] / "timeseries.csv"
-            frame = pd.read_csv(source)
-            if list(frame["time_s"]) != list(range(0, 10001, 100)):
-                raise ValueError("unexpected short time grid")
-            frames.append(frame)
+            frames.append(pd.read_csv(source).set_index("time_s"))
             sources.append(source)
-        for axis, metric, ylabel in zip(axes.flat, ("alive_sensors", "remaining_energy_j"), ("Số sensor còn sống", "Năng lượng sensor (J)")):
-            values = []
-            for index, time in enumerate(range(0, 10001, 100)):
-                stats = sample_summary([float(frame.iloc[index][metric]) for frame in frames], 30)
+        for metric in ("alive_sensors", "remaining_energy_j"):
+            for time in range(0, 10001, 100):
+                observed = [float(frame.at[time, metric]) for frame in frames if time in frame.index]
+                if not observed:
+                    break
+                stats = sample_summary(observed, len(group))
                 used.append({"scenario": scenario, "metric": metric, "time_s": time, **stats})
-                values.append(stats["mean"])
-            line, = axis.plot(range(0, 10001, 100), values, color=COLORS[scenario], linewidth=1.8, linestyle="--" if scenario in ("MHR_SF", "EMHR_SF", "SF2") else "-")
+    return used, sources
+
+
+def time_curves(writer, records):
+    fig, axes = writer.layout("Diễn biến mạng trong 10.000 giây", 1, 2)
+    used, sources = time_data(records)
+    handles = []
+    for scenario in ORDER:
+        for axis, metric in zip(axes.flat, ("alive_sensors", "remaining_energy_j")):
+            group = [row for row in used if row["scenario"] == scenario and row["metric"] == metric]
+            times, values = [row["time_s"] for row in group], [row["mean"] for row in group]
+            line, = axis.plot(times, values, color=COLORS[scenario], linewidth=1.8, linestyle="--" if scenario in ("MHR_SF", "EMHR_SF", "SF2") else "-")
             line.set_gid(metric + "|" + scenario)
             if metric == "alive_sensors":
                 handles.append(line)
-            axis.set_ylabel(ylabel)
+            axis.set_ylabel("Số sensor còn sống" if metric == "alive_sensors" else "Năng lượng sensor (J)")
             axis.set_xlabel("Thời gian mô phỏng (s)")
             axis.set_title("Sensor còn sống" if metric == "alive_sensors" else "Năng lượng còn lại", pad=12)
             axis.set_xlim(0, 10000)
@@ -286,8 +339,34 @@ def time_curves(writer, records):
     writer.save(fig, "07_dien_bien_mang", used, handles, [LABELS[key] for key in ORDER], sources)
 
 
+def time_bars(writer, records):
+    fig, axes = writer.layout("Trạng thái mạng theo từng mốc thời gian", 2, 1)
+    used, sources = time_data(records)
+    for row in used:
+        row["plotted"] = row["time_s"] in PLOT_TIMES_S
+    for axis, metric in zip(axes.flat, ("alive_sensors", "remaining_energy_j")):
+        for index, scenario in enumerate(ORDER):
+            group = [row for row in used if row["metric"] == metric and row["scenario"] == scenario
+                     and row["plotted"]]
+            offset = (index - (len(ORDER) - 1) / 2) * .135
+            for row in group:
+                x = PLOT_TIMES_S.index(row["time_s"]) + offset
+                rectangle, = axis.bar(x, row["mean"], width=.125, color=COLORS[scenario])
+                rectangle._source_record = {
+                    "metric": metric, "scenario": scenario, "time_s": row["time_s"],
+                    "mean": row["mean"], "n_used": row["n_used"], "unit_factor": 1,
+                }
+        format_axis(axis, metric)
+        axis.set_title("Sensor còn sống" if metric == "alive_sensors" else "Năng lượng còn lại")
+        axis.set_xticks(range(len(PLOT_TIMES_S)), [f"{time:,}".replace(",", ".") for time in PLOT_TIMES_S])
+        axis.set_xlabel("Thời gian mô phỏng (s)")
+    writer.save(fig, "07_dien_bien_mang", used,
+                [plt.Rectangle((0, 0), 1, 1, color=COLORS[key]) for key in ORDER],
+                [LABELS[key] for key in ORDER], sources)
+
+
 def drop_composition(writer, rows):
-    categories = [("delivered_fraction", "Giao thành công", "#168875"), ("unreachable_fraction", "Không có tuyến", "#9ba5b1"), ("selective_forwarding_fraction", "Selective Forwarding", "#ca522a"), ("natural_link_loss_fraction", "Mất kênh tự nhiên", "#d5a023"), ("energy_depletion_fraction", "Cạn năng lượng", "#70509b"), ("in_flight_fraction", "Đang truyền", "#2b6eae")]
+    categories = PACKET_CATEGORIES
     fig, axes = writer.layout("Trạng thái gói tại 10.000 giây", 1, 2)
     axis, table_axis = axes.flat
     used, bottom = [], np.zeros(6)
@@ -317,17 +396,46 @@ def drop_composition(writer, rows):
     writer.save(fig, "09_trang_thai_goi", used, handles, labels)
 
 
+def drop_bars(writer, rows):
+    from wsn_sim.experiment_statistics import sample_summary
+    fig, axes = writer.layout("Trạng thái gói tại 10.000 giây")
+    used = []
+    for axis, (metric, title, _) in zip(axes.flat, PACKET_CATEGORIES):
+        for index, scenario in enumerate(ORDER):
+            group = [row for row in rows if row["scenario"] == scenario and is_center(row)]
+            stats = sample_summary([row[metric] for row in group], len(group))
+            used.extend({"scenario": scenario, "seed": row["seed"], "metric": metric, "value": row[metric]} for row in group)
+            if stats["mean"] is None:
+                raise ValueError(f"undefined packet state: {scenario}/{metric}")
+            rectangle, = axis.bar(index, 100 * stats["mean"], width=.64, color=COLORS[scenario])
+            rectangle._source_record = {
+                "metric": metric, "scenario": scenario, "mean": stats["mean"],
+                "n_used": stats["n_used"], "unit_factor": 100,
+            }
+        axis.set_title(title, pad=12)
+        axis.set_ylabel("Tỷ lệ gói (%)")
+        axis.set_ylim(bottom=0)
+        axis.margins(y=.22)
+        axis.yaxis.set_major_locator(MaxNLocator(nbins=5))
+        axis.set_xticks(range(len(ORDER)), [SHORT[key] for key in ORDER], rotation=25, ha="right")
+    writer.save(fig, "09_trang_thai_goi", used,
+                [plt.Rectangle((0, 0), 1, 1, color=COLORS[key]) for key in ORDER],
+                [LABELS[key] for key in ORDER])
+
+
 def draw_all(plan, rows, aggregates, records, directory):
-    writer = FigureWriter(directory)
+    labeled_bars = plan["base_configuration"].get("topology_model") == "na"
+    writer = FigureWriter(directory, labeled_bars=labeled_bars)
     center_bars(writer, aggregates, "01_hieu_nang_trung_tam", "Hiệu năng mạng trong 10.000 giây", PERFORMANCE)
     center_bars(writer, aggregates, "02_trang_thai_10000s", "Dữ liệu và trạng thái mạng tại 10.000 giây", ["received_payload_bits", "alive_sensors", "remaining_energy_j"])
     center_bars(writer, aggregates, "03_phat_hien_bao_mat", "Phát hiện Selective Forwarding tại 10.000 giây", ["tpr", "fpr", "precision", "f1", "coverage", "detection_capped_delay_s"], ["SF2", "SF3"])
-    factor_lines(writer, aggregates, "04_ty_le_attacker", "Ảnh hưởng của tỷ lệ nút tấn công", "rho", [.02, .05, .1], lambda row: row["p_drop"] == .5 and row["placement"] == "random")
-    factor_lines(writer, aggregates, "05_xac_suat_bo_goi", "Ảnh hưởng của xác suất bỏ gói", "p_drop", [.25, .5, .75], lambda row: row["rho"] == .05 and row["placement"] == "random")
+    draw_factor = factor_bars if labeled_bars else factor_lines
+    draw_factor(writer, aggregates, "04_ty_le_attacker", "Ảnh hưởng của tỷ lệ nút tấn công", "rho", [.02, .05, .1], lambda row: row["p_drop"] == .5 and row["placement"] == "random")
+    draw_factor(writer, aggregates, "05_xac_suat_bo_goi", "Ảnh hưởng của xác suất bỏ gói", "p_drop", [.25, .5, .75], lambda row: row["rho"] == .05 and row["placement"] == "random")
     placement_bars(writer, aggregates)
-    time_curves(writer, records)
+    (time_bars if labeled_bars else time_curves)(writer, records)
     center_bars(writer, aggregates, "08_FND_gioi_han", "Mốc sensor đầu tiên chết trong 10.000 giây", ["FND_restricted_s", "FND_observed_fraction"])
-    drop_composition(writer, rows)
+    (drop_bars if labeled_bars else drop_composition)(writer, rows)
     center_bars(writer, aggregates, "10_doi_tuyen_va_cach_ly", "Đổi tuyến và đề xuất cách ly trong 10.000 giây", ["reroute_decision_count", "route_edges_changed", "detector_isolation_events"], scenario_groups={"detector_isolation_events": ["SF2", "SF3"]})
     audit = [{"figure": figure["figure"], **bar} for figure in writer.manifest for bar in figure["bars"]]
     pd.DataFrame(audit).to_csv(writer.directory.parent / "bar_visibility_audit.csv", index=False, encoding="utf-8-sig")

@@ -37,19 +37,20 @@ def enrich(rows, records, directory):
         summary, spec = record["summary"], record["job"]
         configuration = spec["configuration"]
         states = read_json(record["directory"] / "final_sensor_states.json")
+        sensor_count = len(states)
         counts = {name: performance[name] for name in ("generated", "delivered", "dropped", "pending_in_flight")}
         row.update(counts)
         row["received_payload_bits"] = performance["received_payload_bits"]
         row["generated_payload_bits"] = performance["generated"] * configuration["packet_size_bytes"] * 8
-        row["offered_payload_bps"] = row["generated_payload_bits"] / summary["time_s"]
+        row["offered_payload_bps"] = row["generated_payload_bits"] / summary["time_s"] if summary["time_s"] else None
         forwards = [value["forwarded"] for value in states.values()]
         denominator = len(forwards) * sum(value * value for value in forwards)
         row["jain_forwarding_fairness"] = sum(forwards) ** 2 / denominator if denominator else None
         row["consumed_energy_j"] = performance["consumed_since_start_j"]
         row["remaining_energy_j"] = performance["remaining_energy_j"]
         row["alive_sensors"] = sum(state["alive"] for state in states.values())
-        row["alive_fraction"] = row["alive_sensors"] / configuration["num_sensors"]
-        row["dead_sensors"] = configuration["num_sensors"] - row["alive_sensors"]
+        row["alive_fraction"] = row["alive_sensors"] / sensor_count
+        row["dead_sensors"] = sensor_count - row["alive_sensors"]
         row["received_wire_bits"] = performance["received_wire_bits"]
         row["FND_observed_fraction"] = int(not summary["lifetime"]["FND"]["censored"])
         row["evaluation_time_s"] = summary["security"]["evaluation_time_s"]
@@ -71,11 +72,11 @@ def enrich(rows, records, directory):
         for node, state in relays.items():
             received = state["received_transit"]
             relay_rows.append({**{key: row[key] for key in ("case_id", "scenario", "rho", "p_drop", "placement", "seed", "run_id")}, "node_id": node, "evaluation_time_s": summary["time_s"], "ground_truth_attacker_for_evaluation_only": node in attackers, "received_transit_total": received, "forwarded_total": state["forwarded"], "failed_timeout_total": state["failed_timeout"], "pending_total": state["pending"], "forwarding_ratio_cumulative": state["forwarded"] / received if received else None, "cumulative_ratio_na_reason": "no_transit_observations" if not received else None, "ratio_scope": "cumulative_diagnostic_not_window_ratio_used_by_EWMA", "trust_at_cutoff": state["trust"], "valid_windows": state["valid_windows"], "suspected_current": state["suspected"], "ever_suspected_by_cutoff": state["suspected_at"] is not None, "first_suspected_s": state["suspected_at"], "first_isolated_s": state["isolated_at"], "isolated_until_s": state["isolated_until"], "routing_avoidance_enabled": row["routing_avoidance_enabled"]})
-        row["delivered_fraction"] = counts["delivered"] / counts["generated"]
-        row["in_flight_fraction"] = counts["pending_in_flight"] / counts["generated"]
+        row["delivered_fraction"] = counts["delivered"] / counts["generated"] if counts["generated"] else None
+        row["in_flight_fraction"] = counts["pending_in_flight"] / counts["generated"] if counts["generated"] else None
         for kind in loss_types:
             row[kind + "_count"] = performance["drop_reasons"].get(kind, 0)
-            row[kind + "_fraction"] = row[kind + "_count"] / counts["generated"]
+            row[kind + "_fraction"] = row[kind + "_count"] / counts["generated"] if counts["generated"] else None
         row["queue_drop_count"] = None
         row["monitoring_energy_j"] = performance["monitoring_energy_j"]
         row["monitoring_time_s"] = performance["monitoring_time_s"]
@@ -99,7 +100,10 @@ def enrich(rows, records, directory):
         remaining_check = isclose(row["remaining_energy_j"], sum(value["energy_j"] for value in states.values()), abs_tol=1e-8)
         packets_check = counts["generated"] == counts["delivered"] + counts["dropped"] + counts["pending_in_flight"]
         energy_check = performance["energy_conservation_ok"]
-        population_check = sum(summary["security"][name] for name in ("TP", "FP", "TN", "FN")) == configuration["num_sensors"]
+        population_check = (
+            sum(summary["security"][name] for name in ("TP", "FP", "TN", "FN"))
+            == sensor_count == record["manifest"].get("actual_num_sensors", configuration["num_sensors"])
+        )
         labels_check = summary["security"]["TP"] + summary["security"]["FN"] == row["actual_attacker_count"]
         reasons_check = sum(performance["drop_reasons"].values()) == counts["dropped"]
         detector = summary["detector"]

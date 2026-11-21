@@ -58,7 +58,6 @@ class RoutingEngine:
         current_level = [source_id]
         found_sinks: list[str] = []
 
-        # Duyệt BFS từng lớp hop; dừng ngay khi chạm lớp đầu tiên có Sink
         while current_level and not found_sinks:
             next_level: list[str] = []
             for u in current_level:
@@ -151,7 +150,6 @@ class RoutingEngine:
         r_max = self.network.communication_range_m or 300.0
         init_energy = getattr(self.network.config, "initial_energy_j", 5.0)
 
-        # Tính sẵn (dist_m / r_max) ** alpha một lần duy nhất cho toàn bộ mô phỏng
         if self._static_dist_cache is None or self._cached_alpha != alpha:
             self._cached_alpha = alpha
             self._static_dist_cache = {
@@ -174,7 +172,6 @@ class RoutingEngine:
             if cur_cost > best_dist.get(u, float("inf")):
                 continue
 
-            # Dừng ngay khi pop được trạm Sink có tổng chi phí thấp nhất
             if u in sinks:
                 route: list[str] = []
                 curr: str | None = u

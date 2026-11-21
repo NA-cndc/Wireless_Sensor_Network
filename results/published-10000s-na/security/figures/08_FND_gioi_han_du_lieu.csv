@@ -1,0 +1,13 @@
+﻿scenario,rho,p_drop,placement,case_id,metric,estimand,n_not_completed,n_undefined_among_completed,n_expected,n_used,n_missing,coverage,mean,sample_std_ddof1,ci95_low,ci95_high,ci_method,meets_30_seed_requirement
+MHR,0.0,0.0,random,MHR_r0_d0_random,FND_restricted_s,restricted_to_administrative_horizon,0,0,30,30,0,1.0,250.6749952,67.71791402173672,225.38871053582614,275.9612798641739,Student_t_pointwise,True
+EMHR,0.0,0.0,random,EMHR_r0_d0_random,FND_restricted_s,restricted_to_administrative_horizon,0,0,30,30,0,1.0,1339.0,112.04524947999573,1297.1616162495773,1380.8383837504227,Student_t_pointwise,True
+MHR_SF,0.05,0.5,random,MHR_SF_r0.05_d0.5_random,FND_restricted_s,restricted_to_administrative_horizon,0,0,30,30,0,1.0,257.3412522666667,67.92103407289669,231.97912132889107,282.70338320444233,Student_t_pointwise,True
+EMHR_SF,0.05,0.5,random,EMHR_SF_r0.05_d0.5_random,FND_restricted_s,restricted_to_administrative_horizon,0,0,30,30,0,1.0,1361.0,121.75016816528782,1315.5377400557509,1406.4622599442491,Student_t_pointwise,True
+SF2,0.05,0.5,random,SF2_r0.05_d0.5_random,FND_restricted_s,restricted_to_administrative_horizon,0,0,30,30,0,1.0,1361.0,121.75016816528782,1315.5377400557509,1406.4622599442491,Student_t_pointwise,True
+SF3,0.05,0.5,random,SF3_r0.05_d0.5_random,FND_restricted_s,restricted_to_administrative_horizon,0,0,30,30,0,1.0,1336.0,104.04243166231217,1297.1499175340573,1374.8500824659427,Student_t_pointwise,True
+MHR,0.0,0.0,random,MHR_r0_d0_random,FND_observed_fraction,mean_per_independent_seed,0,0,30,30,0,1.0,1.0,0.0,1.0,1.0,Student_t_pointwise,True
+EMHR,0.0,0.0,random,EMHR_r0_d0_random,FND_observed_fraction,mean_per_independent_seed,0,0,30,30,0,1.0,1.0,0.0,1.0,1.0,Student_t_pointwise,True
+MHR_SF,0.05,0.5,random,MHR_SF_r0.05_d0.5_random,FND_observed_fraction,mean_per_independent_seed,0,0,30,30,0,1.0,1.0,0.0,1.0,1.0,Student_t_pointwise,True
+EMHR_SF,0.05,0.5,random,EMHR_SF_r0.05_d0.5_random,FND_observed_fraction,mean_per_independent_seed,0,0,30,30,0,1.0,1.0,0.0,1.0,1.0,Student_t_pointwise,True
+SF2,0.05,0.5,random,SF2_r0.05_d0.5_random,FND_observed_fraction,mean_per_independent_seed,0,0,30,30,0,1.0,1.0,0.0,1.0,1.0,Student_t_pointwise,True
+SF3,0.05,0.5,random,SF3_r0.05_d0.5_random,FND_observed_fraction,mean_per_independent_seed,0,0,30,30,0,1.0,1.0,0.0,1.0,1.0,Student_t_pointwise,True

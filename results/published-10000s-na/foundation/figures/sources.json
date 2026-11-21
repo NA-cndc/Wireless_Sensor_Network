@@ -1,0 +1,128 @@
+{
+  "configuration": {
+    "area_width_m": 3000,
+    "area_height_m": 3000,
+    "num_sensors": 450,
+    "num_sinks": 7,
+    "initial_energy_j": 5.0,
+    "packet_size_bytes": 128,
+    "packet_interval_s": 10,
+    "communication_ranges_m": [
+      250,
+      300,
+      350
+    ],
+    "seed": 36,
+    "duration_s": 10000,
+    "emhr_alpha": 0.2,
+    "channel_loss_probability": 0.05,
+    "traffic_seed": null,
+    "channel_seed": null,
+    "topology_model": "na"
+  },
+  "stage1": [
+    {
+      "radius_m": 250,
+      "algorithm": "EMHR",
+      "timeseries": "csv/simulation_log_EMHR_range_250m.csv",
+      "manifest": "csv/simulation_log_EMHR_range_250m.json",
+      "git_commit": "8602c1032551cdf507215ae946ccb0ba427ad69d",
+      "elapsed_s": 10000.0,
+      "stop_reason": "duration_limit",
+      "timeseries_sha256": "3ca0abaab39ef3e82bcb6e334ea7040f679c4188fc57f89a1ef17004eaf59fb1",
+      "manifest_sha256": "50cc851e7c029b3abb4fd66d931ee8da2e6c1b24e1ada5ac48bddf25ca807956",
+      "log_end_s": 10000.0
+    },
+    {
+      "radius_m": 300,
+      "algorithm": "EMHR",
+      "timeseries": "csv/simulation_log_EMHR_range_300m.csv",
+      "manifest": "csv/simulation_log_EMHR_range_300m.json",
+      "git_commit": "8602c1032551cdf507215ae946ccb0ba427ad69d",
+      "elapsed_s": 10000.0,
+      "stop_reason": "duration_limit",
+      "timeseries_sha256": "9e40c42dfe873c022cb13e7e8ad582ff1d4968d98f36abb55d0c39f44f31b159",
+      "manifest_sha256": "3d706191a82bb45cfa8c2b5600e50d2ed7bccd489c22a446ed2362489a80bf01",
+      "log_end_s": 10000.0
+    },
+    {
+      "radius_m": 350,
+      "algorithm": "EMHR",
+      "timeseries": "csv/simulation_log_EMHR_range_350m.csv",
+      "manifest": "csv/simulation_log_EMHR_range_350m.json",
+      "git_commit": "8602c1032551cdf507215ae946ccb0ba427ad69d",
+      "elapsed_s": 10000.0,
+      "stop_reason": "duration_limit",
+      "timeseries_sha256": "9012b9a55423f173b7f7de5ebc3d44082cb91bc575b8ce6a482a498f9a3e7091",
+      "manifest_sha256": "bca8c010c1b1a9dad562228d5153eebb6a780e60bd5a13614a5a1d2eb56e6c41",
+      "log_end_s": 10000.0
+    }
+  ],
+  "stage2": [
+    {
+      "radius_m": 300,
+      "algorithm": "EMHR",
+      "timeseries": "csv/simulation_log_EMHR_range_300m.csv",
+      "manifest": "csv/simulation_log_EMHR_range_300m.json",
+      "git_commit": "8602c1032551cdf507215ae946ccb0ba427ad69d",
+      "elapsed_s": 10000.0,
+      "stop_reason": "duration_limit",
+      "timeseries_sha256": "9e40c42dfe873c022cb13e7e8ad582ff1d4968d98f36abb55d0c39f44f31b159",
+      "manifest_sha256": "3d706191a82bb45cfa8c2b5600e50d2ed7bccd489c22a446ed2362489a80bf01",
+      "log_end_s": 10000.0
+    },
+    {
+      "radius_m": 300.0,
+      "algorithm": "MHR",
+      "timeseries": "csv/simulation_log_MHR_range_300m.csv",
+      "manifest": "csv/simulation_log_MHR_range_300m.json",
+      "git_commit": "8602c1032551cdf507215ae946ccb0ba427ad69d",
+      "elapsed_s": 10000.0,
+      "stop_reason": "duration_limit",
+      "timeseries_sha256": "9a6bf65ef86662c0b347e3b683923abc313f1ca74ca253074519e6bee8b4dfd2",
+      "manifest_sha256": "d074ed38f254b91ff22619a12fe2cc0da8b194c0ce0227cae4fddf5c11407ab4",
+      "log_end_s": 10000.0
+    },
+    {
+      "radius_m": 300.0,
+      "algorithm": "Weighted_Dijkstra",
+      "timeseries": "csv/simulation_log_Weighted_Dijkstra_range_300m.csv",
+      "manifest": "csv/simulation_log_Weighted_Dijkstra_range_300m.json",
+      "git_commit": "8602c1032551cdf507215ae946ccb0ba427ad69d",
+      "elapsed_s": 10000.0,
+      "stop_reason": "duration_limit",
+      "timeseries_sha256": "b9599230e061638152a00ff6067ee1c9bc5d7cd176907cf81cff1b24f55ee5c7",
+      "manifest_sha256": "e5cf29629b76733bffe5e265a31c4c2021f66204a0e6fd487325a3346524cc61",
+      "log_end_s": 10000.0
+    },
+    {
+      "radius_m": 300.0,
+      "algorithm": "MMBCR",
+      "timeseries": "csv/simulation_log_MMBCR_range_300m.csv",
+      "manifest": "csv/simulation_log_MMBCR_range_300m.json",
+      "git_commit": "8602c1032551cdf507215ae946ccb0ba427ad69d",
+      "elapsed_s": 10000.0,
+      "stop_reason": "duration_limit",
+      "timeseries_sha256": "3c5a7b223530a2d85cf0db671ba7358d125dfcd01f4c95cc1e94c55e0e71d629",
+      "manifest_sha256": "7d0ecdecee3863c09342353336611591d9da6e4bf26f9e7327b6001f99818ddc",
+      "log_end_s": 10000.0
+    },
+    {
+      "radius_m": 300.0,
+      "algorithm": "GPSR",
+      "timeseries": "csv/simulation_log_GPSR_range_300m.csv",
+      "manifest": "csv/simulation_log_GPSR_range_300m.json",
+      "git_commit": "8602c1032551cdf507215ae946ccb0ba427ad69d",
+      "elapsed_s": 10000.0,
+      "stop_reason": "duration_limit",
+      "timeseries_sha256": "0c3b241d668c92fa72ffed9dcd783600c1a46c6da6a66332b12f200c14fe29a3",
+      "manifest_sha256": "8330fece877b15b45563097f3fbb338ff9c020328308ce001f23b2a99e6a4416",
+      "log_end_s": 10000.0
+    }
+  ],
+  "topology_radii_m": [
+    250,
+    300,
+    350
+  ]
+}

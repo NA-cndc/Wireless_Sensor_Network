@@ -2,6 +2,7 @@ from argparse import ArgumentParser
 from collections import Counter
 import csv
 from datetime import datetime, timezone
+from decimal import Decimal, ROUND_HALF_UP
 import hashlib
 from html.parser import HTMLParser
 import io
@@ -16,13 +17,11 @@ import pandas as pd
 from scipy import stats
 
 from study import DEFAULT_PROJECT, JOB_SCOPE, SEEDS, load_project, read_json, verify_short_plan
-from charts_vi import METRICS, number_label
+from charts_vi import METRICS, PACKET_CATEGORIES, PLOT_TIMES_S, number_label
 
 
 
 def read_numeric_csv(path):
-    # Preserve exported binary floats: a last-bit parsing change can break
-    # tied signed ranks after the declared 12-decimal paired rounding.
     return pd.read_csv(path, float_precision="round_trip")
 
 
@@ -51,17 +50,22 @@ def compare_old_prefix(records, output, long_report=None):
     if long_report is None:
         return {"status": "not_requested", "long_metrics_reused": False}
     old = read_numeric_csv(long_report / "runs.csv")
-    index = {(row.case_id, int(row.seed)): Path(row.directory) for row in old.itertuples()}
+    index = {(row.case_id, int(row.seed)): row for row in old.itertuples()}
     comparisons = []
     for record in records:
         job = record["job"]
-        path = index[(job["case"]["case_id"], job["seed"])] / "timeseries.csv"
+        old_row = index[(job["case"]["case_id"], job["seed"])]
+        if old_row.topology_hash != record["manifest"]["topology_hash"]:
+            raise ValueError("prefix comparison requires the same physical topology")
+        path = Path(old_row.directory) / "timeseries.csv"
         with path.open(encoding="utf-8-sig", newline="") as handle:
             previous = next((row for row in csv.DictReader(handle) if float(row["time_s"]) == 10000), None)
         if previous is None:
             raise ValueError("old checkpoint missing exact 10000-second sample")
         frame = read_numeric_csv(record["directory"] / "timeseries.csv")
         endpoint = frame.iloc[-1]
+        if endpoint.time_s != 10000:
+            raise ValueError("new run has no 10000-second sample")
         keys = [key for key in frame.columns if key != "time_s" and key in previous]
         for key in keys:
             if previous[key] == "":
@@ -102,10 +106,12 @@ def verify_report(root, batch, directory, check_package=True):
     pairs = read_numeric_csv(directory / "paired_comparisons.csv")
     relay_frame = read_numeric_csv(directory / "relay_security_per_seed.csv")
     relay_snapshots = {(row.run_id, row.node_id): row for row in relay_frame.itertuples()}
-    assert len(relay_frame) == len(relay_snapshots) == sum(record["summary"]["detector"] is not None for record in records) * 450
+    assert len(relay_frame) == len(relay_snapshots) == sum(
+        len(record["summary"]["detector"]["relays"]) for record in records if record["summary"]["detector"]
+    )
     assert len(runs) == 480 and runs["run_id"].nunique() == 480
     assert (runs.groupby("case_id")["topology_hash"].nunique() == 30).all()
-    assert (runs["actual_duration_s"] == 10000).all() and (runs["requested_horizon_s"] == 10000).all()
+    assert (runs["requested_horizon_s"] == 10000).all()
     indexed = {row.run_id: row for row in runs.itertuples()}
     record_index = {record["job"]["run_id"]: record for record in records}
     all_pair_groups = {}
@@ -115,9 +121,19 @@ def verify_report(root, batch, directory, check_package=True):
         states = read_json(record["directory"] / "final_sensor_states.json")
         perf, security, detector = summary["performance"], summary["security"], summary["detector"]
         assert spec["scope"] == manifest["scope"] == JOB_SCOPE
-        assert summary["time_s"] == security["evaluation_time_s"] == manifest["actual_duration_s"] == manifest["requested_horizon_s"] == 10000
-        assert summary["rounds"] == spec["configuration"]["max_rounds"] == row.rounds == 1000
-        assert len(states) == 450
+        end = summary["time_s"]
+        assert end == security["evaluation_time_s"] == manifest["actual_duration_s"] == row.actual_duration_s
+        assert 0 <= end <= manifest["requested_horizon_s"] == 10000
+        assert end == 10000 or summary["stop_reason"] == "LND"
+        assert 0 <= summary["rounds"] == row.rounds <= spec["configuration"]["max_rounds"] == 1000
+        sensor_count = len(states)
+        assert sensor_count == manifest.get("actual_num_sensors", spec["configuration"]["num_sensors"])
+        if spec["configuration"].get("topology_model") == "na":
+            assert 400 <= sensor_count <= 500
+            assert manifest["topology_seed"] == spec["seed"]
+        count = int((Decimal(str(spec["case"]["rho"])) * sensor_count).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+        assert manifest["attack"]["attacker_count"] == count
+        same(manifest["attack"]["actual_ratio"], count / sensor_count)
         assert set(manifest["attack"]["attacker_ids"]).issubset(states)
         assert manifest["stream_seeds"] == summary["stream_seeds"]
         assert perf["conservation_ok"] and perf["energy_conservation_ok"]
@@ -126,15 +142,16 @@ def verify_report(root, batch, directory, check_package=True):
         assert perf["duplicate_delivery_events"] == perf["duplicate_created_events"] == 0
         assert sum(perf["drop_reasons"].values()) == perf["dropped"]
         same(sum(state["energy_j"] for state in states.values()), perf["remaining_energy_j"], "remaining energy")
-        same(2250 - perf["remaining_energy_j"], perf["consumed_since_start_j"], "energy depletion")
+        same(sensor_count * spec["configuration"]["initial_energy_j"] - perf["remaining_energy_j"],
+             perf["consumed_since_start_j"], "energy depletion")
         same(perf["energy_from_events_j"], perf["consumed_since_start_j"], "radio event energy", abs_tol=1e-7)
         assert perf["generated"] == sum(state["generated"] for state in states.values())
         assert row.alive_sensors == sum(state["alive"] for state in states.values())
         assert row.physical_reachable_alive == summary["reachability"]["physical_reachable_alive"]
         assert row.routing_reachable_alive == summary["reachability"]["routing_reachable_alive"]
-        same(row.pdr, perf["delivered"] / perf["generated"])
-        same(row.throughput_bps, perf["received_wire_bits"] / 10000)
-        same(row.goodput_bps, perf["received_payload_bits"] / 10000)
+        same(row.pdr, perf["delivered"] / perf["generated"] if perf["generated"] else None)
+        same(row.throughput_bps, perf["received_wire_bits"] / end if end else None)
+        same(row.goodput_bps, perf["received_payload_bits"] / end if end else None)
         same(row.energy_per_payload_bit_j, perf["consumed_since_start_j"] / perf["received_payload_bits"] if perf["received_payload_bits"] else None)
         for key in ("generated", "delivered", "dropped", "pending_in_flight", "received_payload_bits", "received_wire_bits", "mean_latency_s", "mean_actual_hops", "reroute_decision_count", "route_edges_changed"):
             same(getattr(row, key), perf[key], "per-run " + key)
@@ -147,22 +164,22 @@ def verify_report(root, batch, directory, check_package=True):
         if not row.routing_avoidance_enabled:
             assert row.security_reroute_decision_count == 0
         if detector:
-            assert detector["time_s"] == 10000 and detector["conservation_ok"] and detector["input_conservation_ok"]
+            assert detector["time_s"] == end and detector["conservation_ok"] and detector["input_conservation_ok"]
             relays = detector["relays"]
+            assert set(relays) == set(states)
             for node, state in relays.items():
-                # isolated_until is a scheduled expiry and may be after cutoff; it is not an observed event.
                 for key in ("first_received_at", "suspected_at", "isolated_at", "probation_started_at_s"):
-                    assert state[key] is None or 0 <= state[key] <= 10000
+                    assert state[key] is None or 0 <= state[key] <= end
                 exported = relay_snapshots[(row.run_id, node)]
                 for field, original in (("received_transit_total", "received_transit"), ("forwarded_total", "forwarded"), ("failed_timeout_total", "failed_timeout"), ("pending_total", "pending"), ("trust_at_cutoff", "trust"), ("valid_windows", "valid_windows"), ("first_suspected_s", "suspected_at"), ("first_isolated_s", "isolated_at")):
                     same(getattr(exported, field), state[original], "relay snapshot " + field)
                 same(exported.forwarding_ratio_cumulative, state["forwarded"] / state["received_transit"] if state["received_transit"] else None)
-                assert exported.evaluation_time_s == 10000
+                assert exported.evaluation_time_s == end
                 assert exported.ground_truth_attacker_for_evaluation_only == (node in manifest["attack"]["attacker_ids"])
                 assert exported.suspected_current == state["suspected"]
                 assert exported.received_transit_total == exported.forwarded_total + exported.failed_timeout_total + exported.pending_total
-            predicted = {node for node, state in relays.items() if state["suspected_at"] is not None and state["suspected_at"] <= 10000}
-            same(security["coverage"], sum(state["valid_windows"] > 0 for state in relays.values()) / 450)
+            predicted = {node for node, state in relays.items() if state["suspected_at"] is not None and state["suspected_at"] <= end}
+            same(security["coverage"], sum(state["valid_windows"] > 0 for state in relays.values()) / sensor_count)
         else:
             predicted = set()
         assert row.unique_suspected_by_cutoff == len(predicted)
@@ -175,13 +192,13 @@ def verify_report(root, batch, directory, check_package=True):
             for kind in ("detection", "isolation"):
                 value = delay[kind + "_delay_s"]
                 assert delay[kind + "_censored"] == (value is None)
-                assert value is None or 0 <= value <= 10000
+                assert value is None or 0 <= value <= end
                 if value is None:
                     assert delay[kind + "_na_reason"]
         deaths = sorted(state["died_at"] for state in states.values() if state["died_at"] is not None)
-        assert all(0 <= time <= 10000 for time in deaths)
-        assert len(deaths) == 450 - row.alive_sensors
-        for name, rank in (("FND", 1), ("HND", 225), ("LND", 450)):
+        assert all(0 <= time <= end for time in deaths)
+        assert len(deaths) == sensor_count - row.alive_sensors
+        for name, rank in (("FND", 1), ("HND", (sensor_count + 1) // 2), ("LND", sensor_count)):
             milestone = summary["lifetime"][name]
             derived = deaths[rank - 1] if len(deaths) >= rank else None
             same(milestone["time_s"], derived, "milestone from sensor deaths")
@@ -191,23 +208,33 @@ def verify_report(root, batch, directory, check_package=True):
             same(getattr(row, name + "_s"), derived)
             same(getattr(row, name + "_restricted_s"), 10000 if derived is None else derived)
         frame = read_numeric_csv(record["directory"] / "timeseries.csv")
-        assert list(frame["time_s"]) == list(range(0, 10001, 100))
         endpoint = frame.iloc[-1]
+        log_end = manifest.get("log_end_s", end)
+        assert endpoint.time_s == summary.get("log_end_s", end) == log_end <= end
+        expected_grid = list(range(0, int(log_end) + 1, spec["sample_interval_s"]))
+        if expected_grid[-1] != log_end:
+            assert log_end == end and summary["stop_reason"] == "LND"
+            expected_grid.append(log_end)
+        assert list(frame["time_s"]) == expected_grid
+        if "log_end_s" in manifest:
+            terminals = frame.alive_sensors.eq(0) | frame.physical_reachable_alive.eq(0)
+            assert not terminals.iloc[:-1].any()
+            assert log_end == end or terminals.iloc[-1]
         assert (frame["generated"] == frame["delivered"] + frame["dropped"] + frame["in_flight"]).all()
-        for ts_key, performance_key in (("generated", "generated"), ("delivered", "delivered"), ("dropped", "dropped"), ("in_flight", "pending_in_flight"), ("received_payload_bits", "received_payload_bits"), ("remaining_energy_j", "remaining_energy_j")):
-            same(endpoint[ts_key], perf[performance_key], "endpoint " + ts_key)
+        if log_end == end:
+            for ts_key, performance_key in (("generated", "generated"), ("delivered", "delivered"), ("dropped", "dropped"), ("in_flight", "pending_in_flight"), ("received_payload_bits", "received_payload_bits"), ("remaining_energy_j", "remaining_energy_j")):
+                same(endpoint[ts_key], perf[performance_key], "endpoint " + ts_key)
         family = (spec["case"]["rho"], spec["case"]["p_drop"], spec["case"]["placement"], spec["seed"])
         for previous in all_pair_groups.get(family, []):
             assert previous["manifest"]["topology_hash"] == manifest["topology_hash"]
             assert previous["manifest"]["attack"]["attacker_ids"] == manifest["attack"]["attacker_ids"]
             assert previous["job"]["pairing_hash"] == spec["pairing_hash"]
         all_pair_groups.setdefault(family, []).append(record)
-    # Location sensitivity changes attacker IDs, not topology, cardinality or external streams.
     for seed in SEEDS:
         groups = [record for record in records if record["job"]["seed"] == seed]
         assert len({record["manifest"]["topology_hash"] for record in groups}) == 1
         treatments = [record for record in groups if record["job"]["case"]["rho"] == .05 and record["job"]["case"]["p_drop"] == .5]
-        assert {record["manifest"]["attack"]["attacker_count"] for record in treatments} == {23}
+        assert len({record["manifest"]["attack"]["attacker_count"] for record in treatments}) == 1
         passive = runs[(runs.scenario == "SF2") & (runs.seed == seed)].iloc[0]
         control = runs[(runs.scenario == "EMHR_SF") & (runs.seed == seed) & (runs.rho == .05) & (runs.p_drop == .5) & (runs.placement == "random")].iloc[0]
         for metric in ("pdr", "throughput_bps", "goodput_bps", "energy_per_payload_bit_j", "mean_latency_s", "mean_actual_hops", "consumed_energy_j", "remaining_energy_j", "delivered", "dropped", "pending_in_flight"):
@@ -256,6 +283,7 @@ def verify_report(root, batch, directory, check_package=True):
             same(actual, expected)
     figures = read_json(directory / "bieu_do/figure_manifest.json")
     visibility_audit = read_numeric_csv(directory / "bar_visibility_audit.csv")
+    labeled_bars = plan["base_configuration"].get("topology_model") == "na"
     assert len(figures) == 10
     total_bars = 0
     for figure in figures:
@@ -270,6 +298,8 @@ def verify_report(root, batch, directory, check_package=True):
         for forbidden in ("Số phía trên cột", "CI 95%", "seed/cấu hình", "Cấu hình tấn công:", "phá hòa", "Chưa quan sát mốc", "100.000"):
             assert forbidden not in joined, (figure["figure"], forbidden)
         data = read_numeric_csv(directory / "bieu_do" / figure["data_csv"])
+        if labeled_bars:
+            assert figure["bars"] and not figure["lines"] and not figure["point_labels"]
         if "metric" in data.columns and "case_id" in data.columns:
             for row in data.itertuples():
                 source = aggregates[(aggregates.case_id == row.case_id) & (aggregates.metric == row.metric)].iloc[0]
@@ -286,14 +316,23 @@ def verify_report(root, batch, directory, check_package=True):
             if value == 0:
                 assert any(element.get("id", "").startswith("true_zero_marker_") for element in svg.iter())
             for source in bar["sources"]:
-                origin = aggregates[(aggregates.case_id == source["case_id"]) & (aggregates.metric == source["metric"])].iloc[0]
+                if "time_s" in source:
+                    matching = data[(data.scenario == source["scenario"]) & (data.metric == source["metric"])
+                                    & (data.time_s == source["time_s"])]
+                    assert len(matching) == 1
+                    origin = matching.iloc[0]
+                    assert origin["plotted"]
+                elif "value" in data.columns:
+                    group = data[(data.scenario == source["scenario"]) & (data.metric == source["metric"])]
+                    origin = {"n_used": group.value.count(), "mean": group.value.mean()}
+                else:
+                    origin = aggregates[(aggregates.case_id == source["case_id"]) & (aggregates.metric == source["metric"])].iloc[0]
+                    if source["n_used"] != 30:
+                        assert f"n={source['n_used']}" in texts
                 assert source["n_used"] == origin["n_used"] and 0 < source["n_used"] <= 30
-                if source["n_used"] != 30:
-                    assert f"n={source['n_used']}" in texts
                 same(source["mean"], origin["mean"])
                 same(value, origin["mean"] * source["unit_factor"], "bar source provenance")
             total_bars += 1
-        # Ordinary bar values must equal scaled per-case means in their source CSV.
         if "case_id" in data.columns:
             expected_values = sorted(float(row.mean) * METRICS[row.metric][2] for row in data.itertuples() if not pd.isna(row.mean))
             actual_values = sorted(bar["value_in_axis_units"] for bar in figure["bars"])
@@ -302,7 +341,16 @@ def verify_report(root, batch, directory, check_package=True):
                 for actual, expected in zip(actual_values, expected_values):
                     same(actual, expected, "bar height from CSV")
         if "time_s" in data.columns:
-            assert data.time_s.min() == 0 and data.time_s.max() == 10000
+            assert data.time_s.min() == 0 and data.time_s.max() <= 10000
+            if labeled_bars:
+                assert data.plotted.eq(data.time_s.isin(PLOT_TIMES_S)).all()
+                assert int(data.plotted.sum()) == len(figure["bars"])
+                plotted_keys = set(data[data.plotted][["scenario", "metric", "time_s"]].itertuples(index=False, name=None))
+                source_keys = {
+                    (source["scenario"], source["metric"], source["time_s"])
+                    for bar in figure["bars"] for source in bar["sources"]
+                }
+                assert source_keys == plotted_keys
         for line in figure["lines"]:
             metric, scenario = line["series"].split("|")
             group = data[(data.metric == metric) & (data.scenario == scenario)]
@@ -326,10 +374,14 @@ def verify_report(root, batch, directory, check_package=True):
         if "value" in data.columns:
             for source in data.itertuples():
                 original = runs[(runs.scenario == source.scenario) & (runs.seed == source.seed) & (runs.placement == "random") & (runs.rho.isin([0, .05])) & (runs.p_drop.isin([0, .5]))].iloc[0]
-                same(source.value, original[source.metric], "stacked component CSV")
-            assert len(figure["bars"]) == 6
-            for bar in figure["bars"]:
-                same(bar["value_in_axis_units"], 100, "stacked packet total")
+                same(source.value, original[source.metric], "packet component CSV")
+            if labeled_bars:
+                assert len(figure["bars"]) == len(PACKET_CATEGORIES) * data.scenario.nunique()
+                assert np.allclose(data.groupby(["scenario", "seed"]).value.sum(), 1)
+            else:
+                assert len(figure["bars"]) == 6
+                for bar in figure["bars"]:
+                    same(bar["value_in_axis_units"], 100, "stacked packet total")
     assert len(visibility_audit) == total_bars
     assert visibility_audit.data_state.isin(["positive", "zero"]).all()
     zero_count = int((visibility_audit.data_state == "zero").sum())

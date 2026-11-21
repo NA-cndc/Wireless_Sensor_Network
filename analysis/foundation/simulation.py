@@ -13,6 +13,7 @@ from analysis.foundation.energy import RadioModel
 from analysis.foundation.network import Network
 from analysis.foundation.routing import RoutingEngine
 from analysis.foundation.traffic import TrafficGenerator
+from wsn_sim.topology import terminal_log_sample
 
 
 class Simulation:
@@ -52,6 +53,7 @@ class Simulation:
         self._lifetime_graph = self.network.graph
         self._update_lifetime()
         self.samples: list[dict[str, int | float]] = []
+        self.log_finished = False
         self._snapshot()
         self.traffic_gen.start()
 
@@ -87,7 +89,12 @@ class Simulation:
         while self.milestones["LND"] is None and self.env.peek() <= target:
             timestamp = self.env.peek()
             self.env.step()
-            if self.env.peek() != timestamp and self.traffic_gen.rounds != self.samples[-1]["Rounds"]:
+            if (
+                not self.log_finished
+                and self.milestones["LND"] is None
+                and self.env.peek() != timestamp
+                and self.traffic_gen.rounds != self.samples[-1]["Rounds"]
+            ):
                 self._snapshot()
         if self.milestones["LND"] is not None:
             self.stop_reason = "lnd"
@@ -102,8 +109,11 @@ class Simulation:
         return float(self.env.now)
 
     def _snapshot(self) -> None:
-        if self._lifetime_graph is not self.network.graph:
+        reachable = len(self.network.routable_sensor_ids(alive_only=True))
+        if self._lifetime_graph is not self.network.graph or reachable != self.routable_nodes:
             self._update_lifetime()
+        if self.log_finished:
+            return
         traffic = self.traffic_gen
         rows = {
             "Time_s": float(self.env.now - self.started_at),
@@ -126,22 +136,23 @@ class Simulation:
             self.samples[-1] = rows
         else:
             self.samples.append(rows)
+        self.log_finished = terminal_log_sample(self.alive_nodes, self.routable_nodes)
 
     def summary(self) -> dict:
         """Return metrics with explicit units and nulls for undefined or censored values."""
         traffic = self.traffic_gen
         generated, delivered = len(traffic.generated_packets), len(traffic.delivered_packets)
         elapsed = float(self.env.now - self.started_at)
-        residual = self.samples[-1]["Total_Energy_J"]
+        residual = sum(sensor.energy_j for sensor in self.network.sensors.values())
         consumed = self.initial_energy_j - residual
         payload_bits = 8 * traffic.delivered_bytes
         forward_counts = [sensor.forwarded_packets for sensor in self.network.sensors.values()]
         forward_squares = sum(count ** 2 for count in forward_counts)
         receive_times = [packet.delivered_at - self.started_at for packet in traffic.delivered_packets]
-        # Traffic uses one payload size. Count all reception events at or before a milestone.
         return {
             "stop_reason": self.stop_reason,
             "elapsed_s": elapsed,
+            "log_end_s": self.samples[-1]["Time_s"],
             "rounds": traffic.rounds,
             "alive_sensors": self.alive_nodes,
             "routable_sensors": self.routable_nodes,

@@ -21,7 +21,7 @@ PUBLISHED_SHA256 = "55be594df949a03501e1063acbcbd21d9d1ba7757be441aef01c711e335a
 def load_records(directory):
     from wsn_sim.calibration import json_digest, source_fingerprint, verify_freeze
     from wsn_sim.experiment_execution import valid_completion
-    from wsn_sim.experiment_plan import PAIR_FIELDS
+    from wsn_sim.experiment_plan import pairing_hash
 
     plan = read_json(directory / "batch/plan.json")
     checkpoint = read_json(directory / "batch/checkpoint.json")
@@ -54,20 +54,20 @@ def load_records(directory):
         if json_digest({k: v for k, v in job.items() if k != "run_id"})[:24] != run_id or not valid_completion(raw, job):
             raise ValueError(f"run hash mismatch for {run_id}")
         summary, manifest = (read_json(raw / name) for name in ("summary.json", "run_manifest.json"))
-        pairing_hash = json_digest({key: config[key] for key in PAIR_FIELDS})
+        expected_pairing_hash = pairing_hash(config)
         if (job["scope"] != JOB_SCOPE or config["max_rounds"] != 1000 or config["packet_interval_s"] != 10
                 or manifest["requested_horizon_s"] != HORIZON_S or summary["time_s"] != manifest["actual_duration_s"]
                 or not 0 < summary["time_s"] <= HORIZON_S
                 or (summary["time_s"] < HORIZON_S and summary["stop_reason"] != "LND")
                 or manifest["source_sha256"] != plan["source_fingerprint"]["sha256"]
-                or job["pairing_hash"] != pairing_hash or manifest["pairing_hash"] != pairing_hash):
+                or job["pairing_hash"] != expected_pairing_hash or manifest["pairing_hash"] != expected_pairing_hash):
             raise ValueError(f"profile or provenance mismatch for {run_id}")
         group = (case["case_id"], job["seed"])
         if group in groups:
             raise ValueError(f"duplicate treatment/seed {group}")
         groups.add(group)
         pair = (job["seed"], case["rho"], case["p_drop"], case["placement"])
-        actual = (pairing_hash, manifest["topology_hash"], sorted(manifest["attack"]["attacker_ids"]))
+        actual = (expected_pairing_hash, manifest["topology_hash"], sorted(manifest["attack"]["attacker_ids"]))
         if pairs.setdefault(pair, actual) != actual:
             raise ValueError(f"paired input mismatch for {run_id}")
         records.append({"job": job, "summary": summary, "manifest": manifest, "directory": raw})

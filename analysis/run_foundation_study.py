@@ -24,7 +24,9 @@ sys.path.insert(0, str(ROOT))
 from analysis.foundation.runner import ANALYSIS_RADIUS_M, CONFIG_PATH, run_single_scenario
 from analysis.foundation.config import SimulationConfig
 from analysis.foundation.network import Network
-from analysis.foundation.storage import _git_output, save_json, save_topology_summary, scenario_stem
+from analysis.foundation.storage import (
+    _git_output, foundation_source_sha256, save_json, save_topology_summary, scenario_stem,
+)
 
 OUTPUT = ROOT / "results" / "study_10000s"
 ARCHIVE = ROOT / ".wsn-foundation-10000s" / "results" / "study_10000s"
@@ -50,11 +52,11 @@ def radius_pilot(configs: list[SimulationConfig], output: Path, commit: str | No
             if network.communication_range_m != radius:
                 network.build_graph(radius)
             summary = network.topology_summary()
-            passes = summary["routable_sensors"] >= ceil(MINIMUM_ROUTABLE_FRACTION * config.num_sensors)
+            passes = summary["routable_sensors"] >= ceil(MINIMUM_ROUTABLE_FRACTION * summary["sensors"])
             totals[radius] += passes
             rows.append({
                 "pair": pair, **summary,
-                "routable_fraction": summary["routable_sensors"] / config.num_sensors,
+                "routable_fraction": summary["routable_sensors"] / summary["sensors"],
                 "passes_95_percent": passes,
             })
     save_topology_summary(pd.DataFrame(rows), output / "pilot_topologies.csv")
@@ -92,7 +94,7 @@ def study_jobs(configs, radius, output):
             yield pair, treatment, (radius, algo, settings.to_dict(), directory)
 
 
-def read_completed(job, commit):
+def read_completed(job, commit, source_sha256=None):
     radius, algo, config, directory = job
     path = directory / f"{scenario_stem(algo, radius)}.json"
     if not path.is_file():
@@ -100,6 +102,7 @@ def read_completed(job, commit):
     run = json.loads(path.read_text(encoding="utf-8"))
     if (
         run["git_commit"] != commit or run["configuration"] != config
+        or (source_sha256 is not None and run.get("source_sha256") != source_sha256)
         or run["routing_algorithm"] != algo or run["communication_range_m"] != radius
         or run["metrics"]["stop_reason"] not in {"duration_limit", "lnd"}
         or not all((directory / name).is_file() for name in run["generated_files"])
@@ -180,21 +183,29 @@ def compare(control, experiment):
     return out
 
 
-def report(jobs, output, commit, config):
+def report(jobs, output, commit, config, source_sha256=None):
     availability = []
     by_treatment = {}
     metric_names = ()
     for pair, treatment, job in jobs:
-        path = read_completed(job, commit)
+        path = read_completed(job, commit, source_sha256)
         by_treatment.setdefault(treatment, {})
+        run = None
         if path:
-            values = metric_values(json.loads(path.read_text(encoding="utf-8")))
+            run = json.loads(path.read_text(encoding="utf-8"))
+            values = metric_values(run)
             by_treatment[treatment][pair] = values
             metric_names = tuple(values)
-        availability.append({
+        entry = {
             "pair": pair, "treatment": treatment, "completed": path is not None,
             "manifest": Path(os.path.relpath(path, output)).as_posix() if path else None,
-        })
+        }
+        if config.topology_model == "na":
+            entry.update({
+                key: run.get(key) if run else None
+                for key in ("topology_seed", "actual_num_sensors", "topology_hash", "source_sha256")
+            })
+        availability.append(entry)
     save_topology_summary(pd.DataFrame(availability), output / "run_index.csv")
     if not metric_names:
         return
@@ -240,6 +251,9 @@ def main():
         parser.error("--source-commit and --input require --report-only")
     config = SimulationConfig.from_json(CONFIG_PATH)
     archived_report = args.report_only and args.input is None
+    if archived_report:
+        config = replace(config, topology_model="uniform")
+    source_sha256 = foundation_source_sha256(ROOT) if not args.report_only else None
     run_directory = ARCHIVE if archived_report else (args.input or args.output).resolve()
     revision = args.source_commit or (ARCHIVED_REVISION if archived_report else "HEAD")
     commit = _git_output(ROOT, "rev-parse", "--verify", "--end-of-options", f"{revision}^{{commit}}")
@@ -255,13 +269,13 @@ def main():
     if archived_report:
         audit_archived_runs(jobs, commit, args.output)
     if not args.report_only:
-        remaining = [job for _, _, job in jobs if read_completed(job, commit) is None]
+        remaining = [job for _, _, job in jobs if read_completed(job, commit, source_sha256) is None]
         print(f"Running {len(remaining)} of {len(jobs)} scenarios at R={selected:g} m", flush=True)
         with ProcessPoolExecutor(max_workers=args.workers) as executor:
             futures = [executor.submit(run_single_scenario, *job) for job in remaining]
             for result in futures:
                 result.result()
-    report(jobs, args.output, commit, config)
+    report(jobs, args.output, commit, config, source_sha256)
 
 
 if __name__ == "__main__":

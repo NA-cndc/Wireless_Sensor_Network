@@ -12,6 +12,7 @@ from wsn_sim.calibration import json_digest, source_fingerprint
 from wsn_sim.config import SimulationConfig
 from wsn_sim.evaluation import classification_metrics
 from wsn_sim.recording import RunRecorder
+from wsn_sim.topology import topology_record
 from wsn_sim.simulation import Simulation
 from wsn_sim.storage import create_run_manifest, save_json
 
@@ -92,9 +93,7 @@ def execute_worker(spec, directory, root):
             raise ValueError('official evaluation must keep 10000 rounds of 10 seconds')
         recorder = RunRecorder(directory, spec['full_trace'])
         simulation = Simulation(config, recorder=recorder)
-        coordinates = simulation.network.coordinates()
-        edges = sorted((sorted(edge) for edge in simulation.network.graph.edges))
-        topology_hash = json_digest({'coordinates': coordinates, 'edges': edges})
+        topology = topology_record(simulation.network)
         summary = recorder.snapshot(simulation)
         while simulation.env.now < horizon and (not simulation.stop_event.triggered):
             simulation.run_for(min(spec['sample_interval_s'], horizon - simulation.env.now))
@@ -103,6 +102,7 @@ def execute_worker(spec, directory, root):
                 raise TimeoutError('worker wall-clock budget exceeded')
         if summary['security'] is None:
             summary['security'] = disabled_security(simulation)
+        summary['log_end_s'] = recorder.log_end_s
         if not summary['performance']['conservation_ok'] or not summary['performance']['energy_conservation_ok']:
             raise RuntimeError('packet/energy conservation failed')
         recorder.close()
@@ -112,10 +112,21 @@ def execute_worker(spec, directory, root):
         recording = recorder.metadata()
         recording.update({'active_packets_at_end': len(simulation.traffic_gen.active_packets), 'live_observations_at_end': len(simulation.detector.observations) if simulation.detector else 0, 'route_cache_hits': simulation.router.cache_hits, 'cache_policy': 'unique_primary_paths_selective_monotone_removal_global_gain_invalidation'})
         save_json(recording, directory / 'recording.json')
-        save_json({'coordinates': coordinates, 'physical_edges': edges, 'topology_hash': topology_hash}, directory / 'topology.json')
+        save_json(topology, directory / 'topology.json')
         files = [path for path in directory.iterdir() if path.is_file() and path.name not in {'stdout.log', 'stderr.log', 'spec.json', 'complete.json'}]
         manifest = create_run_manifest(config, files, root)
-        manifest.update({'run_id': spec['run_id'], 'case': spec['case'], 'scope': spec['scope'], 'pairing_hash': spec['pairing_hash'], 'source_sha256': spec['source_sha256'], 'topology_hash': topology_hash, 'attack': simulation.traffic_gen.attack.to_dict(), 'frozen_detector': spec['freeze'], 'status': 'COMPLETE', 'actual_duration_s': summary['time_s'], 'requested_horizon_s': horizon, 'wall_clock_s': perf_counter() - started, 'peak_working_set_bytes': peak_memory_bytes(), 'output_bytes_before_manifest': sum((path.stat().st_size for path in files)), 'command': sys.argv, 'recording': recording})
+        manifest.update({
+            'run_id': spec['run_id'], 'case': spec['case'], 'scope': spec['scope'],
+            'pairing_hash': spec['pairing_hash'], 'source_sha256': spec['source_sha256'],
+            'topology_hash': topology['topology_hash'], 'topology_seed': topology['topology_seed'],
+            'actual_num_sensors': topology['actual_num_sensors'],
+            'attack': summary['attack'], 'frozen_detector': spec['freeze'], 'status': 'COMPLETE',
+            'actual_duration_s': summary['time_s'], 'log_end_s': recorder.log_end_s,
+            'requested_horizon_s': horizon, 'wall_clock_s': perf_counter() - started,
+            'peak_working_set_bytes': peak_memory_bytes(),
+            'output_bytes_before_manifest': sum(path.stat().st_size for path in files),
+            'command': sys.argv, 'recording': recording,
+        })
         save_json(manifest, directory / 'run_manifest.json')
         files.append(directory / 'run_manifest.json')
         complete = {'run_id': spec['run_id'], 'status': 'COMPLETE', 'source_sha256': spec['source_sha256'], 'files': {path.name: file_hash(path) for path in files}}

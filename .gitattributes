@@ -11,6 +11,8 @@
 /configs/detector_stage56.json text eol=lf
 /configs/detector_stage78.json text eol=lf
 /configs/detector_long_horizon_20261117.json text eol=crlf
+/configs/detector_na.json text eol=lf
+/configs/detector_na.lock.json text eol=lf
 
 # Preserve the recorded bytes of the 10,000-second study artifacts.
 /.wsn-foundation-10000s/** -text
@@ -20,3 +22,5 @@
 /results/kiem-chung/** -text
 /results/runs/** -text
 /results/security_audit/archive/** -text
+/results/published-10000s-na/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/results/published-10000s-na/security/figures/*.svg -whitespace

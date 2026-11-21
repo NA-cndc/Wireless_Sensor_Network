@@ -8,6 +8,7 @@ from time import perf_counter
 import pandas as pd
 from wsn_sim.config import DEFAULT_CONFIG_PATH, DetectorConfig, SimulationConfig, require_integer, require_number, require_probability
 from wsn_sim.detection import ForwardingDetector
+from wsn_sim.provenance import json_digest, source_fingerprint
 from wsn_sim.simulation import Simulation
 from wsn_sim.storage import create_run_directory, create_run_manifest, save_csv, save_detector_outputs, save_json
 SELECTION_ORDER = ['lowest_worst_channel_conditional_fpr', 'highest_tau', 'shortest_K_times_W_plus_timeout', 'highest_min_seed_coverage', 'beta_closest_to_0.8', 'lowest_N_min', 'candidate_id']
@@ -20,17 +21,6 @@ class BenignTrace:
     sink_ids: tuple[str, ...]
     end_time_s: float
     events: list[tuple[str, float, str, str, str]]
-
-def json_digest(value) -> str:
-    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=True).encode('utf-8')).hexdigest()
-
-def source_fingerprint(root: Path) -> dict:
-    paths = [*root.glob('*.py')]
-    for folder in ('src', 'scripts'):
-        paths.extend((root / folder).rglob('*.py'))
-    paths.extend((root / name for name in ('pyproject.toml', 'requirements.txt', 'requirements-dev.txt', 'configs/plan.json')))
-    files = {path.relative_to(root).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest() for path in sorted(paths) if path.is_file()}
-    return {'sha256': json_digest(files), 'files': files}
 
 def linear_quantile(values, probability: float) -> float | None:
     require_probability('quantile', probability)

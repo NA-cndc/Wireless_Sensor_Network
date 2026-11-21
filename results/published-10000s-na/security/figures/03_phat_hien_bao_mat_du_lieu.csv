@@ -1,0 +1,13 @@
+﻿scenario,rho,p_drop,placement,case_id,metric,estimand,n_not_completed,n_undefined_among_completed,n_expected,n_used,n_missing,coverage,mean,sample_std_ddof1,ci95_low,ci95_high,ci_method,meets_30_seed_requirement
+SF2,0.05,0.5,random,SF2_r0.05_d0.5_random,tpr,mean_per_independent_seed,0,0,30,30,0,1.0,0.8990244055461447,0.053294377144030874,0.879123958065863,0.9189248530264265,Student_t_pointwise,True
+SF3,0.05,0.5,random,SF3_r0.05_d0.5_random,tpr,mean_per_independent_seed,0,0,30,30,0,1.0,0.9076323483280005,0.049136391023299364,0.8892845183817549,0.9259801782742462,Student_t_pointwise,True
+SF2,0.05,0.5,random,SF2_r0.05_d0.5_random,fpr,mean_per_independent_seed,0,0,30,30,0,1.0,0.4109110822752992,0.03788856352830815,0.3967632601408798,0.4250589044097186,Student_t_pointwise,True
+SF3,0.05,0.5,random,SF3_r0.05_d0.5_random,fpr,mean_per_independent_seed,0,0,30,30,0,1.0,0.4532557268496355,0.03606251343374757,0.43978976302655276,0.46672169067271824,Student_t_pointwise,True
+SF2,0.05,0.5,random,SF2_r0.05_d0.5_random,precision,mean_per_independent_seed,0,0,30,30,0,1.0,0.10450614062371698,0.010988462848033885,0.10040298116272274,0.10860930008471122,Student_t_pointwise,True
+SF3,0.05,0.5,random,SF3_r0.05_d0.5_random,precision,mean_per_independent_seed,0,0,30,30,0,1.0,0.09631301249098048,0.008446376944926707,0.09315908350637271,0.09946694147558825,Student_t_pointwise,True
+SF2,0.05,0.5,random,SF2_r0.05_d0.5_random,f1,mean_per_independent_seed,0,0,30,30,0,1.0,0.18712510837374174,0.018254762740705407,0.18030866794129924,0.19394154880618425,Student_t_pointwise,True
+SF3,0.05,0.5,random,SF3_r0.05_d0.5_random,f1,mean_per_independent_seed,0,0,30,30,0,1.0,0.17406332613518233,0.014255533448791307,0.1687402224626433,0.17938642980772135,Student_t_pointwise,True
+SF2,0.05,0.5,random,SF2_r0.05_d0.5_random,coverage,mean_per_independent_seed,0,0,30,30,0,1.0,0.8822004474991395,0.01925760278976273,0.8750095404381922,0.8893913545600868,Student_t_pointwise,True
+SF3,0.05,0.5,random,SF3_r0.05_d0.5_random,coverage,mean_per_independent_seed,0,0,30,30,0,1.0,0.898361819727263,0.01882399586753943,0.8913328241520146,0.9053908153025114,Student_t_pointwise,True
+SF2,0.05,0.5,random,SF2_r0.05_d0.5_random,detection_capped_delay_s,capped_at_common_observable_tau_includes_undetected,0,0,30,30,0,1.0,1953.4572219085262,508.7636558624679,1763.4817506499946,2143.4326931670576,Student_t_pointwise,True
+SF3,0.05,0.5,random,SF3_r0.05_d0.5_random,detection_capped_delay_s,capped_at_common_observable_tau_includes_undetected,0,0,30,30,0,1.0,1767.3702264884873,505.38800000953313,1578.655245841025,1956.0852071359498,Student_t_pointwise,True

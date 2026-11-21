@@ -20,6 +20,12 @@ def table_md(records):
 
 
 def write_report(plan, rows, aggregates, completeness, comparisons, lifetime_table, figures, directory, batch):
+    base = plan["base_configuration"]
+    sensor_setting = (
+        "400–500 sensor theo seed (450 danh định)" if base.get("topology_model") == "na"
+        else f"{base['num_sensors']} sensor"
+    )
+    detector = next(job["configuration"]["detector"] for job in plan["jobs"] if job["configuration"]["detector"])
     center = {row["scenario"]: row["case_id"] for row in rows if is_center(row)}
     def metric(scenario, name):
         return next(row for row in aggregates if row["case_id"] == center[scenario] and row["metric"] == name)
@@ -69,18 +75,18 @@ def write_report(plan, rows, aggregates, completeness, comparisons, lifetime_tab
     discussion.insert(4, "SF-2 quan sát thụ động và không tránh relay, nên các chỉ số giao dữ liệu/radio trùng EMHR-SF khi dùng cùng seed. Sự trùng nhau này phù hợp mô hình chưa thu chi phí giám sát; không có nghĩa detector ngoài thực tế không tiêu tốn tài nguyên.")
     discussion.append(f"Tại 10.000 s, số sensor sống còn tuyến hợp lệ trung bình là {val('MHR','routing_reachable_alive',1,2)} với MHR, {val('EMHR','routing_reachable_alive',1,2)} với EMHR, {val('EMHR_SF','routing_reachable_alive',1,2)} với EMHR-SF và {val('SF3','routing_reachable_alive',1,2)} với S-EMHR. Bảng trung tâm đặt số sensor còn sống cạnh số nối vật lý và số có tuyến hợp lệ để phân biệt còn pin với duy trì khả năng truyền đến sink.")
     milestone_totals = {name: sum(row["n_observed"] for row in lifetime_table if row["milestone"] == name) for name in ("HND", "LND")}
-    discussion.append(f"Trong toàn bộ 480 lượt mới, HND được quan sát ở {milestone_totals['HND']}/480 lượt, LND ở {milestone_totals['LND']}/480 lượt. Các mốc còn lại giữ NA/censored trong bảng. Bảng FND và hai đường số sensor sống/năng lượng cho phép đánh giá suy giảm ngắn hạn; không biến 10.000 s thành tuổi thọ thực của các seed chưa đạt mốc.")
+    discussion.append(f"Trong toàn bộ 480 lượt mới, HND được quan sát ở {milestone_totals['HND']}/480 lượt, LND ở {milestone_totals['LND']}/480 lượt. Các mốc còn lại giữ NA/censored trong bảng. Bảng FND và biểu đồ sensor sống, năng lượng cho phép đánh giá suy giảm ngắn hạn.")
     discussion.append(f"Ở SF-2, detector tạo trung bình {val('SF2','detector_isolation_events',1,2)} đề xuất cách ly nhưng chế độ tránh relay tắt. S-EMHR có {val('SF3','detector_isolation_events',1,2)} đề xuất và bật ràng buộc tránh relay. Số quyết định tìm lại tuyến có nguyên nhân chính là an ninh lấy trực tiếp từ log: {val('SF2','security_reroute_decision_count',1,2)} với SF-2 và {val('SF3','security_reroute_decision_count',1,2)} với S-EMHR. Số đề xuất có thể lặp lại trên cùng node, gồm cả báo nhầm; không phải số attacker duy nhất hoặc số lần đổi tuyến thực sự. Nhóm không bật detector không xuất hiện ở ô đề xuất cách ly, nhưng số đếm 0 vẫn giữ trong CSV.")
-    discussion.append("PDR toàn kỳ có thể chịu ảnh hưởng mạnh của relay dưới ngưỡng và nguồn còn sống nhưng mất tuyến. Vì vậy tăng xác suất bỏ gói không bắt buộc làm mọi chỉ số trung bình toàn kỳ biến thiên đơn điệu. Đọc các đường độ nhạy cùng tỷ lệ unreachable, selective_forwarding, số sensor còn tuyến và đường năng lượng; không đổi horizon hoặc loại seed chỉ để S-EMHR có kết quả tốt hơn.")
+    discussion.append("PDR toàn kỳ có thể chịu ảnh hưởng mạnh của relay dưới ngưỡng và nguồn còn sống nhưng mất tuyến. Đọc các biểu đồ độ nhạy cùng tỷ lệ unreachable, selective_forwarding, số sensor còn tuyến và năng lượng.")
     discussion.append(f"Ở cấu hình trung tâm, phần gói sinh ra bị Selective Forwarding là {fate('EMHR_SF','selective_forwarding_fraction')}% với EMHR-SF và {fate('SF3','selective_forwarding_fraction')}% với S-EMHR. Phần gói không có tuyến tương ứng {fate('EMHR_SF','unreachable_fraction')}% và {fate('SF3','unreachable_fraction')}%. Giảm mất gói do tấn công đi kèm thay đổi mất gói do không có tuyến; TPR cao hơn không tự bảo đảm PDR/goodput hoặc tuổi thọ cao hơn. Bảng trạng thái gói giữ cả hai nguyên nhân và các chi phí radio đã đo.")
     methods = [
         f"Hoàn tất {len(rows)}/480 lượt hợp lệ, 16 cấu hình × 30 seed (51001–51030), 0 lượt lỗi/còn thiếu. Mỗi seed tạo topology độc lập; cùng seed giữa các treatment giữ topology và các stream ngoại sinh. Không loại seed vì kết quả bất lợi. Đơn vị thống kê là lượt/seed, không phải node, gói hoặc cửa sổ. Profile chính thức: {PROFILE}; job scope EVALUATION_FIXED_HORIZON_10000S, config_profile CUSTOM, không dùng nhãn PILOT/TEST_ONLY cho evaluation.",
         "Mỗi lượt quan sát t ∈ [0,10.000] giây, tối đa 1000 round, sinh gói mỗi 10 giây từ t=10 đến t=10.000. Xử lý toàn bộ sự kiện tại t=10.000 theo thứ tự hàng đợi SimPy, chốt detector tại thời điểm này, không chạy xả sau mốc. Gói đã sinh nhưng chưa có sự kiện kết thúc giữ pending_in_flight. PDR dùng toàn bộ gói sinh trong khoảng đo, bao gồm gói đang truyền ở mẫu số. Quy tắc cutoff được kiểm tra bằng ca một sensor: 1.000 gói sinh, 999 gói đến và 1 gói đang truyền.",
-        "Giữ 450 sensor, 7 sink, vùng 3.000 × 3.000 m, E0=5 J, Eth=1 J, R=300 m, wire=payload=128 byte, chu kỳ 10 s, p_channel=0,01. Detector giữ beta=0,8; cửa sổ 40 s; timeout 0,02 s; minObs=2; tau=0,95; K=1; trust ban đầu=1; cách ly 60 s. Bán kính kế thừa quyết định pilot trước đó. Không sửa lõi, lock hoặc tham số để làm đẹp kết quả.",
+        f"Mỗi lượt có {sensor_setting}, 7 sink, vùng 3.000 × 3.000 m, E0=5 J, Eth=1 J, R=300 m, wire=payload=128 byte, chu kỳ 10 s và p_channel=0,01. Detector dùng beta={detector['beta_trust']}, cửa sổ {detector['window_size_s']} s, timeout {detector['forwarding_timeout_s']} s, minObs={detector['min_observations']}, tau={detector['trust_threshold']}, K={detector['consecutive_bad_windows']}, trust ban đầu={detector['initial_trust']} và cách ly {detector['isolation_duration_s']} s.",
         "Throughput = wire bit nhận duy nhất tại sink / 10.000 s; goodput = payload bit nhận / 10.000 s. Vì wire=payload, hai giá trị bằng nhau trong mô hình này. Năng lượng/bit = năng lượng sensor tiêu hao từ t=0 đến t=10.000 / payload bit nhận thành công. Delay và hop lấy đúng gói hoàn tất trước hoặc tại cutoff, không lấy giá trị cuối của lượt 100.000 s rồi đổi nhãn. Các trạng thái TP/FP/TN/FN, coverage, cảnh báo và cách ly đều chốt tại t=10.000.",
         "Mean và độ lệch chuẩn mẫu (ddof=1) tính trên seed có chỉ số xác định; CI95 = mean ± t(0,975,n−1)×std/√n. CSV giữ n_expected/n_used/n_missing và NA cho mẫu số 0. So sánh cặp trên matched seeds, xác minh pairing hash/topology/attacker IDs, dùng paired t và Wilcoxon-Pratt, hiệu chỉnh Holm trên toàn họ chỉ số/cặp đã khai báo. CI95 của chênh lệch cặp giữ trong CSV; không thay CI bằng error bar trong ảnh. CI tỷ lệ là khoảng t cho mean theo seed và có thể vượt [0,1]; không cắt để che biến thiên.",
         "Độ trễ phát hiện/cách ly thực theo attacker giữ NA nếu chưa thấy sự kiện. Chỉ số capped delay lấy min(delay,10.000) và dùng 10.000 cho attacker bị kiểm duyệt, rồi trung bình trong mỗi seed và qua 30 seed. Giá trị giới hạn không phải thời gian phát hiện thực của attacker chưa bị phát hiện. TPR/FPR tính trên toàn bộ sensor, coverage mô tả tập có đủ quan sát, không loại attacker không quan sát để tăng TPR.",
-        "FND là sensor đầu tiên chết; HND là ít nhất 225/450 sensor chết; LND là toàn bộ 450 sensor chết. Mốc không xảy ra giữ time_s/payload=NA và censored=true, không gán 0 hoặc coi 10.000 s là thời điểm chết thật. Thời gian giới hạn là min(T,10.000 s). Payload trước mốc chỉ trung bình trong các lượt đạt mốc, không dùng để xếp hạng nhóm có mức kiểm duyệt khác nhau. Mốc mất chức năng theo physical/routing reachability là chỉ số khác với HND/LND.",
+        "FND là mốc sensor đầu tiên chết. HND là mốc có ít nhất ceil(N thực/2) sensor chết. LND là mốc toàn bộ sensor chết. Mốc chưa quan sát giữ time_s và payload là NA, với censored=true. Thời gian giới hạn là min(T, 10.000 s). Trung bình payload trước mốc dùng các lượt đã đạt mốc. Mốc mất chức năng dựa trên tỷ lệ liên thông vật lý hoặc tỷ lệ có tuyến.",
         "Hai ô payload trước HND/LND cũ không đủ quan sát để so sánh. Bộ hình chính đã thay bằng payload đến sink, sensor sống và năng lượng còn lại tại 10.000 s. Bảng dưới giữ n_observed/n_runs cho mọi mốc và mọi cấu hình. Cấu hình/phương pháp nằm trong báo cáo và metadata; ảnh chỉ giữ tiêu đề, trục/đơn vị, legend và số phía trên cột.",
         "Phạm vi 10.000 s được chọn theo yêu cầu người dùng sau khi đã xem checkpoint dài hạn, không phải đăng ký trước khi xem dữ liệu dài hạn. Toàn bộ 480 lượt này được chạy mới trong profile ngắn; không trộn mean hay delay/hop từ kết quả dài hạn. Báo cáo và dữ liệu 100.000 s cũ giữ riêng, không ghi đè.",
     ]
@@ -93,13 +99,16 @@ def write_report(plan, rows, aggregates, completeness, comparisons, lifetime_tab
             title, unit, factor = row["metric"], "đơn vị gốc trong CSV", 1
         stats_view.append({"Case ID": row["case_id"], "Chỉ số": title, "Đơn vị": unit, "n hợp lệ": row["n_used"], "n thiếu/NA": row["n_missing"], "Mean": formatted(row["mean"] * factor if row["mean"] is not None else None, 5), "Std mẫu": formatted(row["sample_std_ddof1"] * factor if row["sample_std_ddof1"] is not None else None, 5), "CI95 thấp": formatted(row["ci95_low"] * factor if row["ci95_low"] is not None else None, 5), "CI95 cao": formatted(row["ci95_high"] * factor if row["ci95_high"] is not None else None, 5)})
     sections = [("Phương pháp và quy tắc chốt dữ liệu", methods), ("Nhận xét ưu điểm và hạn chế", discussion), ("Giới hạn diễn giải", limits)]
-    methods.insert(3, "Các mức attacker 2%, 5%, 10% là tỷ lệ yêu cầu; làm tròn nửa lên trên 450 sensor thành 9, 23, 45 attacker. Mức 5% thực tế là 23/450 ≈ 5,111%. Tập attacker không gồm sink; số lượng và tỷ lệ thực nằm trong manifest/CSV. Giữ cùng tập ID giữa các thuật toán trong cùng treatment; vị trí khác nhau thay tập ID theo quy tắc nhưng giữ topology và số lượng.")
+    methods.insert(3, "Số attacker là tỷ lệ yêu cầu 2%, 5% hoặc 10% nhân với số sensor thực và làm tròn nửa lên. Attacker được chọn từ sensor. Manifest và CSV ghi số lượng và tỷ lệ thực. Các thuật toán cùng treatment dùng chung tập ID. Các vị trí khác nhau dùng quy tắc chọn ID tương ứng trên cùng topology.")
     methods.append("Số quyết định tìm lại tuyến có nguyên nhân chính security chỉ đếm việc sửa một tuyến đã gán. Tuyến được chọn mới ngay khi sinh gói có thể tránh node cách ly mà không tạo sự kiện reroute. Vì vậy số đếm security bằng 0 không tự chứng minh S-EMHR không tránh relay hoặc không có chi phí bảo vệ; trạng thái bật/tắt tránh relay và các chi phí chưa mô phỏng được công bố riêng.")
-    methods.append("Tỷ lệ 100% ở ô quan sát FND nghĩa là 30/30 lượt đã có ít nhất một sensor chết, không phải toàn bộ 450 sensor đã chết.")
+    methods.append("Tỷ lệ 100% ở ô quan sát FND nghĩa là 30/30 lượt đã có ít nhất một sensor chết.")
     methods.append("Chuỗi thời gian được ghi mỗi 100 s để giảm chi phí lưu và tổng hợp; chu kỳ sinh gói vẫn là 10 s và mốc chết vẫn được ghi theo đúng sự kiện. Các chỗ còn ghi 1.000 s trong mẫu yêu cầu được thống nhất thành 10.000 s theo các mục cấu hình/nghiệm thu mới. Kế hoạch gốc có giới hạn 100.000 s; báo cáo hiện tại là phạm vi 10.000 s điều chỉnh theo yêu cầu, không tuyên bố thay thế đầy đủ nghiên cứu dài hạn. Bộ 1.000 s và 100.000 s cũ đều được bảo toàn.")
+    if base.get("topology_model") == "na":
+        methods.append("Mẫu cuối được ghi khi hết sensor sống hoặc hết sensor sống nối vật lý tới sink. Biểu đồ trạng thái mạng trình bày các mốc 0, 2.500, 5.000, 7.500 và 10.000 s. Mỗi cột lấy trung bình các seed có mẫu tại mốc đó. CSV nguồn giữ các mẫu mỗi 100 s và số seed dùng để tính giá trị. Summary và chỉ số tại cutoff dựa trên toàn bộ vòng đời mô phỏng.")
     visibility = [{"Hình": figure["figure"], "Số cột có số đo": len(figure["bars"]), "Cột dương": sum(bar["data_state"] == "positive" for bar in figure["bars"]), "Số 0 có điểm đánh dấu": sum(bar["data_state"] == "zero" and bar["zero_marker_shown"] for bar in figure["bars"]), "Cột thiếu dữ liệu": 0} for figure in figures if figure["bars"]]
     methods.append("Đã kiểm tra mọi cột từ CSV đến ảnh. Mean bằng 0 giữ chiều cao 0, có vòng tròn tại đường gốc và nhãn số để phân biệt với thiếu dữ liệu. Mean không xác định trong các hình chính làm xuất báo cáo dừng để kiểm tra; không điền số giả. Các mốc HND/LND thiếu quan sát chỉ ở bảng kiểm duyệt, không tạo ô hình trống. Bảng kiểm tra hiển thị và bar_visibility_audit.csv ghi trạng thái từng cột. Nhóm không bật detector không được vẽ trong ô chỉ dành cho detector; đây là chọn đúng phạm vi chỉ số, không phải bỏ dữ liệu bất lợi.")
-    methods.append("Đồ thị độ nhạy dùng trục tung theo khoảng số liệu để nhìn rõ các mức đã đo, với nhãn mean tại từng điểm. Trục cột vẫn bắt đầu từ 0. Độ dốc nhìn thấy không tự chứng minh ý nghĩa thống kê; phải đọc cùng độ lớn chênh lệch, CI95 và so sánh cặp.")
+    if base.get("topology_model") == "na":
+        methods.append("Các biểu đồ bảo mật dùng cột bắt đầu từ 0, với giá trị trung bình ghi trên đầu mỗi cột. Khoảng tin cậy 95% và so sánh cặp nằm trong các bảng số liệu.")
     methods.append("Protocol hiệu lực ghi rõ quy tắc cutoff 10.000 s. Bản đăng ký gốc được giữ nguyên hash; một chuỗi mô tả còn sót 1.000 trong mẫu được đính chính riêng ở protocol_effective.json. Không đổi cấu hình chạy, kết quả, run ID hoặc completion hash vì chỉnh mô tả này.")
     methods.append("relay_security_per_seed.csv lưu bộ đếm nhận/chuyển tiếp/timeout/pending, trust và cờ nghi ngờ/cách ly của từng relay tại cutoff. Tỷ số F/N trong CSV này được ghi rõ là tỷ số tích lũy để đối chiếu, không phải forwarding ratio từng cửa sổ đã dùng cập nhật EWMA. Batch dùng full_trace=false để tiết kiệm tài nguyên; không tuyên bố đã lưu lại đầy đủ log từng gói hoặc lịch sử từng cửa sổ. Các bài kiểm tra module và demo chi tiết được giữ riêng trong dự án.")
     tables = [("Hiệu năng cấu hình trung tâm", center_table), ("Bảo mật cấu hình trung tâm", detector_view), ("So sánh cặp tại cấu hình trung tâm", paired), ("Độ nhạy của PDR", sensitivity), ("Kiểm tra hiển thị cột", visibility), ("Ma trận và số seed", design), ("Mốc chết và mất chức năng: quan sát/kiểm duyệt", lifetime_view), ("Thống kê đầy đủ: mean/std/CI95 theo seed", stats_view)]
@@ -129,7 +138,7 @@ def write_report(plan, rows, aggregates, completeness, comparisons, lifetime_tab
     (directory / "BAO_CAO.html").write_text(document, encoding="utf-8")
 
 
-def write_reproduction(directory, batch, root, published_directory=None):
+def write_reproduction(directory, batch, root, detector_path, published_directory=None):
     command_report = published_directory or directory
     text = f'''# Tái tạo nghiên cứu 10.000 giây
 
@@ -137,9 +146,9 @@ Giữ Python và các phiên bản trong manifest. Dự án mô phỏng: `{root}
 
 ```powershell
 Set-Location '{root}'
-& '.\\.venv\\Scripts\\python.exe' -B -X utf8 analysis\\security_10000s\\study.py dry-run --project .
+& '.\\.venv\\Scripts\\python.exe' -B -X utf8 analysis\\security_10000s\\study.py dry-run --project . --detector-config '{detector_path}'
 & '.\\.venv\\Scripts\\python.exe' -B -X utf8 -m pytest -q -p no:cacheprovider analysis\\security_10000s\\test_profile.py
-& '.\\.venv\\Scripts\\python.exe' -B -X utf8 analysis\\security_10000s\\study.py run --project . --output results\\security_10000s --workers 10
+& '.\\.venv\\Scripts\\python.exe' -B -X utf8 analysis\\security_10000s\\study.py run --project . --detector-config '{detector_path}' --output results\\security_10000s --workers 10
 ```
 
 Lệnh run tạo batch mới 480 lượt, không ghi đè dữ liệu. Dùng đường dẫn batch vừa in cho report. Với batch hiện tại:
@@ -217,7 +226,8 @@ def render_report(root, batch, output, pack=False, test_results=None, published_
     provenance = {"created_at_utc": datetime.now(timezone.utc).isoformat(), "project": str(root), "batch": str(batch), "profile": PROFILE, "plan_hash": plan["plan_hash"], "model_source_sha256": plan["source_fingerprint"]["sha256"], "analysis_files": {path.name: file_hash(path) for path in Path(__file__).parent.glob("*.py")}, "completed": len(records), "failed": 0, "pending": 0, "new_short_runs": 480, "reused_long_metrics": 0, "horizon_s": 10000, "max_rounds": 1000, "freeze": plan["freeze"]}
     (directory / "analysis_provenance.json").write_text(json.dumps(provenance, indent=2) + "\n", encoding="utf-8")
     write_report(plan, rows, aggregates, completeness, comparisons, lifetime_table, figures, directory, batch)
-    write_reproduction(directory, batch, root, published_output_root / directory.name if published_output_root else None)
+    write_reproduction(directory, batch, root, plan["detector_path"],
+                       published_output_root / directory.name if published_output_root else None)
     from verify_report import verify_report
     qa = verify_report(root, batch, directory, check_package=False)
     (directory / "verification_checks.json").write_text(json.dumps(qa, indent=2) + "\n", encoding="utf-8")

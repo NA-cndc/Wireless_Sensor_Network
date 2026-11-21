@@ -42,26 +42,52 @@ def profile_config(root):
     return SimulationConfig.from_json(root / "configs/default.json")
 
 
-def verify_short_plan(plan, root):
+def treatment_config(base, case, seed, detector):
+    from wsn_sim.experiment_plan import SCENARIOS
+    algorithm, attacked, detecting = SCENARIOS[case["scenario"]]
+    return replace(
+        base, seed=seed, routing_algorithm=algorithm, detector=detector if detecting else None,
+        attacker_ratio=case["rho"] if attacked else 0, p_drop=case["p_drop"] if attacked else 0,
+        attacker_ids=None if attacked else (), attacker_selection=case["placement"],
+    )
+
+
+def study_job(base, case, seed, detector, fingerprint, freeze):
     from wsn_sim.calibration import json_digest
+    from wsn_sim.experiment_plan import pairing_hash
+    values = treatment_config(base, case, seed, detector).to_dict()
+    job = {
+        "case": case, "configuration": values, "seed": seed,
+        "source_sha256": fingerprint["sha256"], "freeze": freeze, "sample_interval_s": 100,
+        "full_trace": False, "scope": JOB_SCOPE if freeze is not None else "TEST_ONLY",
+        "observation_horizon_s": HORIZON_S, "pairing_hash": pairing_hash(values),
+    }
+    job["run_id"] = json_digest(job)[:24]
+    return job
+
+
+def verify_short_plan(plan, root):
     from wsn_sim.config import SimulationConfig
-    from wsn_sim.experiment_plan import PAIR_FIELDS, SCENARIOS, verify_plan
+    from wsn_sim.experiment_plan import SCENARIOS, pairing_hash, validate_calibration_basis, verify_plan
     verify_plan(plan, root)
     if plan.get("evaluation_profile") != PROFILE or plan["scope"] != "EVALUATION":
         raise ValueError("expected the official 10000-second evaluation profile")
     if plan["seeds"] != SEEDS or plan["cases"] != cases() or plan["expected_runs"] != 480 or len(plan["jobs"]) != 480:
         raise ValueError("profile requires 16 cases and 30 distinct seeds per case")
-    if plan["base_configuration"] != profile_config(root).to_dict():
+    base = profile_config(root)
+    if plan["base_configuration"] != base.to_dict():
         raise ValueError("base configuration differs from the declared short profile")
     protocol = plan["analysis_protocol"]
     if protocol["horizon_s"] != HORIZON_S or protocol["security_cutoff_s"] != HORIZON_S or protocol["max_rounds"] != 1000 or protocol["sample_interval_s"] != 100 or protocol["last_generation_s"] != HORIZON_S:
         raise ValueError("numeric protocol fields disagree with the 10000-second evaluation")
     basis = read_json(Path(plan["detector_path"]).with_suffix(".lock.json"))
-    for key in PAIR_FIELDS:
-        if key not in {"seed", "channel_loss_probability", "max_rounds"} and plan["base_configuration"][key] != basis["simulation_configuration"][key]:
-            raise ValueError(f"calibration basis mismatch: {key}")
-    if plan["base_configuration"]["channel_loss_probability"] not in basis["protocol"]["channel_loss_probabilities"]:
-        raise ValueError("channel loss not covered by calibration")
+    validate_calibration_basis(plan["base_configuration"], basis)
+    calibration_seeds = {
+        seed for name, seeds in basis["protocol"]["seed_partitions"].items()
+        if name != "evaluation_reserved" for seed in seeds
+    }
+    if calibration_seeds.intersection(plan["seeds"]):
+        raise ValueError("evaluation seeds overlap detector calibration or validation")
     keys = set()
     for job in plan["jobs"]:
         config = SimulationConfig.from_dict(job["configuration"])
@@ -70,15 +96,15 @@ def verify_short_plan(plan, root):
             raise ValueError("short evaluation must not use pilot/test duration overrides")
         if config.max_rounds != 1000 or config.packet_interval_s != 10 or config.max_duration_s != HORIZON_S or job["sample_interval_s"] != 100:
             raise ValueError("each run must keep 1000 rounds, 100-second sampling and a 10000-second cutoff")
-        algorithm, attacked, detecting = SCENARIOS[case["scenario"]]
-        expected = replace(SimulationConfig.from_dict(plan["base_configuration"]), seed=job["seed"], routing_algorithm=algorithm, detector=config.detector if detecting else None, attacker_ratio=case["rho"] if attacked else 0, p_drop=case["p_drop"] if attacked else 0, attacker_ids=None if attacked else (), attacker_selection=case["placement"])
+        detecting = SCENARIOS[case["scenario"]][2]
+        expected = treatment_config(base, case, job["seed"], config.detector)
         if config != expected:
             raise ValueError("unexpected treatment parameters")
         if detecting:
             from dataclasses import asdict
             if asdict(config.detector) != read_json(plan["detector_path"]):
                 raise ValueError("detector differs from the frozen parameters")
-        if job["pairing_hash"] != json_digest({key: job["configuration"][key] for key in PAIR_FIELDS}):
+        if job["pairing_hash"] != pairing_hash(job["configuration"]):
             raise ValueError("exogenous pairing hash mismatch")
         key = (case["case_id"], job["seed"])
         if key in keys or case not in plan["cases"] or job["seed"] not in SEEDS:
@@ -87,25 +113,17 @@ def verify_short_plan(plan, root):
     return True
 
 
-def build_short_plan(root):
+def build_short_plan(root, detector_path=None):
     from wsn_sim.calibration import json_digest, source_fingerprint, verify_freeze
     from wsn_sim.config import DetectorConfig
-    from wsn_sim.experiment_plan import PAIR_FIELDS, SCENARIOS, validate_evaluation_seeds
+    from wsn_sim.experiment_plan import validate_evaluation_seeds
     base = profile_config(root)
-    detector_path = root / "configs/detector_stage78.json"
+    detector_path = detector_path or root / "configs/detector_stage78.json"
     frozen = verify_freeze(detector_path, root)
     detector = DetectorConfig(**read_json(detector_path))
     validate_evaluation_seeds(root, SEEDS)
     fingerprint = source_fingerprint(root)
-    jobs = []
-    for case in cases():
-        algorithm, attacked, detecting = SCENARIOS[case["scenario"]]
-        for seed in SEEDS:
-            config = replace(base, seed=seed, routing_algorithm=algorithm, detector=detector if detecting else None, attacker_ratio=case["rho"] if attacked else 0, p_drop=case["p_drop"] if attacked else 0, attacker_ids=None if attacked else (), attacker_selection=case["placement"])
-            values = config.to_dict()
-            job = {"case": case, "configuration": values, "seed": seed, "source_sha256": fingerprint["sha256"], "freeze": frozen, "sample_interval_s": 100, "full_trace": False, "scope": JOB_SCOPE, "observation_horizon_s": HORIZON_S, "pairing_hash": json_digest({key: values[key] for key in PAIR_FIELDS})}
-            job["run_id"] = json_digest(job)[:24]
-            jobs.append(job)
+    jobs = [study_job(base, case, seed, detector, fingerprint, frozen) for case in cases() for seed in SEEDS]
     protocol = {
         "version": PROFILE, "registered_at_utc": datetime.now(timezone.utc).isoformat(),
         "horizon_s": HORIZON_S, "max_rounds": 1000, "sample_interval_s": 100,
@@ -115,7 +133,7 @@ def build_short_plan(root):
         "first_generation_s": 10, "last_generation_s": 10000,
         "security_cutoff_s": HORIZON_S, "long_horizon_data_mixed": False,
         "request_resolution": {"effective_horizon_s": HORIZON_S, "effective_rounds": 1000, "authoritative_request_sections": [1, 5, 7, 8], "stale_1000_second_template_references_normalized": True, "previous_1000s_and_100000s_studies_preserved": True},
-        "sampling_rule": "record_every_100_seconds_keep_10_second_packet_generation_and_exact_event_time_milestones",
+        "sampling_rule": "record_every_100_seconds_through_first_sample_with_no_alive_or_physically_reachable_sensors",
         "horizon_selected_by_user_after_reviewing_previous_long_horizon_results": True,
         "detector_retuned_on_evaluation": False,
         "statistics": {"std_ddof": 1, "ci": "Student_t_95_percent", "paired_tests": ["paired_t", "Wilcoxon_Pratt"], "multiplicity": "Holm_all_declared_metrics_and_contrasts"},
@@ -126,9 +144,9 @@ def build_short_plan(root):
     return plan
 
 
-def prepare(root, output):
+def prepare(root, output, detector_path=None):
     from wsn_sim.storage import create_run_directory, save_json
-    plan = build_short_plan(root)
+    plan = build_short_plan(root, detector_path)
     directory = create_run_directory(output.resolve(), "evaluation_10000s")
     save_json(plan, directory / "plan.json")
     save_json(plan["base_configuration"], directory / "experiment_10000s.json")
@@ -143,6 +161,9 @@ def prepare(root, output):
             relative = path.relative_to(root).as_posix()
             if relative not in plan["source_fingerprint"]["files"]:
                 archive.write(path, relative)
+        selected_detector = Path(plan["detector_path"])
+        for path in (selected_detector, selected_detector.with_suffix(".lock.json")):
+            archive.write(path, f"frozen_detector/{path.name}")
     return directory
 
 
@@ -171,25 +192,39 @@ def main():
     parser.add_argument("--batch", type=Path)
     parser.add_argument("--workers", type=int, default=10)
     parser.add_argument("--scenario", choices=("MHR", "EMHR", "SF3"))
+    parser.add_argument("--detector-config", type=Path)
+    parser.add_argument("--test-only", action="store_true", help="sample using TEST_ONLY detector parameters")
     args = parser.parse_args()
     root = load_project(args.project)
+    detector_path = args.detector_config.resolve() if args.detector_config else None
+    if args.test_only and args.mode != "sample":
+        parser.error("--test-only is available for sample")
     if args.mode == "sample":
         if args.scenario is None or args.output is None:
             parser.error("sample requires --scenario and a new --output directory")
         from wsn_sim.experiment_execution import execute_worker
-        plan = build_short_plan(root)
-        job = next(job for job in plan["jobs"] if job["case"]["scenario"] == args.scenario)
+        if args.test_only:
+            from wsn_sim.calibration import source_fingerprint
+            from wsn_sim.config import DetectorConfig
+            detector = DetectorConfig(**read_json(detector_path or root / "configs/detector_test_only.json"))
+            if detector.calibration_status != "TEST_ONLY":
+                parser.error("--test-only requires a TEST_ONLY detector configuration")
+            case = next(case for case in cases() if case["scenario"] == args.scenario)
+            job = study_job(profile_config(root), case, SEEDS[0], detector, source_fingerprint(root), None)
+        else:
+            plan = build_short_plan(root, detector_path)
+            job = next(job for job in plan["jobs"] if job["case"]["scenario"] == args.scenario)
         output = args.output.resolve()
         output.mkdir(parents=True, exist_ok=False)
         execute_worker(job, output, root)
         print(output)
         return
     if args.mode == "dry-run":
-        plan = build_short_plan(root)
+        plan = build_short_plan(root, detector_path)
         print(json.dumps({"profile": PROFILE, "cases": 16, "runs": 480, "horizon_s": HORIZON_S, "max_rounds": 1000, "source_sha256": plan["source_fingerprint"]["sha256"], "freeze_verified": plan["freeze"]["verified"]}, indent=2))
         return
     if args.mode in {"prepare", "run"}:
-        directory = prepare(root, args.output or root / "results/security_10000s")
+        directory = prepare(root, args.output or root / "results/security_10000s", detector_path)
     else:
         if args.batch is None:
             raise ValueError("--batch is required")

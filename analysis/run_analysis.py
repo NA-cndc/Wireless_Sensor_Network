@@ -7,7 +7,6 @@ from hashlib import sha256
 from math import ceil, isfinite
 from pathlib import Path
 
-# Cấu hình UTF-8 cho console trên Windows tránh lỗi encode
 if sys.stdout and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 if sys.stderr and hasattr(sys.stderr, "reconfigure"):
@@ -48,7 +47,8 @@ def _validate_sources(csv_dir, config, scenarios):
             raise ValueError(f"{stem} does not match the current profile. Run this script without --plots-only first.")
         metrics = metadata["metrics"]
         last_time = pd.read_csv(series, usecols=["Time_s"], float_precision="round_trip")["Time_s"].iloc[-1]
-        if last_time != metrics["elapsed_s"]:
+        expected_log_end = metrics.get("log_end_s", metrics["elapsed_s"])
+        if last_time != expected_log_end or last_time > metrics["elapsed_s"]:
             raise ValueError(f"{stem} has an inconsistent final timestamp")
         sources.append({
             "radius_m": radius,
@@ -61,6 +61,8 @@ def _validate_sources(csv_dir, config, scenarios):
             "timeseries_sha256": sha256(series.read_bytes()).hexdigest(),
             "manifest_sha256": sha256(manifest.read_bytes()).hexdigest(),
         })
+        if "log_end_s" in metrics:
+            sources[-1]["log_end_s"] = expected_log_end
     return sources
 
 
@@ -90,7 +92,6 @@ def plot_range_selection(ranges, csv_dir, fig_dir, algo="EMHR", initial_energy_j
     fig_lat, ax_lat = plt.subplots(figsize=(9, 6))
 
     colors = {250.0: "tab:blue", 300.0: "tab:orange", 350.0: "tab:green"}
-    actual_sensors = 450
 
     for r in ranges:
         csv_file = csv_dir / f"{scenario_stem(algo, r)}.csv"
@@ -117,7 +118,6 @@ def plot_range_selection(ranges, csv_dir, fig_dir, algo="EMHR", initial_energy_j
         latency = df["Avg_Latency_s"].where(df["Delivered_Packets"] > 0)
         ax_lat.plot(df["Time_s"], latency, label=label_name, color=c, linestyle="-", linewidth=2.2)
 
-    # Đường ngưỡng và cố định trục tung từ mốc 0
     ax_life.axhline(y=50, color="red", linestyle=":", linewidth=1.5, label="Ngưỡng Lifetime (50%)")
     ax_dead.axhline(y=actual_sensors / 2, color="purple", linestyle=":", linewidth=1.5, label="Ngưỡng HND (50% chết)")
 
@@ -173,10 +173,8 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
     fig_energy, ax_energy = plt.subplots(figsize=(9, 6))
     fig_lat, ax_lat = plt.subplots(figsize=(9, 6))
 
-    # Bảng màu tách biệt cho nhóm thuật toán năng lượng
     energy_palette = ["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:purple"]
     color_idx = 0
-    actual_sensors = 450
     valid_dfs = []
 
     for algo in algos:
@@ -193,7 +191,6 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
         df = df_raw
         valid_dfs.append((algo, df))
 
-        # MHR dùng nét đứt làm mốc chuẩn đối chứng; các thuật toán năng lượng dùng nét liền
         if algo == "MHR":
             c = "dimgray"
             ls = "--"
@@ -213,7 +210,6 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
         latency = df["Avg_Latency_s"].where(df["Delivered_Packets"] > 0)
         ax_lat.plot(df["Time_s"], latency, label=label_name, color=c, linestyle=ls, linewidth=2.2)
 
-    # Đường ngưỡng và cố định trục tung từ mốc 0
     ax_life.axhline(y=50, color="red", linestyle=":", linewidth=1.5, label="Ngưỡng Lifetime (50%)")
     ax_dead.axhline(y=actual_sensors / 2, color="purple", linestyle=":", linewidth=1.5, label="Ngưỡng HND (50% chết)")
 
@@ -252,7 +248,6 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
         duration_s,
     )
 
-    # Vẽ biểu đồ phân rã gói tin tự động co giãn theo số lượng thuật toán
     if valid_dfs:
         n_algos = len(valid_dfs)
         ncols = n_algos if n_algos <= 3 else ceil(n_algos / 2)
@@ -284,7 +279,6 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
             if idx == 0:
                 ax_target.legend(loc="upper left", fontsize="9.5")
 
-        # Đặt mốc 0 sau cùng để không khóa trục tung theo biểu đồ đầu tiên
         axes_flat[0].set_ylim(bottom=0)
 
         for idx in range(n_algos, len(axes_flat)):
@@ -315,7 +309,11 @@ if __name__ == "__main__":
     csv_dir.mkdir(parents=True, exist_ok=True)
     fig_dir.mkdir(parents=True, exist_ok=True)
 
-    config = SimulationConfig.from_json(wsn_main.CONFIG_PATH)
+    published_index = json.loads(args.source_index.read_text(encoding="utf-8")) if args.source_index else None
+    config = (
+        SimulationConfig.from_dict(published_index["configuration"]) if published_index
+        else SimulationConfig.from_json(wsn_main.CONFIG_PATH)
+    )
     if args.duration is not None:
         config = replace(config, duration_s=args.duration)
     ranges = config.communication_ranges_m
@@ -332,11 +330,10 @@ if __name__ == "__main__":
         "stage2": [source for source in sources if source["radius_m"] == wsn_main.ANALYSIS_RADIUS_M],
         "topology_radii_m": list(ranges),
     }
-    if args.source_index and json.loads(args.source_index.read_text(encoding="utf-8")) != source_index:
+    if published_index and published_index != source_index:
         raise ValueError("plot inputs differ from the published source index")
     generate_topologies(ranges, config.to_dict(), fig_dir)
 
-    # Giai đoạn 1: Khảo sát 3 bán kính trên thuật toán EMHR
     plot_range_selection(
         ranges=ranges,
         csv_dir=csv_dir,
@@ -346,7 +343,6 @@ if __name__ == "__main__":
         duration_s=config.duration_s
     )
 
-    # Giai đoạn 2: Cố định R=300m, đối chứng MHR với 4 thuật toán tối ưu năng lượng
     plot_algorithm_comparison(
         fixed_range=wsn_main.ANALYSIS_RADIUS_M,
         algos=algorithms_to_compare,

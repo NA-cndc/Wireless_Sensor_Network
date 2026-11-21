@@ -7,6 +7,22 @@ SCENARIOS = {'MHR': ('MHR', False, False), 'EMHR': ('EMHR', False, False), 'MHR_
 PILOT_SEEDS = [44001, 44002, 44003, 44004, 44005]
 PAIR_FIELDS = ('area_width_m', 'area_height_m', 'num_sensors', 'num_sinks', 'initial_energy_j', 'energy_threshold_ratio', 'communication_range_m', 'packet_size_bytes', 'wire_size_bytes', 'packet_interval_s', 'bandwidth_bps', 'seed', 'channel_loss_probability', 'max_rounds')
 
+def pairing_hash(configuration):
+    fields = {key: configuration[key] for key in PAIR_FIELDS}
+    if 'topology_model' in configuration:
+        fields['topology_model'] = configuration['topology_model']
+    return json_digest(fields)
+
+def validate_calibration_basis(configuration, lock):
+    basis = lock['simulation_configuration']
+    for name in PAIR_FIELDS:
+        if name not in {'seed', 'channel_loss_probability', 'max_rounds'} and configuration[name] != basis[name]:
+            raise ValueError(f'calibration basis mismatch: {name}')
+    if configuration.get('topology_model', 'uniform') != basis.get('topology_model', 'uniform'):
+        raise ValueError('calibration basis mismatch: topology_model')
+    if configuration['channel_loss_probability'] not in lock['protocol']['channel_loss_probabilities']:
+        raise ValueError('channel loss is outside the benign calibration protocol')
+
 def parse_seeds(value: str) -> list[int]:
     seeds = []
     for token in value.split(','):
@@ -79,12 +95,7 @@ def build_plan(root, base, detector_path, seeds, cases, *, test_only=False, samp
             raise ValueError('a frozen calibrated detector is required')
         freeze = verify_freeze(detector_path, root)
         lock = json.loads(detector_path.with_suffix('.lock.json').read_text(encoding='utf-8'))
-        basis = lock['simulation_configuration']
-        for name in PAIR_FIELDS:
-            if name not in {'seed', 'channel_loss_probability', 'max_rounds'} and base.to_dict()[name] != basis[name]:
-                raise ValueError(f'calibration basis mismatch: {name}')
-        if base.channel_loss_probability not in lock['protocol']['channel_loss_probabilities']:
-            raise ValueError('channel loss is outside the benign calibration protocol')
+        validate_calibration_basis(base.to_dict(), lock)
     jobs = []
     for case in cases:
         algorithm, attacked, detecting = SCENARIOS[case['scenario']]
@@ -93,7 +104,7 @@ def build_plan(root, base, detector_path, seeds, cases, *, test_only=False, samp
         for seed in seeds:
             config = replace(base, seed=seed, routing_algorithm=algorithm, detector=detector if detecting else None, attacker_ratio=case['rho'] if attacked else 0, p_drop=case['p_drop'] if attacked else 0, attacker_ids=tuple(explicit_ids) if attacked and explicit_ids is not None else None if attacked else (), attacker_selection=case['placement'])
             values = config.to_dict()
-            body = {'case': case, 'configuration': values, 'seed': seed, 'source_sha256': fingerprint['sha256'], 'freeze': freeze, 'sample_interval_s': sample_interval_s, 'full_trace': full_trace, 'scope': 'TEST_ONLY' if test_only else 'EVALUATION_MAX_ROUNDS_10000', 'pairing_hash': json_digest({name: values[name] for name in PAIR_FIELDS})}
+            body = {'case': case, 'configuration': values, 'seed': seed, 'source_sha256': fingerprint['sha256'], 'freeze': freeze, 'sample_interval_s': sample_interval_s, 'full_trace': full_trace, 'scope': 'TEST_ONLY' if test_only else 'EVALUATION_MAX_ROUNDS_10000', 'pairing_hash': pairing_hash(values)}
             body['run_id'] = json_digest(body)[:24]
             jobs.append(body)
     pilot_selection = None

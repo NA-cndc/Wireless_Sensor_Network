@@ -18,11 +18,21 @@ from typing import TYPE_CHECKING, Any, Iterable
 import pandas as pd
 
 from analysis.foundation.config import SimulationConfig
+from wsn_sim.provenance import source_fingerprint
+from wsn_sim.topology import topology_record
 
 if TYPE_CHECKING:
     from analysis.foundation.simulation import Simulation
 
 RUNTIME_LIBRARIES = ("networkx", "simpy", "numpy", "pandas", "matplotlib", "scipy")
+
+
+def foundation_source_sha256(root: Path) -> str:
+    paths = sorted((root / "analysis/foundation").rglob("*.py"))
+    paths.extend(root / path for path in (
+        "analysis/foundation/config.json", "analysis/run_foundation_study.py", "analysis/run_analysis.py",
+    ))
+    return source_fingerprint(root, extra_paths=(path.relative_to(root) for path in paths))["sha256"]
 
 
 def scenario_stem(routing_algo: str, radius: float) -> str:
@@ -75,10 +85,14 @@ def save_simulation_run(sim: Simulation, output_dir: Path, root: Path) -> Path:
                             packet.tx_attempts, sim.traffic_gen.cutoff_state.get(packet.packet_id),
                         ))
         manifest = create_run_manifest(sim.config, names, root)
+        topology = topology_record(sim.network)
         manifest.update({
             "routing_algorithm": sim.routing_algo,
             "communication_range_m": radius,
-            "topology_seed": sim.config.seed,
+            "topology_seed": topology["topology_seed"],
+            "actual_num_sensors": topology["actual_num_sensors"],
+            "topology_hash": topology["topology_hash"],
+            "source_sha256": foundation_source_sha256(root),
             "traffic_seed": sim.config.effective_traffic_seed,
             "channel_seed": sim.config.effective_channel_seed,
             "metrics": summary,

@@ -1,0 +1,11 @@
+{
+  "beta_trust": 0.8,
+  "window_size_s": 20,
+  "forwarding_timeout_s": 0.02,
+  "min_observations": 2,
+  "trust_threshold": 1,
+  "consecutive_bad_windows": 1,
+  "initial_trust": 1,
+  "isolation_duration_s": 60,
+  "calibration_status": "CALIBRATED"
+}
