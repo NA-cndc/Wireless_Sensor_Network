@@ -1,0 +1,215 @@
+{
+  "batch_plan_hash": "0d2d7bdf4c9294bfdd4cb2fb9056dbceda2507a7b596a4f956617abf826bdc1e",
+  "source_fingerprint": "d71cfc497d59ab28a6ab7cf21e44ec5185f288e4349d1e082a1eeb607bda3973",
+  "seed_count": 30,
+  "complete_runs_used": 90,
+  "metrics": {
+    "pdr": [
+      {
+        "scenario": "EMHR_SF",
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 47.390904634344516,
+        "sample_std_ddof1": 4.506101165912815,
+        "ci95_low": 45.708298806139844,
+        "ci95_high": 49.07351046254919,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      {
+        "scenario": "SF2",
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 47.390904634344516,
+        "sample_std_ddof1": 4.506101165912815,
+        "ci95_low": 45.708298806139844,
+        "ci95_high": 49.07351046254919,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      {
+        "scenario": "SF3",
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 47.18263703047548,
+        "sample_std_ddof1": 4.4779185511687185,
+        "ci95_low": 45.51055476356614,
+        "ci95_high": 48.854719297384825,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      }
+    ],
+    "goodput_bps": [
+      {
+        "scenario": "EMHR_SF",
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 17.828099413333334,
+        "sample_std_ddof1": 2.388579756450703,
+        "ci95_low": 16.936189074138472,
+        "ci95_high": 18.720009752528195,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      {
+        "scenario": "SF2",
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 17.828099413333334,
+        "sample_std_ddof1": 2.388579756450703,
+        "ci95_low": 16.936189074138472,
+        "ci95_high": 18.720009752528195,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      {
+        "scenario": "SF3",
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 17.82929408,
+        "sample_std_ddof1": 2.390682896737711,
+        "ci95_low": 16.93659841531551,
+        "ci95_high": 18.721989744684493,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      }
+    ],
+    "remaining_energy_j": [
+      {
+        "scenario": "EMHR_SF",
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 791.1128621979401,
+        "sample_std_ddof1": 55.52194821847976,
+        "ci95_low": 770.3806260083943,
+        "ci95_high": 811.8450983874859,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      {
+        "scenario": "SF2",
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 791.1128621979401,
+        "sample_std_ddof1": 55.52194821847976,
+        "ci95_low": 770.3806260083943,
+        "ci95_high": 811.8450983874859,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      {
+        "scenario": "SF3",
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 782.21930719563,
+        "sample_std_ddof1": 53.609543675860934,
+        "ci95_low": 762.2011745982621,
+        "ci95_high": 802.2374397929979,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      }
+    ],
+    "tpr": [
+      {
+        "scenario": "SF2",
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 89.90244055461447,
+        "sample_std_ddof1": 5.329437714403087,
+        "ci95_low": 87.9123958065863,
+        "ci95_high": 91.89248530264264,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      {
+        "scenario": "SF3",
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 90.76323483280005,
+        "sample_std_ddof1": 4.9136391023299355,
+        "ci95_low": 88.92845183817549,
+        "ci95_high": 92.59801782742461,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      }
+    ],
+    "fpr": [
+      {
+        "scenario": "SF2",
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 41.09110822752992,
+        "sample_std_ddof1": 3.788856352830815,
+        "ci95_low": 39.676326014087984,
+        "ci95_high": 42.50589044097186,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      {
+        "scenario": "SF3",
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 45.32557268496355,
+        "sample_std_ddof1": 3.6062513433747565,
+        "ci95_low": 43.97897630265527,
+        "ci95_high": 46.672169067271824,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      }
+    ],
+    "precision": [
+      {
+        "scenario": "SF2",
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 10.450614062371697,
+        "sample_std_ddof1": 1.0988462848033884,
+        "ci95_low": 10.040298116272274,
+        "ci95_high": 10.86093000847112,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      },
+      {
+        "scenario": "SF3",
+        "n_expected": 30,
+        "n_used": 30,
+        "n_missing": 0,
+        "coverage": 1.0,
+        "mean": 9.631301249098048,
+        "sample_std_ddof1": 0.8446376944926709,
+        "ci95_low": 9.31590835063727,
+        "ci95_high": 9.946694147558825,
+        "ci_method": "Student_t_pointwise",
+        "meets_30_seed_requirement": true
+      }
+    ]
+  }
+}

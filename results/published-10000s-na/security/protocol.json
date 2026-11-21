@@ -1,0 +1,41 @@
+{
+  "version": "WSN_SECURITY_FIXED_HORIZON_10000S_V1",
+  "registered_at_utc": "2026-11-21T14:40:30.161876+00:00",
+  "horizon_s": 10000.0,
+  "max_rounds": 1000,
+  "sample_interval_s": 100,
+  "cases": 16,
+  "seeds_per_case": 30,
+  "independent_unit": "seed",
+  "design": "one_factor_at_a_time",
+  "interactions_estimated": false,
+  "boundary_rule": "include_all_events_at_t_le_10000_hold_later_arrivals_in_flight_no_drain",
+  "first_generation_s": 10,
+  "last_generation_s": 10000,
+  "security_cutoff_s": 10000.0,
+  "long_horizon_data_mixed": false,
+  "request_resolution": {
+    "effective_horizon_s": 10000.0,
+    "effective_rounds": 1000,
+    "authoritative_request_sections": [
+      1,
+      5,
+      7,
+      8
+    ],
+    "stale_1000_second_template_references_normalized": true,
+    "previous_1000s_and_100000s_studies_preserved": true
+  },
+  "sampling_rule": "record_every_100_seconds_through_first_sample_with_no_alive_or_physically_reachable_sensors",
+  "horizon_selected_by_user_after_reviewing_previous_long_horizon_results": true,
+  "detector_retuned_on_evaluation": false,
+  "statistics": {
+    "std_ddof": 1,
+    "ci": "Student_t_95_percent",
+    "paired_tests": [
+      "paired_t",
+      "Wilcoxon_Pratt"
+    ],
+    "multiplicity": "Holm_all_declared_metrics_and_contrasts"
+  }
+}

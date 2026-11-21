@@ -1,0 +1,198 @@
+{
+  "timestamp_utc": "2026-11-21T15:19:54.670567+00:00",
+  "metric_schema": "wsn_metrics_event_ordered_v2",
+  "seed": 51009,
+  "stream_seeds": {
+    "topology": 51009,
+    "traffic": 6184571519730141061,
+    "routing": 10285067472058146124,
+    "attacker_selection": 16679083779799426799,
+    "attack_decision": 2024267698581469263,
+    "channel_loss": 5382684129753325096
+  },
+  "randomness": {
+    "event_key_schema": "wsn_event_keys_v2",
+    "hash_encoding": "sha256_canonical_json_first_64_bits",
+    "stream_usage": {
+      "topology": "seeded_coordinates",
+      "traffic": "deterministic_periodic_no_draws",
+      "routing": "deterministic_lexicographic_no_draws",
+      "attacker_selection": "seeded_sample_for_random_mode",
+      "attack_decision": "event_keyed_bernoulli",
+      "channel_loss": "event_keyed_bernoulli"
+    },
+    "attack_decision_key": [
+      "packet_id",
+      "relay_id",
+      "attempt_index"
+    ],
+    "channel_loss_key": [
+      "packet_id",
+      "sender_id",
+      "receiver_id",
+      "attempt_index"
+    ],
+    "simulated_attempt_index": 0,
+    "retransmission_modeled": false
+  },
+  "energy_threshold_j": 1.0,
+  "energy_configuration": {
+    "initial_energy_j": 5.0,
+    "energy_threshold_ratio": 0.2,
+    "energy_threshold_j": 1.0
+  },
+  "config_profile": "CUSTOM",
+  "configuration": {
+    "area_width_m": 3000,
+    "area_height_m": 3000,
+    "num_sensors": 450,
+    "num_sinks": 7,
+    "initial_energy_j": 5.0,
+    "packet_size_bytes": 128,
+    "packet_interval_s": 10,
+    "communication_ranges_m": [
+      250,
+      300,
+      350
+    ],
+    "seed": 51009,
+    "communication_range_m": 300,
+    "energy_threshold_ratio": 0.2,
+    "energy_epsilon_j": 1e-12,
+    "max_rounds": 1000,
+    "routing_algorithm": "S_EMHR",
+    "wire_size_bytes": null,
+    "bandwidth_bps": 250000,
+    "attacker_ratio": 0.02,
+    "attacker_ids": null,
+    "attacker_selection": "random",
+    "p_drop": 0.5,
+    "channel_loss_probability": 0.01,
+    "detector": {
+      "beta_trust": 0.8,
+      "window_size_s": 20,
+      "forwarding_timeout_s": 0.02,
+      "min_observations": 2,
+      "trust_threshold": 1,
+      "consecutive_bad_windows": 1,
+      "initial_trust": 1,
+      "isolation_duration_s": 60,
+      "calibration_status": "CALIBRATED"
+    },
+    "config_profile": "CUSTOM",
+    "topology_model": "na"
+  },
+  "python_version": "3.12.10",
+  "library_versions": {
+    "networkx": "3.4.2",
+    "simpy": "4.1.1",
+    "numpy": "2.2.6",
+    "pandas": "2.2.3",
+    "matplotlib": "3.10.3",
+    "scipy": "1.15.3"
+  },
+  "git_commit": "8602c1032551cdf507215ae946ccb0ba427ad69d",
+  "git_branch": "codex/na-topology-log",
+  "working_tree_clean": true,
+  "generated_files": [
+    "F:\\bangdzaihjhj\\dancctt\\results\\wsn-rerun-20261121\\security-batch\\evaluation_10000s_20261121T144030230495Z_3e2c45af\\runs\\SF3_r0.02_d0.5_random\\seed_51009\\attempt_0001\\final_sensor_states.json",
+    "F:\\bangdzaihjhj\\dancctt\\results\\wsn-rerun-20261121\\security-batch\\evaluation_10000s_20261121T144030230495Z_3e2c45af\\runs\\SF3_r0.02_d0.5_random\\seed_51009\\attempt_0001\\lifetime.json",
+    "F:\\bangdzaihjhj\\dancctt\\results\\wsn-rerun-20261121\\security-batch\\evaluation_10000s_20261121T144030230495Z_3e2c45af\\runs\\SF3_r0.02_d0.5_random\\seed_51009\\attempt_0001\\recording.json",
+    "F:\\bangdzaihjhj\\dancctt\\results\\wsn-rerun-20261121\\security-batch\\evaluation_10000s_20261121T144030230495Z_3e2c45af\\runs\\SF3_r0.02_d0.5_random\\seed_51009\\attempt_0001\\summary.json",
+    "F:\\bangdzaihjhj\\dancctt\\results\\wsn-rerun-20261121\\security-batch\\evaluation_10000s_20261121T144030230495Z_3e2c45af\\runs\\SF3_r0.02_d0.5_random\\seed_51009\\attempt_0001\\timeseries.csv",
+    "F:\\bangdzaihjhj\\dancctt\\results\\wsn-rerun-20261121\\security-batch\\evaluation_10000s_20261121T144030230495Z_3e2c45af\\runs\\SF3_r0.02_d0.5_random\\seed_51009\\attempt_0001\\topology.json"
+  ],
+  "run_id": "b8db892703e8547ff4079f05",
+  "case": {
+    "scenario": "SF3",
+    "rho": 0.02,
+    "p_drop": 0.5,
+    "placement": "random",
+    "case_id": "SF3_r0.02_d0.5_random"
+  },
+  "scope": "EVALUATION_FIXED_HORIZON_10000S",
+  "pairing_hash": "dd68f2f2b80b740222fd4aee05d074cbb1276e256c61706d947207e42b76919d",
+  "source_sha256": "d71cfc497d59ab28a6ab7cf21e44ec5185f288e4349d1e082a1eeb607bda3973",
+  "topology_hash": "2dca9afd49679ead37243d5743b1d6c09cc87d970abe5494486ff55435ba5ae3",
+  "topology_seed": 51009,
+  "actual_num_sensors": 482,
+  "attack": {
+    "attacker_ids": [
+      "sensor_036",
+      "sensor_083",
+      "sensor_084",
+      "sensor_145",
+      "sensor_232",
+      "sensor_364",
+      "sensor_374",
+      "sensor_389",
+      "sensor_429",
+      "sensor_453"
+    ],
+    "attacker_count": 10,
+    "requested_count_from_ratio": 10,
+    "requested_ratio": 0.02,
+    "actual_ratio": 0.02074688796680498,
+    "requested_selection": "random",
+    "selection": "random",
+    "selection_rule": "uniform_sample_without_replacement_from_sorted_sensor_ids",
+    "rounding": "half_up",
+    "nearest_sink_distances_m": {
+      "sensor_036": 298.84682567392355,
+      "sensor_083": 403.9753814037374,
+      "sensor_084": 1104.2283166899415,
+      "sensor_145": 701.4788379085055,
+      "sensor_232": 626.5091069605828,
+      "sensor_364": 565.6173236019321,
+      "sensor_374": 565.249825134211,
+      "sensor_389": 323.62661098522693,
+      "sensor_429": 223.6041736645888,
+      "sensor_453": 409.57115339924115
+    }
+  },
+  "frozen_detector": {
+    "verified": true,
+    "config": "F:\\bangdzaihjhj\\dancctt\\results\\wsn-handover\\final\\calibration\\detector_na.json",
+    "lock": "F:\\bangdzaihjhj\\dancctt\\results\\wsn-handover\\final\\calibration\\detector_na.lock.json",
+    "config_file_sha256": "dce52cacc293a57932ebe9769dfbf20b73b79718ec9c62fce976442f71ebf2a8",
+    "scope": "stage7-8 final source; 450 sensors, 7 sinks, pilot-selected R=300m, E0=5J; benign ideal TX observer; finite 120.5s horizon; no real overhearing or full-lifetime FPR guarantee"
+  },
+  "status": "COMPLETE",
+  "actual_duration_s": 10000.0,
+  "log_end_s": 10000.0,
+  "requested_horizon_s": 10000,
+  "wall_clock_s": 180.309101400082,
+  "peak_working_set_bytes": 84652032,
+  "output_bytes_before_manifest": 663849,
+  "command": [
+    "F:\\bangdzaihjhj\\dancctt\\results\\wsn-handover\\clean\\scripts\\run_experiments.py",
+    "_worker",
+    "--spec",
+    "F:\\bangdzaihjhj\\dancctt\\results\\wsn-rerun-20261121\\security-batch\\evaluation_10000s_20261121T144030230495Z_3e2c45af\\runs\\SF3_r0.02_d0.5_random\\seed_51009\\attempt_0001\\spec.json",
+    "--output",
+    "F:\\bangdzaihjhj\\dancctt\\results\\wsn-rerun-20261121\\security-batch\\evaluation_10000s_20261121T144030230495Z_3e2c45af\\runs\\SF3_r0.02_d0.5_random\\seed_51009\\attempt_0001"
+  ],
+  "recording": {
+    "mode": "bounded_active_state_streaming",
+    "full_trace": false,
+    "packet_id_rule": "unique_sensor_sequence_ids_single_path_terminal_guard_no_MAC_replay",
+    "detector_history": "pending_and_unclosed_cohorts_only",
+    "historical_evaluator_queries": false,
+    "bulk_unreachable": true,
+    "max_active_packets_sampled": 482,
+    "max_live_observations_sampled": 0,
+    "files": [
+      "final_sensor_states.json",
+      "lifetime.json",
+      "spec.json",
+      "stderr.log",
+      "stdout.log",
+      "summary.json",
+      "timeseries.csv"
+    ],
+    "active_packets_at_end": 39,
+    "live_observations_at_end": 0,
+    "route_cache_hits": 149873,
+    "cache_policy": "unique_primary_paths_selective_monotone_removal_global_gain_invalidation"
+  }
+}

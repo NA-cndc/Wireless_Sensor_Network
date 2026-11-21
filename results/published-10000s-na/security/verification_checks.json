@@ -1,0 +1,43 @@
+{
+  "status": "PASS",
+  "verification_phase": "before_zip_creation",
+  "verified_at_utc": "2026-11-21T16:10:38.657635+00:00",
+  "completed": 480,
+  "failed": 0,
+  "pending": 0,
+  "cases": 16,
+  "seeds_per_case": 30,
+  "horizon_s": 10000,
+  "rounds": 1000,
+  "freeze_verified": true,
+  "source_sha256": "d71cfc497d59ab28a6ab7cf21e44ec5185f288e4349d1e082a1eeb607bda3973",
+  "run_hashes_verified": 480,
+  "packet_energy_conservation": true,
+  "event_cutoff_inclusive_no_drain": true,
+  "security_recomputed_at_cutoff": true,
+  "milestones_recomputed_from_sensor_deaths": true,
+  "all_statistics_recomputed": true,
+  "paired_topology_and_attacker_ids": true,
+  "lifetime_NA_censoring_preserved": true,
+  "figures": 10,
+  "bar_labels_verified": 284,
+  "positive_bars": 282,
+  "true_zero_values_marked": 2,
+  "main_chart_missing_values": 0,
+  "relay_snapshot_rows_checked": 93982,
+  "effective_protocol_checked": true,
+  "figure_layout_checks_passed": true,
+  "HTML_links_valid": true,
+  "old_prefix_crosscheck": {
+    "status": "not_requested",
+    "long_metrics_reused": false
+  },
+  "package_verified": false,
+  "package_file_count": 0,
+  "test_evidence": {
+    "tests": 348,
+    "failures": 0,
+    "errors": 0
+  },
+  "zip_sha256": null
+}

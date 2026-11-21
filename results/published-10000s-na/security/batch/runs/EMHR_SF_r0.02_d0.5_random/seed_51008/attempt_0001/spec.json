@@ -1,0 +1,55 @@
+{
+  "case": {
+    "scenario": "EMHR_SF",
+    "rho": 0.02,
+    "p_drop": 0.5,
+    "placement": "random",
+    "case_id": "EMHR_SF_r0.02_d0.5_random"
+  },
+  "configuration": {
+    "area_width_m": 3000,
+    "area_height_m": 3000,
+    "num_sensors": 450,
+    "num_sinks": 7,
+    "initial_energy_j": 5.0,
+    "packet_size_bytes": 128,
+    "packet_interval_s": 10,
+    "communication_ranges_m": [
+      250,
+      300,
+      350
+    ],
+    "seed": 51008,
+    "communication_range_m": 300,
+    "energy_threshold_ratio": 0.2,
+    "energy_epsilon_j": 1e-12,
+    "max_rounds": 1000,
+    "routing_algorithm": "EMHR",
+    "wire_size_bytes": null,
+    "bandwidth_bps": 250000,
+    "attacker_ratio": 0.02,
+    "attacker_ids": null,
+    "attacker_selection": "random",
+    "p_drop": 0.5,
+    "channel_loss_probability": 0.01,
+    "detector": null,
+    "config_profile": "CUSTOM",
+    "topology_model": "na"
+  },
+  "seed": 51008,
+  "source_sha256": "d71cfc497d59ab28a6ab7cf21e44ec5185f288e4349d1e082a1eeb607bda3973",
+  "freeze": {
+    "verified": true,
+    "config": "F:\\bangdzaihjhj\\dancctt\\results\\wsn-handover\\final\\calibration\\detector_na.json",
+    "lock": "F:\\bangdzaihjhj\\dancctt\\results\\wsn-handover\\final\\calibration\\detector_na.lock.json",
+    "config_file_sha256": "dce52cacc293a57932ebe9769dfbf20b73b79718ec9c62fce976442f71ebf2a8",
+    "scope": "stage7-8 final source; 450 sensors, 7 sinks, pilot-selected R=300m, E0=5J; benign ideal TX observer; finite 120.5s horizon; no real overhearing or full-lifetime FPR guarantee"
+  },
+  "sample_interval_s": 100,
+  "full_trace": false,
+  "scope": "EVALUATION_FIXED_HORIZON_10000S",
+  "observation_horizon_s": 10000.0,
+  "pairing_hash": "29103c90a21ac9b20503bedb8d5ec82c06126bcbf7227329c91cfffa060f3872",
+  "run_id": "30c96fd225d899d8ed08a883",
+  "timeout_s": 3600
+}

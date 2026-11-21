@@ -1,0 +1,13 @@
+phase,candidate_id,seed,channel_loss_probability,sensor_population,FP,TN,fpr,observed_nodes,conditional_FP,conditional_TN,conditional_fpr,coverage,valid_windows,false_positive_windows,window_fpr,ever_isolated_nodes,received_transit,forwarded,failed_timeout,pending,observations_awaiting_cohort,conservation_ok,input_conservation_ok
+benign_validation,candidate_01_1,42001,0.0,401,0,401,0.0,139,0,139,0.0,0.34663341645885287,789,0,0.0,0,6084,6084,0,0,507,True,True
+benign_validation,candidate_01_1,42001,0.01,401,0,401,0.0,139,0,139,0.0,0.34663341645885287,782,0,0.0,0,5962,5962,0,0,491,True,True
+benign_validation,candidate_01_1,42001,0.05,401,0,401,0.0,139,0,139,0.0,0.34663341645885287,767,0,0.0,0,5630,5630,0,0,454,True,True
+benign_validation,candidate_01_1,42002,0.0,479,0,479,0.0,176,0,176,0.0,0.3674321503131524,992,0,0.0,0,6936,6936,0,0,578,True,True
+benign_validation,candidate_01_1,42002,0.01,479,0,479,0.0,176,0,176,0.0,0.3674321503131524,982,0,0.0,0,6834,6834,0,0,569,True,True
+benign_validation,candidate_01_1,42002,0.05,479,0,479,0.0,176,0,176,0.0,0.3674321503131524,953,0,0.0,0,6471,6471,0,0,537,True,True
+benign_validation,candidate_01_1,42003,0.0,422,0,422,0.0,149,0,149,0.0,0.35308056872037913,846,0,0.0,0,6420,6420,0,0,535,True,True
+benign_validation,candidate_01_1,42003,0.01,422,0,422,0.0,149,0,149,0.0,0.35308056872037913,839,0,0.0,0,6327,6327,0,0,525,True,True
+benign_validation,candidate_01_1,42003,0.05,422,0,422,0.0,149,0,149,0.0,0.35308056872037913,820,0,0.0,0,5936,5936,0,0,495,True,True
+benign_validation,candidate_01_1,42004,0.0,476,0,476,0.0,184,0,184,0.0,0.3865546218487395,1037,0,0.0,0,7224,7224,0,0,602,True,True
+benign_validation,candidate_01_1,42004,0.01,476,0,476,0.0,184,0,184,0.0,0.3865546218487395,1028,0,0.0,0,7116,7116,0,0,595,True,True
+benign_validation,candidate_01_1,42004,0.05,476,0,476,0.0,184,0,184,0.0,0.3865546218487395,995,0,0.0,0,6706,6706,0,0,559,True,True

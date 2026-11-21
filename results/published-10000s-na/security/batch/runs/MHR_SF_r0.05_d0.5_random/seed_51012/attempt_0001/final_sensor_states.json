@@ -1,0 +1,3737 @@
+{
+  "sensor_000": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2610.0122880000004,
+    "generated": 261,
+    "received_transit": 3033,
+    "forwarded": 1552,
+    "dropped": 1500
+  },
+  "sensor_001": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1600.0081919999998,
+    "generated": 160,
+    "received_transit": 2613,
+    "forwarded": 2612,
+    "dropped": 36
+  },
+  "sensor_002": {
+    "energy_j": 2.9126376575304533,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 183,
+    "forwarded": 181,
+    "dropped": 639
+  },
+  "sensor_003": {
+    "energy_j": 1.7717709278119544,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 526,
+    "forwarded": 523,
+    "dropped": 661
+  },
+  "sensor_004": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3110.0081920000002,
+    "generated": 311,
+    "received_transit": 569,
+    "forwarded": 568,
+    "dropped": 12
+  },
+  "sensor_005": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1250.004096,
+    "generated": 125,
+    "received_transit": 982,
+    "forwarded": 981,
+    "dropped": 18
+  },
+  "sensor_006": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 730.008192,
+    "generated": 73,
+    "received_transit": 426,
+    "forwarded": 425,
+    "dropped": 10
+  },
+  "sensor_007": {
+    "energy_j": 0.7307970532145995,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 947,
+    "forwarded": 947,
+    "dropped": 674
+  },
+  "sensor_008": {
+    "energy_j": 3.3609153558425966,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 174,
+    "forwarded": 174,
+    "dropped": 550
+  },
+  "sensor_009": {
+    "energy_j": 2.542366361427992,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 1415,
+    "forwarded": 1414,
+    "dropped": 662
+  },
+  "sensor_010": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1050.0081919999998,
+    "generated": 105,
+    "received_transit": 1149,
+    "forwarded": 554,
+    "dropped": 609
+  },
+  "sensor_011": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2010.004096,
+    "generated": 201,
+    "received_transit": 1840,
+    "forwarded": 1839,
+    "dropped": 23
+  },
+  "sensor_012": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 4140.004096,
+    "generated": 414,
+    "received_transit": 1963,
+    "forwarded": 1962,
+    "dropped": 32
+  },
+  "sensor_013": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2340.0081920000002,
+    "generated": 234,
+    "received_transit": 2797,
+    "forwarded": 2796,
+    "dropped": 34
+  },
+  "sensor_014": {
+    "energy_j": 0.16454987353380607,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 806,
+    "forwarded": 805,
+    "dropped": 404
+  },
+  "sensor_015": {
+    "energy_j": 3.6422759436813186,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 141,
+    "forwarded": 141,
+    "dropped": 659
+  },
+  "sensor_016": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2670.0204800000006,
+    "generated": 267,
+    "received_transit": 361,
+    "forwarded": 360,
+    "dropped": 10
+  },
+  "sensor_017": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2420.0,
+    "generated": 242,
+    "received_transit": 533,
+    "forwarded": 533,
+    "dropped": 7
+  },
+  "sensor_018": {
+    "energy_j": 1.2139513088241385,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 1220,
+    "forwarded": 1218,
+    "dropped": 714
+  },
+  "sensor_019": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3070.0122880000004,
+    "generated": 307,
+    "received_transit": 2884,
+    "forwarded": 2883,
+    "dropped": 36
+  },
+  "sensor_020": {
+    "energy_j": 2.239956254112219,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 320,
+    "forwarded": 320,
+    "dropped": 654
+  },
+  "sensor_021": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 4100.004096,
+    "generated": 410,
+    "received_transit": 921,
+    "forwarded": 920,
+    "dropped": 22
+  },
+  "sensor_022": {
+    "energy_j": 2.2079038580090726,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 556,
+    "forwarded": 556,
+    "dropped": 664
+  },
+  "sensor_023": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1260.004096,
+    "generated": 126,
+    "received_transit": 992,
+    "forwarded": 991,
+    "dropped": 19
+  },
+  "sensor_024": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3220.0122880000004,
+    "generated": 322,
+    "received_transit": 976,
+    "forwarded": 975,
+    "dropped": 13
+  },
+  "sensor_025": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2680.0,
+    "generated": 268,
+    "received_transit": 1022,
+    "forwarded": 1022,
+    "dropped": 16
+  },
+  "sensor_026": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2750.004096,
+    "generated": 275,
+    "received_transit": 461,
+    "forwarded": 460,
+    "dropped": 10
+  },
+  "sensor_027": {
+    "energy_j": 3.7642837653640377,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 138,
+    "forwarded": 138,
+    "dropped": 656
+  },
+  "sensor_028": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1580.004096,
+    "generated": 158,
+    "received_transit": 980,
+    "forwarded": 979,
+    "dropped": 18
+  },
+  "sensor_029": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 510.008192,
+    "generated": 51,
+    "received_transit": 1177,
+    "forwarded": 1176,
+    "dropped": 20
+  },
+  "sensor_030": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2150.0081920000002,
+    "generated": 215,
+    "received_transit": 1351,
+    "forwarded": 1350,
+    "dropped": 13
+  },
+  "sensor_031": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 810.004096,
+    "generated": 81,
+    "received_transit": 903,
+    "forwarded": 902,
+    "dropped": 18
+  },
+  "sensor_032": {
+    "energy_j": 0.6460363116512653,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 531,
+    "forwarded": 530,
+    "dropped": 398
+  },
+  "sensor_033": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 930.004096,
+    "generated": 93,
+    "received_transit": 449,
+    "forwarded": 448,
+    "dropped": 7
+  },
+  "sensor_034": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2160.004096,
+    "generated": 216,
+    "received_transit": 538,
+    "forwarded": 537,
+    "dropped": 6
+  },
+  "sensor_035": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 870.008192,
+    "generated": 87,
+    "received_transit": 631,
+    "forwarded": 630,
+    "dropped": 7
+  },
+  "sensor_036": {
+    "energy_j": 4.5917948323141085,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 46,
+    "forwarded": 46,
+    "dropped": 659
+  },
+  "sensor_037": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1300.004096,
+    "generated": 130,
+    "received_transit": 389,
+    "forwarded": 388,
+    "dropped": 9
+  },
+  "sensor_038": {
+    "energy_j": 4.3505275976589255,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 696
+  },
+  "sensor_039": {
+    "energy_j": 2.4151842017733802,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 234,
+    "forwarded": 234,
+    "dropped": 445
+  },
+  "sensor_040": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3140.004096,
+    "generated": 314,
+    "received_transit": 786,
+    "forwarded": 785,
+    "dropped": 16
+  },
+  "sensor_041": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1540.004096,
+    "generated": 154,
+    "received_transit": 607,
+    "forwarded": 606,
+    "dropped": 14
+  },
+  "sensor_042": {
+    "energy_j": 4.702996361512431,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 1687,
+    "forwarded": 1687,
+    "dropped": 19
+  },
+  "sensor_043": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1360.004096,
+    "generated": 136,
+    "received_transit": 799,
+    "forwarded": 798,
+    "dropped": 15
+  },
+  "sensor_044": {
+    "energy_j": 2.4236922340057134,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 545
+  },
+  "sensor_045": {
+    "energy_j": 3.5576602659705214,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 4608,
+    "forwarded": 4608,
+    "dropped": 53
+  },
+  "sensor_046": {
+    "energy_j": 1.597121084191657,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 174,
+    "forwarded": 174,
+    "dropped": 656
+  },
+  "sensor_047": {
+    "energy_j": 3.5776684468671442,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 103,
+    "forwarded": 103,
+    "dropped": 657
+  },
+  "sensor_048": {
+    "energy_j": 1.4043692736783935,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 282,
+    "forwarded": 282,
+    "dropped": 662
+  },
+  "sensor_049": {
+    "energy_j": 1.05271864506588,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 434,
+    "forwarded": 434,
+    "dropped": 667
+  },
+  "sensor_050": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2500.0,
+    "generated": 250,
+    "received_transit": 251,
+    "forwarded": 251,
+    "dropped": 4
+  },
+  "sensor_051": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 800.004096,
+    "generated": 80,
+    "received_transit": 394,
+    "forwarded": 393,
+    "dropped": 4
+  },
+  "sensor_052": {
+    "energy_j": 3.4065600204422086,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 657
+  },
+  "sensor_053": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2590.0,
+    "generated": 259,
+    "received_transit": 2044,
+    "forwarded": 2044,
+    "dropped": 25
+  },
+  "sensor_054": {
+    "energy_j": 3.5839837066787306,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 112,
+    "forwarded": 112,
+    "dropped": 655
+  },
+  "sensor_055": {
+    "energy_j": 0.8488150978813602,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 304,
+    "forwarded": 304,
+    "dropped": 657
+  },
+  "sensor_056": {
+    "energy_j": 2.5640735760554567,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 216,
+    "forwarded": 216,
+    "dropped": 618
+  },
+  "sensor_057": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3050.004096,
+    "generated": 305,
+    "received_transit": 498,
+    "forwarded": 497,
+    "dropped": 19
+  },
+  "sensor_058": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1870.004096,
+    "generated": 187,
+    "received_transit": 407,
+    "forwarded": 406,
+    "dropped": 12
+  },
+  "sensor_059": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1070.004096,
+    "generated": 107,
+    "received_transit": 373,
+    "forwarded": 372,
+    "dropped": 16
+  },
+  "sensor_060": {
+    "energy_j": 1.6375763714363356,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 337,
+    "forwarded": 337,
+    "dropped": 661
+  },
+  "sensor_061": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2060.0081920000002,
+    "generated": 206,
+    "received_transit": 395,
+    "forwarded": 394,
+    "dropped": 10
+  },
+  "sensor_062": {
+    "energy_j": 3.0165749171557366,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 638
+  },
+  "sensor_063": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3380.0204800000006,
+    "generated": 338,
+    "received_transit": 1192,
+    "forwarded": 1191,
+    "dropped": 12
+  },
+  "sensor_064": {
+    "energy_j": 0.9420381772971846,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 3171,
+    "forwarded": 3171,
+    "dropped": 44
+  },
+  "sensor_065": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3440.0081920000002,
+    "generated": 344,
+    "received_transit": 606,
+    "forwarded": 605,
+    "dropped": 15
+  },
+  "sensor_066": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3370.028672000001,
+    "generated": 337,
+    "received_transit": 532,
+    "forwarded": 531,
+    "dropped": 15
+  },
+  "sensor_067": {
+    "energy_j": 2.413896286493373,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 482,
+    "forwarded": 482,
+    "dropped": 453
+  },
+  "sensor_068": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3350.0245760000007,
+    "generated": 335,
+    "received_transit": 645,
+    "forwarded": 644,
+    "dropped": 26
+  },
+  "sensor_069": {
+    "energy_j": 4.023664778481205,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 652,
+    "forwarded": 652,
+    "dropped": 18
+  },
+  "sensor_070": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 6020.004096,
+    "generated": 602,
+    "received_transit": 461,
+    "forwarded": 460,
+    "dropped": 14
+  },
+  "sensor_071": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2530.004096,
+    "generated": 253,
+    "received_transit": 1252,
+    "forwarded": 1251,
+    "dropped": 19
+  },
+  "sensor_072": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2620.0122880000004,
+    "generated": 262,
+    "received_transit": 414,
+    "forwarded": 413,
+    "dropped": 13
+  },
+  "sensor_073": {
+    "energy_j": 4.351116329027132,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 2374,
+    "forwarded": 2374,
+    "dropped": 21
+  },
+  "sensor_074": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 5830.004096,
+    "generated": 583,
+    "received_transit": 1149,
+    "forwarded": 1148,
+    "dropped": 24
+  },
+  "sensor_075": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2290.0,
+    "generated": 229,
+    "received_transit": 650,
+    "forwarded": 650,
+    "dropped": 13
+  },
+  "sensor_076": {
+    "energy_j": 4.038280723617959,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 2344,
+    "forwarded": 2344,
+    "dropped": 31
+  },
+  "sensor_077": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3370.0122880000004,
+    "generated": 337,
+    "received_transit": 654,
+    "forwarded": 653,
+    "dropped": 12
+  },
+  "sensor_078": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1350.004096,
+    "generated": 135,
+    "received_transit": 343,
+    "forwarded": 342,
+    "dropped": 8
+  },
+  "sensor_079": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1370.0122879999997,
+    "generated": 137,
+    "received_transit": 370,
+    "forwarded": 369,
+    "dropped": 6
+  },
+  "sensor_080": {
+    "energy_j": 4.509773702949147,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 1480,
+    "forwarded": 1480,
+    "dropped": 32
+  },
+  "sensor_081": {
+    "energy_j": 2.1159225568935964,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 174,
+    "forwarded": 171,
+    "dropped": 660
+  },
+  "sensor_082": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1210.0081919999998,
+    "generated": 121,
+    "received_transit": 696,
+    "forwarded": 695,
+    "dropped": 8
+  },
+  "sensor_083": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3330.0163840000005,
+    "generated": 333,
+    "received_transit": 294,
+    "forwarded": 293,
+    "dropped": 19
+  },
+  "sensor_084": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1220.0081919999998,
+    "generated": 122,
+    "received_transit": 1219,
+    "forwarded": 1218,
+    "dropped": 13
+  },
+  "sensor_085": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3960.0,
+    "generated": 396,
+    "received_transit": 191,
+    "forwarded": 191,
+    "dropped": 7
+  },
+  "sensor_086": {
+    "energy_j": 4.931082402246929,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 8
+  },
+  "sensor_087": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2630.0081920000002,
+    "generated": 263,
+    "received_transit": 1260,
+    "forwarded": 1259,
+    "dropped": 17
+  },
+  "sensor_088": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 890.008192,
+    "generated": 89,
+    "received_transit": 1127,
+    "forwarded": 1126,
+    "dropped": 20
+  },
+  "sensor_089": {
+    "energy_j": 2.9840421709315565,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 276,
+    "forwarded": 265,
+    "dropped": 670
+  },
+  "sensor_090": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1280.004096,
+    "generated": 128,
+    "received_transit": 1127,
+    "forwarded": 1126,
+    "dropped": 16
+  },
+  "sensor_091": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1450.004096,
+    "generated": 145,
+    "received_transit": 2880,
+    "forwarded": 2879,
+    "dropped": 41
+  },
+  "sensor_092": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3090.0,
+    "generated": 309,
+    "received_transit": 698,
+    "forwarded": 698,
+    "dropped": 11
+  },
+  "sensor_093": {
+    "energy_j": 2.9189828540400313,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 2022,
+    "forwarded": 2022,
+    "dropped": 22
+  },
+  "sensor_094": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 4510.004096,
+    "generated": 451,
+    "received_transit": 324,
+    "forwarded": 323,
+    "dropped": 9
+  },
+  "sensor_095": {
+    "energy_j": 4.743517078303881,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 1352,
+    "forwarded": 1352,
+    "dropped": 16
+  },
+  "sensor_096": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3160.004096,
+    "generated": 316,
+    "received_transit": 387,
+    "forwarded": 386,
+    "dropped": 14
+  },
+  "sensor_097": {
+    "energy_j": 2.115402072077418,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 314,
+    "forwarded": 314,
+    "dropped": 660
+  },
+  "sensor_098": {
+    "energy_j": 4.829069024296002,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 505,
+    "forwarded": 505,
+    "dropped": 15
+  },
+  "sensor_099": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 960.004096,
+    "generated": 96,
+    "received_transit": 411,
+    "forwarded": 410,
+    "dropped": 5
+  },
+  "sensor_100": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2340.0,
+    "generated": 234,
+    "received_transit": 390,
+    "forwarded": 390,
+    "dropped": 8
+  },
+  "sensor_101": {
+    "energy_j": 3.207413233062835,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 289,
+    "forwarded": 276,
+    "dropped": 672
+  },
+  "sensor_102": {
+    "energy_j": 3.4733197599307766,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 397
+  },
+  "sensor_103": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1700.004096,
+    "generated": 170,
+    "received_transit": 348,
+    "forwarded": 347,
+    "dropped": 4
+  },
+  "sensor_104": {
+    "energy_j": 1.9304658923849245,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 99,
+    "forwarded": 99,
+    "dropped": 357
+  },
+  "sensor_105": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 4650.004096,
+    "generated": 465,
+    "received_transit": 861,
+    "forwarded": 860,
+    "dropped": 17
+  },
+  "sensor_106": {
+    "energy_j": 0.2569653788190177,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 1295,
+    "forwarded": 1293,
+    "dropped": 678
+  },
+  "sensor_107": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1760.0,
+    "generated": 176,
+    "received_transit": 312,
+    "forwarded": 312,
+    "dropped": 6
+  },
+  "sensor_108": {
+    "energy_j": 2.0492612418666774,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 89,
+    "forwarded": 89,
+    "dropped": 661
+  },
+  "sensor_109": {
+    "energy_j": 3.648029767871711,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 588,
+    "forwarded": 588,
+    "dropped": 668
+  },
+  "sensor_110": {
+    "energy_j": 3.8316311119642505,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 33,
+    "forwarded": 33,
+    "dropped": 656
+  },
+  "sensor_111": {
+    "energy_j": 0.21651544645687149,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 312,
+    "forwarded": 312,
+    "dropped": 657
+  },
+  "sensor_112": {
+    "energy_j": 2.2322957301939805,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 545
+  },
+  "sensor_113": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1480.0081919999998,
+    "generated": 148,
+    "received_transit": 940,
+    "forwarded": 939,
+    "dropped": 17
+  },
+  "sensor_114": {
+    "energy_j": 2.7082734879396853,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 57,
+    "forwarded": 57,
+    "dropped": 654
+  },
+  "sensor_115": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3910.004096,
+    "generated": 391,
+    "received_transit": 902,
+    "forwarded": 901,
+    "dropped": 12
+  },
+  "sensor_116": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2030.0,
+    "generated": 203,
+    "received_transit": 383,
+    "forwarded": 383,
+    "dropped": 8
+  },
+  "sensor_117": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1910.004096,
+    "generated": 191,
+    "received_transit": 607,
+    "forwarded": 606,
+    "dropped": 8
+  },
+  "sensor_118": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 450.008192,
+    "generated": 45,
+    "received_transit": 782,
+    "forwarded": 781,
+    "dropped": 13
+  },
+  "sensor_119": {
+    "energy_j": 3.5621126314512987,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 635
+  },
+  "sensor_120": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1570.004096,
+    "generated": 157,
+    "received_transit": 571,
+    "forwarded": 570,
+    "dropped": 18
+  },
+  "sensor_121": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 5580.0,
+    "generated": 558,
+    "received_transit": 1350,
+    "forwarded": 662,
+    "dropped": 700
+  },
+  "sensor_122": {
+    "energy_j": 2.3096134570896876,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 696
+  },
+  "sensor_123": {
+    "energy_j": 2.2716140304447405,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 1699,
+    "forwarded": 855,
+    "dropped": 1081
+  },
+  "sensor_124": {
+    "energy_j": 0.9265193379504458,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 173,
+    "forwarded": 173,
+    "dropped": 547
+  },
+  "sensor_125": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 4750.0,
+    "generated": 475,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 3
+  },
+  "sensor_126": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1910.0122879999997,
+    "generated": 191,
+    "received_transit": 879,
+    "forwarded": 878,
+    "dropped": 12
+  },
+  "sensor_127": {
+    "energy_j": 2.987646112276221,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 548
+  },
+  "sensor_128": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2470.0122880000004,
+    "generated": 247,
+    "received_transit": 389,
+    "forwarded": 388,
+    "dropped": 8
+  },
+  "sensor_129": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2520.0,
+    "generated": 252,
+    "received_transit": 313,
+    "forwarded": 313,
+    "dropped": 9
+  },
+  "sensor_130": {
+    "energy_j": 4.372703106360199,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 659
+  },
+  "sensor_131": {
+    "energy_j": 3.1708375744302604,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 636
+  },
+  "sensor_132": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1660.004096,
+    "generated": 166,
+    "received_transit": 1797,
+    "forwarded": 1797,
+    "dropped": 28
+  },
+  "sensor_133": {
+    "energy_j": 1.3571376957586956,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 274,
+    "forwarded": 274,
+    "dropped": 659
+  },
+  "sensor_134": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2990.0,
+    "generated": 299,
+    "received_transit": 1914,
+    "forwarded": 1914,
+    "dropped": 28
+  },
+  "sensor_135": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2900.0122880000004,
+    "generated": 290,
+    "received_transit": 5157,
+    "forwarded": 5156,
+    "dropped": 48
+  },
+  "sensor_136": {
+    "energy_j": 4.341291587447214,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 93
+  },
+  "sensor_137": {
+    "energy_j": 2.0356331152006772,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 49,
+    "forwarded": 49,
+    "dropped": 656
+  },
+  "sensor_138": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3960.004096,
+    "generated": 396,
+    "received_transit": 485,
+    "forwarded": 484,
+    "dropped": 13
+  },
+  "sensor_139": {
+    "energy_j": 0.13996206737333863,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 4212,
+    "forwarded": 4212,
+    "dropped": 41
+  },
+  "sensor_140": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2340.0081920000002,
+    "generated": 234,
+    "received_transit": 502,
+    "forwarded": 501,
+    "dropped": 10
+  },
+  "sensor_141": {
+    "energy_j": 2.032611534295825,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 544
+  },
+  "sensor_142": {
+    "energy_j": 1.5718260438898202,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 215,
+    "forwarded": 215,
+    "dropped": 657
+  },
+  "sensor_143": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3380.0,
+    "generated": 338,
+    "received_transit": 1553,
+    "forwarded": 784,
+    "dropped": 787
+  },
+  "sensor_144": {
+    "energy_j": 4.486983277960395,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 547
+  },
+  "sensor_145": {
+    "energy_j": 0.10149140600274044,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 513,
+    "forwarded": 513,
+    "dropped": 665
+  },
+  "sensor_146": {
+    "energy_j": 4.631987206368144,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 7
+  },
+  "sensor_147": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3390.0204800000006,
+    "generated": 339,
+    "received_transit": 658,
+    "forwarded": 657,
+    "dropped": 16
+  },
+  "sensor_148": {
+    "energy_j": 0.6246068333246814,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 381,
+    "forwarded": 381,
+    "dropped": 550
+  },
+  "sensor_149": {
+    "energy_j": 0.4307072446536036,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 462,
+    "forwarded": 462,
+    "dropped": 19
+  },
+  "sensor_150": {
+    "energy_j": 2.9921194317578808,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 251,
+    "forwarded": 251,
+    "dropped": 658
+  },
+  "sensor_151": {
+    "energy_j": 1.9653943476795908,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 73,
+    "forwarded": 73,
+    "dropped": 443
+  },
+  "sensor_152": {
+    "energy_j": 3.204888588338555,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 698
+  },
+  "sensor_153": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2000.0,
+    "generated": 200,
+    "received_transit": 476,
+    "forwarded": 476,
+    "dropped": 8
+  },
+  "sensor_154": {
+    "energy_j": 3.569890168862698,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 233
+  },
+  "sensor_155": {
+    "energy_j": 0.6093306442065612,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 651,
+    "forwarded": 651,
+    "dropped": 619
+  },
+  "sensor_156": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3290.032768000001,
+    "generated": 329,
+    "received_transit": 1306,
+    "forwarded": 1305,
+    "dropped": 28
+  },
+  "sensor_157": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2230.0081920000002,
+    "generated": 223,
+    "received_transit": 721,
+    "forwarded": 720,
+    "dropped": 18
+  },
+  "sensor_158": {
+    "energy_j": 3.8072912659533134,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 205,
+    "forwarded": 205,
+    "dropped": 655
+  },
+  "sensor_159": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2470.0081920000002,
+    "generated": 247,
+    "received_transit": 587,
+    "forwarded": 586,
+    "dropped": 7
+  },
+  "sensor_160": {
+    "energy_j": 3.7426080159302764,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 4363,
+    "forwarded": 4363,
+    "dropped": 51
+  },
+  "sensor_161": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3400.0081920000002,
+    "generated": 340,
+    "received_transit": 246,
+    "forwarded": 245,
+    "dropped": 7
+  },
+  "sensor_162": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1280.004096,
+    "generated": 128,
+    "received_transit": 579,
+    "forwarded": 578,
+    "dropped": 13
+  },
+  "sensor_163": {
+    "energy_j": 0.25167510403488674,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 1752,
+    "forwarded": 1750,
+    "dropped": 377
+  },
+  "sensor_164": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2190.004096,
+    "generated": 219,
+    "received_transit": 261,
+    "forwarded": 260,
+    "dropped": 6
+  },
+  "sensor_165": {
+    "energy_j": 4.2009469465577105,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 33,
+    "forwarded": 33,
+    "dropped": 656
+  },
+  "sensor_166": {
+    "energy_j": 1.0723663433023098,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 79,
+    "forwarded": 78,
+    "dropped": 616
+  },
+  "sensor_167": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1210.0,
+    "generated": 121,
+    "received_transit": 386,
+    "forwarded": 386,
+    "dropped": 12
+  },
+  "sensor_168": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2720.004096,
+    "generated": 272,
+    "received_transit": 947,
+    "forwarded": 946,
+    "dropped": 16
+  },
+  "sensor_169": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3710.0081920000002,
+    "generated": 371,
+    "received_transit": 335,
+    "forwarded": 334,
+    "dropped": 4
+  },
+  "sensor_170": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 630.004096,
+    "generated": 63,
+    "received_transit": 431,
+    "forwarded": 430,
+    "dropped": 10
+  },
+  "sensor_171": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 800.004096,
+    "generated": 80,
+    "received_transit": 629,
+    "forwarded": 628,
+    "dropped": 11
+  },
+  "sensor_172": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3060.004096,
+    "generated": 306,
+    "received_transit": 1608,
+    "forwarded": 1607,
+    "dropped": 29
+  },
+  "sensor_173": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3280.0,
+    "generated": 328,
+    "received_transit": 316,
+    "forwarded": 316,
+    "dropped": 9
+  },
+  "sensor_174": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2610.0122880000004,
+    "generated": 261,
+    "received_transit": 420,
+    "forwarded": 419,
+    "dropped": 8
+  },
+  "sensor_175": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1100.004096,
+    "generated": 110,
+    "received_transit": 553,
+    "forwarded": 552,
+    "dropped": 9
+  },
+  "sensor_176": {
+    "energy_j": 2.637259062149642,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 539,
+    "forwarded": 539,
+    "dropped": 667
+  },
+  "sensor_177": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3210.004096,
+    "generated": 321,
+    "received_transit": 487,
+    "forwarded": 486,
+    "dropped": 25
+  },
+  "sensor_178": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3390.0204800000006,
+    "generated": 339,
+    "received_transit": 361,
+    "forwarded": 360,
+    "dropped": 8
+  },
+  "sensor_179": {
+    "energy_j": 1.8609812658071425,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 216,
+    "forwarded": 216,
+    "dropped": 655
+  },
+  "sensor_180": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3020.0204800000006,
+    "generated": 302,
+    "received_transit": 1078,
+    "forwarded": 1077,
+    "dropped": 15
+  },
+  "sensor_181": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1250.0081919999998,
+    "generated": 125,
+    "received_transit": 517,
+    "forwarded": 516,
+    "dropped": 18
+  },
+  "sensor_182": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2370.0081920000002,
+    "generated": 237,
+    "received_transit": 604,
+    "forwarded": 603,
+    "dropped": 11
+  },
+  "sensor_183": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1710.0081919999998,
+    "generated": 171,
+    "received_transit": 676,
+    "forwarded": 336,
+    "dropped": 343
+  },
+  "sensor_184": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1600.0163839999996,
+    "generated": 160,
+    "received_transit": 401,
+    "forwarded": 400,
+    "dropped": 7
+  },
+  "sensor_185": {
+    "energy_j": 4.198088669485336,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 658
+  },
+  "sensor_186": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3140.0081920000002,
+    "generated": 314,
+    "received_transit": 612,
+    "forwarded": 611,
+    "dropped": 8
+  },
+  "sensor_187": {
+    "energy_j": 4.784081516967863,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 517,
+    "forwarded": 517,
+    "dropped": 8
+  },
+  "sensor_188": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 5230.0,
+    "generated": 523,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 5
+  },
+  "sensor_189": {
+    "energy_j": 1.1657406224051985,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 357,
+    "forwarded": 357,
+    "dropped": 661
+  },
+  "sensor_190": {
+    "energy_j": 3.3851353575523935,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 111,
+    "forwarded": 111,
+    "dropped": 655
+  },
+  "sensor_191": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3470.0450560000013,
+    "generated": 347,
+    "received_transit": 218,
+    "forwarded": 217,
+    "dropped": 11
+  },
+  "sensor_192": {
+    "energy_j": 1.3452114024089308,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 520,
+    "forwarded": 520,
+    "dropped": 657
+  },
+  "sensor_193": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 5510.0,
+    "generated": 551,
+    "received_transit": 628,
+    "forwarded": 628,
+    "dropped": 13
+  },
+  "sensor_194": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 4920.0,
+    "generated": 492,
+    "received_transit": 356,
+    "forwarded": 356,
+    "dropped": 6
+  },
+  "sensor_195": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 4820.004096,
+    "generated": 482,
+    "received_transit": 82,
+    "forwarded": 81,
+    "dropped": 7
+  },
+  "sensor_196": {
+    "energy_j": 2.0601194029569525,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 92,
+    "forwarded": 92,
+    "dropped": 549
+  },
+  "sensor_197": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3270.004096,
+    "generated": 327,
+    "received_transit": 645,
+    "forwarded": 644,
+    "dropped": 14
+  },
+  "sensor_198": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 4300.004096,
+    "generated": 430,
+    "received_transit": 442,
+    "forwarded": 441,
+    "dropped": 14
+  },
+  "sensor_199": {
+    "energy_j": 3.9978430363621946,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 958,
+    "forwarded": 958,
+    "dropped": 24
+  },
+  "sensor_200": {
+    "energy_j": 3.373081718862801,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 19,
+    "forwarded": 19,
+    "dropped": 657
+  },
+  "sensor_201": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 6520.012287999999,
+    "generated": 652,
+    "received_transit": 4331,
+    "forwarded": 4330,
+    "dropped": 52
+  },
+  "sensor_202": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2750.0081920000002,
+    "generated": 275,
+    "received_transit": 292,
+    "forwarded": 291,
+    "dropped": 9
+  },
+  "sensor_203": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 570.004096,
+    "generated": 57,
+    "received_transit": 534,
+    "forwarded": 533,
+    "dropped": 15
+  },
+  "sensor_204": {
+    "energy_j": 1.2739238340433454,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 326,
+    "forwarded": 326,
+    "dropped": 551
+  },
+  "sensor_205": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1690.0,
+    "generated": 169,
+    "received_transit": 333,
+    "forwarded": 333,
+    "dropped": 9
+  },
+  "sensor_206": {
+    "energy_j": 2.8418682423381796,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 104,
+    "forwarded": 104,
+    "dropped": 448
+  },
+  "sensor_207": {
+    "energy_j": 1.8909737400169992,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 28,
+    "forwarded": 28,
+    "dropped": 545
+  },
+  "sensor_208": {
+    "energy_j": 2.0472199073421575,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 398
+  },
+  "sensor_209": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 730.004096,
+    "generated": 73,
+    "received_transit": 434,
+    "forwarded": 433,
+    "dropped": 16
+  },
+  "sensor_210": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1420.004096,
+    "generated": 142,
+    "received_transit": 784,
+    "forwarded": 783,
+    "dropped": 15
+  },
+  "sensor_211": {
+    "energy_j": 0.34136912747083825,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 1032,
+    "forwarded": 1032,
+    "dropped": 664
+  },
+  "sensor_212": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3000.004096,
+    "generated": 300,
+    "received_transit": 435,
+    "forwarded": 434,
+    "dropped": 14
+  },
+  "sensor_213": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3480.028672000001,
+    "generated": 348,
+    "received_transit": 212,
+    "forwarded": 211,
+    "dropped": 16
+  },
+  "sensor_214": {
+    "energy_j": 3.975290391397392,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 458,
+    "forwarded": 458,
+    "dropped": 17
+  },
+  "sensor_215": {
+    "energy_j": 0.22659183504196564,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 444,
+    "forwarded": 444,
+    "dropped": 659
+  },
+  "sensor_216": {
+    "energy_j": 3.0408899110789847,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 187,
+    "forwarded": 187,
+    "dropped": 661
+  },
+  "sensor_217": {
+    "energy_j": 3.379437901708261,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 41,
+    "forwarded": 37,
+    "dropped": 662
+  },
+  "sensor_218": {
+    "energy_j": 4.730137167585152,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 1052,
+    "forwarded": 1052,
+    "dropped": 21
+  },
+  "sensor_219": {
+    "energy_j": 2.348245083745775,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 547,
+    "forwarded": 547,
+    "dropped": 14
+  },
+  "sensor_220": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2250.0081920000002,
+    "generated": 225,
+    "received_transit": 1343,
+    "forwarded": 1342,
+    "dropped": 21
+  },
+  "sensor_221": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 4520.008191999999,
+    "generated": 452,
+    "received_transit": 474,
+    "forwarded": 473,
+    "dropped": 13
+  },
+  "sensor_222": {
+    "energy_j": 3.4578718376033746,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 47,
+    "forwarded": 46,
+    "dropped": 551
+  },
+  "sensor_223": {
+    "energy_j": 4.694133448043133,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 656
+  },
+  "sensor_224": {
+    "energy_j": 3.520736356047321,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 33,
+    "forwarded": 33,
+    "dropped": 655
+  },
+  "sensor_225": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2340.0122880000004,
+    "generated": 234,
+    "received_transit": 1273,
+    "forwarded": 1272,
+    "dropped": 17
+  },
+  "sensor_226": {
+    "energy_j": 1.2253665187521987,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 408,
+    "forwarded": 408,
+    "dropped": 661
+  },
+  "sensor_227": {
+    "energy_j": 3.9296855317802164,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 10
+  },
+  "sensor_228": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1540.0081919999998,
+    "generated": 154,
+    "received_transit": 351,
+    "forwarded": 350,
+    "dropped": 6
+  },
+  "sensor_229": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3430.032768000001,
+    "generated": 343,
+    "received_transit": 577,
+    "forwarded": 576,
+    "dropped": 14
+  },
+  "sensor_230": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3460.0122880000004,
+    "generated": 346,
+    "received_transit": 385,
+    "forwarded": 384,
+    "dropped": 11
+  },
+  "sensor_231": {
+    "energy_j": 0.055535331127330154,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 383,
+    "forwarded": 383,
+    "dropped": 666
+  },
+  "sensor_232": {
+    "energy_j": 2.8196125804049426,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 404,
+    "forwarded": 404,
+    "dropped": 17
+  },
+  "sensor_233": {
+    "energy_j": 4.7351788108330695,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 5
+  },
+  "sensor_234": {
+    "energy_j": 3.797719742722105,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 394
+  },
+  "sensor_235": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2660.0,
+    "generated": 266,
+    "received_transit": 338,
+    "forwarded": 338,
+    "dropped": 12
+  },
+  "sensor_236": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 7090.0,
+    "generated": 709,
+    "received_transit": 245,
+    "forwarded": 245,
+    "dropped": 8
+  },
+  "sensor_237": {
+    "energy_j": 2.7346969940027144,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 658
+  },
+  "sensor_238": {
+    "energy_j": 3.49856241836197,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 695
+  },
+  "sensor_239": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2730.0122880000004,
+    "generated": 273,
+    "received_transit": 891,
+    "forwarded": 890,
+    "dropped": 17
+  },
+  "sensor_240": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3070.004096,
+    "generated": 307,
+    "received_transit": 399,
+    "forwarded": 398,
+    "dropped": 8
+  },
+  "sensor_241": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3060.004096,
+    "generated": 306,
+    "received_transit": 905,
+    "forwarded": 904,
+    "dropped": 26
+  },
+  "sensor_242": {
+    "energy_j": 4.606498618222304,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 401,
+    "forwarded": 401,
+    "dropped": 11
+  },
+  "sensor_243": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3820.0122880000004,
+    "generated": 382,
+    "received_transit": 3076,
+    "forwarded": 3075,
+    "dropped": 54
+  },
+  "sensor_244": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1590.004096,
+    "generated": 159,
+    "received_transit": 577,
+    "forwarded": 576,
+    "dropped": 9
+  },
+  "sensor_245": {
+    "energy_j": 4.406699441759774,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 659
+  },
+  "sensor_246": {
+    "energy_j": 1.5355801823119106,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 379,
+    "forwarded": 379,
+    "dropped": 661
+  },
+  "sensor_247": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 5260.004096,
+    "generated": 526,
+    "received_transit": 234,
+    "forwarded": 233,
+    "dropped": 8
+  },
+  "sensor_248": {
+    "energy_j": 4.204444422754022,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 344,
+    "forwarded": 344,
+    "dropped": 637
+  },
+  "sensor_249": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2610.0081920000002,
+    "generated": 261,
+    "received_transit": 560,
+    "forwarded": 559,
+    "dropped": 12
+  },
+  "sensor_250": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 5600.008191999999,
+    "generated": 560,
+    "received_transit": 832,
+    "forwarded": 831,
+    "dropped": 18
+  },
+  "sensor_251": {
+    "energy_j": 4.879503876864639,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 16
+  },
+  "sensor_252": {
+    "energy_j": 2.514509351416295,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 153,
+    "forwarded": 153,
+    "dropped": 657
+  },
+  "sensor_253": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3460.0532480000015,
+    "generated": 346,
+    "received_transit": 606,
+    "forwarded": 605,
+    "dropped": 18
+  },
+  "sensor_254": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3030.028672000001,
+    "generated": 303,
+    "received_transit": 657,
+    "forwarded": 656,
+    "dropped": 9
+  },
+  "sensor_255": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 7310.0,
+    "generated": 731,
+    "received_transit": 42,
+    "forwarded": 42,
+    "dropped": 12
+  },
+  "sensor_256": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 8560.008192000001,
+    "generated": 856,
+    "received_transit": 3108,
+    "forwarded": 3107,
+    "dropped": 31
+  },
+  "sensor_257": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3190.0163840000005,
+    "generated": 319,
+    "received_transit": 682,
+    "forwarded": 681,
+    "dropped": 9
+  },
+  "sensor_258": {
+    "energy_j": 3.249735704796758,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 549
+  },
+  "sensor_259": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3460.0573440000016,
+    "generated": 346,
+    "received_transit": 676,
+    "forwarded": 675,
+    "dropped": 18
+  },
+  "sensor_260": {
+    "energy_j": 4.603244538349809,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 658
+  },
+  "sensor_261": {
+    "energy_j": 2.5891896085754125,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 171,
+    "forwarded": 86,
+    "dropped": 441
+  },
+  "sensor_262": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3120.0122880000004,
+    "generated": 312,
+    "received_transit": 778,
+    "forwarded": 777,
+    "dropped": 16
+  },
+  "sensor_263": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3120.004096,
+    "generated": 312,
+    "received_transit": 642,
+    "forwarded": 315,
+    "dropped": 332
+  },
+  "sensor_264": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3420.028672000001,
+    "generated": 342,
+    "received_transit": 279,
+    "forwarded": 278,
+    "dropped": 11
+  },
+  "sensor_265": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 4920.004096,
+    "generated": 492,
+    "received_transit": 2066,
+    "forwarded": 2065,
+    "dropped": 27
+  },
+  "sensor_266": {
+    "energy_j": 0.6842659902883921,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 591,
+    "forwarded": 591,
+    "dropped": 617
+  },
+  "sensor_267": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2990.004096,
+    "generated": 299,
+    "received_transit": 653,
+    "forwarded": 652,
+    "dropped": 14
+  },
+  "sensor_268": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3070.0122880000004,
+    "generated": 307,
+    "received_transit": 3915,
+    "forwarded": 3914,
+    "dropped": 54
+  },
+  "sensor_269": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2560.0,
+    "generated": 256,
+    "received_transit": 709,
+    "forwarded": 341,
+    "dropped": 380
+  },
+  "sensor_270": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 6100.0,
+    "generated": 610,
+    "received_transit": 347,
+    "forwarded": 347,
+    "dropped": 15
+  },
+  "sensor_271": {
+    "energy_j": 4.896981322975131,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 281,
+    "forwarded": 281,
+    "dropped": 7
+  },
+  "sensor_272": {
+    "energy_j": 2.6183591834409263,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 114,
+    "forwarded": 108,
+    "dropped": 663
+  },
+  "sensor_273": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2260.004096,
+    "generated": 226,
+    "received_transit": 790,
+    "forwarded": 408,
+    "dropped": 398
+  },
+  "sensor_274": {
+    "energy_j": 4.210762124810081,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 6
+  },
+  "sensor_275": {
+    "energy_j": 4.095221136851636,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 657
+  },
+  "sensor_276": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3270.0081920000002,
+    "generated": 327,
+    "received_transit": 804,
+    "forwarded": 392,
+    "dropped": 420
+  },
+  "sensor_277": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 5360.0,
+    "generated": 536,
+    "received_transit": 2509,
+    "forwarded": 1261,
+    "dropped": 1267
+  },
+  "sensor_278": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3670.004096,
+    "generated": 367,
+    "received_transit": 242,
+    "forwarded": 241,
+    "dropped": 9
+  },
+  "sensor_279": {
+    "energy_j": 2.10032921546995,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 653
+  },
+  "sensor_280": {
+    "energy_j": 2.2560043721601373,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 676,
+    "forwarded": 673,
+    "dropped": 663
+  },
+  "sensor_281": {
+    "energy_j": 1.000531639907904,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 444
+  },
+  "sensor_282": {
+    "energy_j": 3.9660183627285366,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 77,
+    "forwarded": 73,
+    "dropped": 659
+  },
+  "sensor_283": {
+    "energy_j": 3.9300552494992838,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 611
+  },
+  "sensor_284": {
+    "energy_j": 0.9029934810192726,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 340,
+    "forwarded": 340,
+    "dropped": 653
+  },
+  "sensor_285": {
+    "energy_j": 4.010967978443418,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 549
+  },
+  "sensor_286": {
+    "energy_j": 3.5470059392814766,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 656
+  },
+  "sensor_287": {
+    "energy_j": 4.933857404175619,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 12
+  },
+  "sensor_288": {
+    "energy_j": 1.2892481442250705,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 883,
+    "forwarded": 883,
+    "dropped": 662
+  },
+  "sensor_289": {
+    "energy_j": 2.1100772990852565,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 104,
+    "forwarded": 104,
+    "dropped": 638
+  },
+  "sensor_290": {
+    "energy_j": 4.399931895586182,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 9,
+    "forwarded": 2,
+    "dropped": 18
+  },
+  "sensor_291": {
+    "energy_j": 3.2183812474454196,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 660
+  },
+  "sensor_292": {
+    "energy_j": 3.3203242221582707,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 546
+  },
+  "sensor_293": {
+    "energy_j": 0.9972733245700033,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 564,
+    "forwarded": 564,
+    "dropped": 616
+  },
+  "sensor_294": {
+    "energy_j": 0.7489425350044995,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 316,
+    "forwarded": 315,
+    "dropped": 666
+  },
+  "sensor_295": {
+    "energy_j": 4.250849137717761,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 657
+  },
+  "sensor_296": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2890.004096,
+    "generated": 289,
+    "received_transit": 219,
+    "forwarded": 218,
+    "dropped": 9
+  },
+  "sensor_297": {
+    "energy_j": 2.7409256468197163,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 356
+  },
+  "sensor_298": {
+    "energy_j": 2.842816074622487,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 610
+  },
+  "sensor_299": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2950.0204800000006,
+    "generated": 295,
+    "received_transit": 283,
+    "forwarded": 282,
+    "dropped": 11
+  },
+  "sensor_300": {
+    "energy_j": 3.740683646809808,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 488,
+    "forwarded": 488,
+    "dropped": 452
+  },
+  "sensor_301": {
+    "energy_j": 3.475132346020396,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 654
+  },
+  "sensor_302": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 530.004096,
+    "generated": 53,
+    "received_transit": 566,
+    "forwarded": 565,
+    "dropped": 11
+  },
+  "sensor_303": {
+    "energy_j": 4.702678772578462,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 1052,
+    "forwarded": 1052,
+    "dropped": 25
+  },
+  "sensor_304": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 4720.004096,
+    "generated": 472,
+    "received_transit": 216,
+    "forwarded": 215,
+    "dropped": 5
+  },
+  "sensor_305": {
+    "energy_j": 3.1823686276744647,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 41,
+    "forwarded": 41,
+    "dropped": 657
+  },
+  "sensor_306": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 7730.0,
+    "generated": 773,
+    "received_transit": 644,
+    "forwarded": 644,
+    "dropped": 12
+  },
+  "sensor_307": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1290.004096,
+    "generated": 129,
+    "received_transit": 381,
+    "forwarded": 380,
+    "dropped": 6
+  },
+  "sensor_308": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2650.0122880000004,
+    "generated": 265,
+    "received_transit": 1184,
+    "forwarded": 1183,
+    "dropped": 18
+  },
+  "sensor_309": {
+    "energy_j": 3.4697569311119407,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 147,
+    "forwarded": 147,
+    "dropped": 657
+  },
+  "sensor_310": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 4120.0,
+    "generated": 412,
+    "received_transit": 603,
+    "forwarded": 603,
+    "dropped": 18
+  },
+  "sensor_311": {
+    "energy_j": 2.5193786642755542,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 654
+  },
+  "sensor_312": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2830.004096,
+    "generated": 283,
+    "received_transit": 1159,
+    "forwarded": 1158,
+    "dropped": 15
+  },
+  "sensor_313": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2620.0122880000004,
+    "generated": 262,
+    "received_transit": 481,
+    "forwarded": 480,
+    "dropped": 12
+  },
+  "sensor_314": {
+    "energy_j": 3.805503731580234,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 189,
+    "forwarded": 189,
+    "dropped": 657
+  },
+  "sensor_315": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 7200.0,
+    "generated": 720,
+    "received_transit": 1193,
+    "forwarded": 1193,
+    "dropped": 24
+  },
+  "sensor_316": {
+    "energy_j": 1.6744046503209389,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 433,
+    "forwarded": 433,
+    "dropped": 553
+  },
+  "sensor_317": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3250.028672000001,
+    "generated": 325,
+    "received_transit": 1201,
+    "forwarded": 1200,
+    "dropped": 16
+  },
+  "sensor_318": {
+    "energy_j": 1.1712991306914742,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 428,
+    "forwarded": 428,
+    "dropped": 660
+  },
+  "sensor_319": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2790.0163840000005,
+    "generated": 279,
+    "received_transit": 387,
+    "forwarded": 386,
+    "dropped": 9
+  },
+  "sensor_320": {
+    "energy_j": 4.895389621039854,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 8
+  },
+  "sensor_321": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 7730.004096,
+    "generated": 773,
+    "received_transit": 3060,
+    "forwarded": 3059,
+    "dropped": 37
+  },
+  "sensor_322": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3450.0122880000004,
+    "generated": 345,
+    "received_transit": 547,
+    "forwarded": 546,
+    "dropped": 12
+  },
+  "sensor_323": {
+    "energy_j": 3.3381834407702176,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 444
+  },
+  "sensor_324": {
+    "energy_j": 1.4813932153231293,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 44,
+    "forwarded": 44,
+    "dropped": 10
+  },
+  "sensor_325": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1510.004096,
+    "generated": 151,
+    "received_transit": 313,
+    "forwarded": 312,
+    "dropped": 13
+  },
+  "sensor_326": {
+    "energy_j": 3.4326151362400923,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 8
+  },
+  "sensor_327": {
+    "energy_j": 4.530981655036348,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 652
+  },
+  "sensor_328": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3540.004096,
+    "generated": 354,
+    "received_transit": 295,
+    "forwarded": 294,
+    "dropped": 12
+  },
+  "sensor_329": {
+    "energy_j": 0.4008856847680837,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 472,
+    "forwarded": 472,
+    "dropped": 660
+  },
+  "sensor_330": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 4120.004096,
+    "generated": 412,
+    "received_transit": 208,
+    "forwarded": 207,
+    "dropped": 5
+  },
+  "sensor_331": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1900.0122879999997,
+    "generated": 190,
+    "received_transit": 459,
+    "forwarded": 458,
+    "dropped": 10
+  },
+  "sensor_332": {
+    "energy_j": 2.0351333500829174,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 61,
+    "forwarded": 61,
+    "dropped": 656
+  },
+  "sensor_333": {
+    "energy_j": 0.4885775547061376,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 304,
+    "forwarded": 303,
+    "dropped": 447
+  },
+  "sensor_334": {
+    "energy_j": 2.838777336874747,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 654
+  },
+  "sensor_335": {
+    "energy_j": 3.2443966937702062,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 655
+  },
+  "sensor_336": {
+    "energy_j": 4.2726485444152775,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 451
+  },
+  "sensor_337": {
+    "energy_j": 3.1065462905623535,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 355
+  },
+  "sensor_338": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2580.0081920000002,
+    "generated": 258,
+    "received_transit": 649,
+    "forwarded": 648,
+    "dropped": 22
+  },
+  "sensor_339": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3220.036864000001,
+    "generated": 322,
+    "received_transit": 2151,
+    "forwarded": 2150,
+    "dropped": 26
+  },
+  "sensor_340": {
+    "energy_j": 2.8627058580183737,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 37,
+    "forwarded": 37,
+    "dropped": 654
+  },
+  "sensor_341": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3680.0,
+    "generated": 368,
+    "received_transit": 315,
+    "forwarded": 315,
+    "dropped": 13
+  },
+  "sensor_342": {
+    "energy_j": 2.313905859582303,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 282,
+    "forwarded": 282,
+    "dropped": 657
+  },
+  "sensor_343": {
+    "energy_j": 3.4596029965681026,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 14,
+    "forwarded": 14,
+    "dropped": 658
+  },
+  "sensor_344": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3450.036864000001,
+    "generated": 345,
+    "received_transit": 1753,
+    "forwarded": 845,
+    "dropped": 918
+  },
+  "sensor_345": {
+    "energy_j": 3.7695556634979184,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 802,
+    "forwarded": 802,
+    "dropped": 16
+  },
+  "sensor_346": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 5500.0,
+    "generated": 550,
+    "received_transit": 724,
+    "forwarded": 724,
+    "dropped": 9
+  },
+  "sensor_347": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3350.0081920000002,
+    "generated": 335,
+    "received_transit": 302,
+    "forwarded": 301,
+    "dropped": 14
+  },
+  "sensor_348": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 4620.008191999999,
+    "generated": 462,
+    "received_transit": 297,
+    "forwarded": 296,
+    "dropped": 9
+  },
+  "sensor_349": {
+    "energy_j": 3.8121931553998896,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 657
+  },
+  "sensor_350": {
+    "energy_j": 3.2518075710885723,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 655
+  },
+  "sensor_351": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1830.004096,
+    "generated": 183,
+    "received_transit": 348,
+    "forwarded": 347,
+    "dropped": 11
+  },
+  "sensor_352": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 520.016384,
+    "generated": 52,
+    "received_transit": 912,
+    "forwarded": 911,
+    "dropped": 7
+  },
+  "sensor_353": {
+    "energy_j": 0.6474968480577843,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 444
+  },
+  "sensor_354": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2480.0,
+    "generated": 248,
+    "received_transit": 247,
+    "forwarded": 247,
+    "dropped": 10
+  },
+  "sensor_355": {
+    "energy_j": 4.1476478458730615,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 636
+  },
+  "sensor_356": {
+    "energy_j": 3.8981021791597215,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 652
+  },
+  "sensor_357": {
+    "energy_j": 1.4197878835090463,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 232,
+    "forwarded": 129,
+    "dropped": 715
+  },
+  "sensor_358": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2440.0,
+    "generated": 244,
+    "received_transit": 600,
+    "forwarded": 600,
+    "dropped": 10
+  },
+  "sensor_359": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3140.0081920000002,
+    "generated": 314,
+    "received_transit": 727,
+    "forwarded": 726,
+    "dropped": 13
+  },
+  "sensor_360": {
+    "energy_j": 1.9952306558963366,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 93,
+    "forwarded": 93,
+    "dropped": 660
+  },
+  "sensor_361": {
+    "energy_j": 3.4980256193192503,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 652
+  },
+  "sensor_362": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 9210.004096,
+    "generated": 921,
+    "received_transit": 378,
+    "forwarded": 377,
+    "dropped": 12
+  },
+  "sensor_363": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3270.0204800000006,
+    "generated": 327,
+    "received_transit": 183,
+    "forwarded": 182,
+    "dropped": 6
+  },
+  "sensor_364": {
+    "energy_j": 3.746613506988838,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 248,
+    "forwarded": 248,
+    "dropped": 613
+  },
+  "sensor_365": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3420.0122880000004,
+    "generated": 342,
+    "received_transit": 479,
+    "forwarded": 478,
+    "dropped": 16
+  },
+  "sensor_366": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2990.004096,
+    "generated": 299,
+    "received_transit": 565,
+    "forwarded": 564,
+    "dropped": 6
+  },
+  "sensor_367": {
+    "energy_j": 1.5548025112225174,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 264,
+    "forwarded": 264,
+    "dropped": 654
+  },
+  "sensor_368": {
+    "energy_j": 4.844707680305866,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 11
+  },
+  "sensor_369": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 4680.0,
+    "generated": 468,
+    "received_transit": 361,
+    "forwarded": 361,
+    "dropped": 7
+  },
+  "sensor_370": {
+    "energy_j": 2.774518872964863,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 545
+  },
+  "sensor_371": {
+    "energy_j": 1.0150578512575514,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 2320,
+    "forwarded": 2320,
+    "dropped": 44
+  },
+  "sensor_372": {
+    "energy_j": 4.850275611996686,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 7
+  },
+  "sensor_373": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2320.004096,
+    "generated": 232,
+    "received_transit": 334,
+    "forwarded": 333,
+    "dropped": 11
+  },
+  "sensor_374": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3320.0081920000002,
+    "generated": 332,
+    "received_transit": 189,
+    "forwarded": 188,
+    "dropped": 9
+  },
+  "sensor_375": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2360.0163840000005,
+    "generated": 236,
+    "received_transit": 3515,
+    "forwarded": 3514,
+    "dropped": 36
+  },
+  "sensor_376": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2620.0,
+    "generated": 262,
+    "received_transit": 4036,
+    "forwarded": 4036,
+    "dropped": 37
+  },
+  "sensor_377": {
+    "energy_j": 2.9777526559599683,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 354
+  },
+  "sensor_378": {
+    "energy_j": 1.9965668686902738,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 116,
+    "forwarded": 116,
+    "dropped": 449
+  },
+  "sensor_379": {
+    "energy_j": 1.9145467976231503,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 968,
+    "forwarded": 968,
+    "dropped": 361
+  },
+  "sensor_380": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 4140.004096,
+    "generated": 414,
+    "received_transit": 204,
+    "forwarded": 99,
+    "dropped": 110
+  },
+  "sensor_381": {
+    "energy_j": 1.7564581251340008,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 396
+  },
+  "sensor_382": {
+    "energy_j": 1.4798890811166465,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 164,
+    "forwarded": 164,
+    "dropped": 656
+  },
+  "sensor_383": {
+    "energy_j": 0.651700430252273,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 243,
+    "forwarded": 243,
+    "dropped": 658
+  },
+  "sensor_384": {
+    "energy_j": 2.1547394165440177,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 175,
+    "forwarded": 175,
+    "dropped": 658
+  },
+  "sensor_385": {
+    "energy_j": 3.0361028472691,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 90
+  },
+  "sensor_386": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 1520.0122879999997,
+    "generated": 152,
+    "received_transit": 922,
+    "forwarded": 921,
+    "dropped": 10
+  },
+  "sensor_387": {
+    "energy_j": 3.216265893321261,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 21,
+    "forwarded": 21,
+    "dropped": 661
+  },
+  "sensor_388": {
+    "energy_j": 0.8574885600074204,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 444
+  },
+  "sensor_389": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2800.0163840000005,
+    "generated": 280,
+    "received_transit": 268,
+    "forwarded": 267,
+    "dropped": 13
+  },
+  "sensor_390": {
+    "energy_j": 2.0732916725886503,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 547
+  },
+  "sensor_391": {
+    "energy_j": 3.019072390476458,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 390,
+    "forwarded": 390,
+    "dropped": 11
+  },
+  "sensor_392": {
+    "energy_j": 2.4749742504641192,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 655
+  },
+  "sensor_393": {
+    "energy_j": 4.776595398357202,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 538,
+    "forwarded": 538,
+    "dropped": 10
+  },
+  "sensor_394": {
+    "energy_j": 0.8188781249669556,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 907,
+    "forwarded": 450,
+    "dropped": 1085
+  },
+  "sensor_395": {
+    "energy_j": 0.6632752372918415,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 455,
+    "forwarded": 453,
+    "dropped": 663
+  },
+  "sensor_396": {
+    "energy_j": 4.814236222733953,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 496,
+    "forwarded": 496,
+    "dropped": 18
+  },
+  "sensor_397": {
+    "energy_j": 4.02518911951335,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 637
+  },
+  "sensor_398": {
+    "energy_j": 1.7220353985521433,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 115,
+    "forwarded": 115,
+    "dropped": 548
+  },
+  "sensor_399": {
+    "energy_j": 1.2293754979753977,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 546,
+    "forwarded": 546,
+    "dropped": 658
+  },
+  "sensor_400": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3390.0204800000006,
+    "generated": 339,
+    "received_transit": 456,
+    "forwarded": 455,
+    "dropped": 11
+  },
+  "sensor_401": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3420.0163840000005,
+    "generated": 342,
+    "received_transit": 1230,
+    "forwarded": 1229,
+    "dropped": 17
+  },
+  "sensor_402": {
+    "energy_j": 1.53969160890794,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 26,
+    "forwarded": 26,
+    "dropped": 656
+  },
+  "sensor_403": {
+    "energy_j": 1.6528023172425128,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 3534,
+    "forwarded": 3534,
+    "dropped": 42
+  },
+  "sensor_404": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 2990.0081920000002,
+    "generated": 299,
+    "received_transit": 408,
+    "forwarded": 407,
+    "dropped": 11
+  },
+  "sensor_405": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 4570.004096,
+    "generated": 457,
+    "received_transit": 216,
+    "forwarded": 215,
+    "dropped": 11
+  },
+  "sensor_406": {
+    "energy_j": 3.761360257942513,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 9
+  },
+  "sensor_407": {
+    "energy_j": 3.298134518632807,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 9
+  },
+  "sensor_408": {
+    "energy_j": 4.289329655942783,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 612
+  },
+  "sensor_409": {
+    "energy_j": 1.8138040797326183,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 70,
+    "forwarded": 70,
+    "dropped": 657
+  },
+  "sensor_410": {
+    "energy_j": 3.419584377265321,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 657
+  },
+  "sensor_411": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 4580.012287999999,
+    "generated": 458,
+    "received_transit": 363,
+    "forwarded": 362,
+    "dropped": 13
+  },
+  "sensor_412": {
+    "energy_j": 3.4062722650599366,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 657
+  },
+  "sensor_413": {
+    "energy_j": 2.2074222810884567,
+    "alive": true,
+    "died_at": null,
+    "generated": 1000,
+    "received_transit": 0,
+    "forwarded": 0,
+    "dropped": 656
+  },
+  "sensor_414": {
+    "energy_j": 0.0,
+    "alive": false,
+    "died_at": 3520.0081920000002,
+    "generated": 352,
+    "received_transit": 483,
+    "forwarded": 257,
+    "dropped": 233
+  }
+}

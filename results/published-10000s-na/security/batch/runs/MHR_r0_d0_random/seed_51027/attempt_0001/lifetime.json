@@ -1,0 +1,37 @@
+{
+  "events": {
+    "FND": {
+      "time_s": 130.012288,
+      "censored": false,
+      "received_payload_bits": 5732352
+    },
+    "HND": {
+      "time_s": null,
+      "censored": true,
+      "received_payload_bits": null
+    },
+    "LND": {
+      "time_s": null,
+      "censored": true,
+      "received_payload_bits": null
+    },
+    "functional_network_death": {
+      "time_s": 2590.0614400000018,
+      "censored": false,
+      "received_payload_bits": 102414336
+    },
+    "functional_routing_network_death": {
+      "time_s": 2590.0614400000018,
+      "censored": false,
+      "received_payload_bits": 102414336
+    }
+  },
+  "metadata": {
+    "payload_na_reasons": {},
+    "death_time_na_reasons": {},
+    "boundary_rule": "cumulative_deliveries_in_event_prefix_at_death_before_later_same_time_events",
+    "observation_end_s": 10000.0,
+    "censoring_reason": "max_rounds",
+    "round_duration_s": 10
+  }
+}

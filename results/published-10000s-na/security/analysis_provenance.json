@@ -1,0 +1,31 @@
+{
+  "created_at_utc": "2026-11-21T16:10:27.060516+00:00",
+  "project": "F:\\bangdzaihjhj\\dancctt\\results\\wsn-handover\\clean",
+  "batch": "F:\\bangdzaihjhj\\dancctt\\results\\wsn-rerun-20261121\\security-batch\\evaluation_10000s_20261121T144030230495Z_3e2c45af",
+  "profile": "WSN_SECURITY_FIXED_HORIZON_10000S_V1",
+  "plan_hash": "0d2d7bdf4c9294bfdd4cb2fb9056dbceda2507a7b596a4f956617abf826bdc1e",
+  "model_source_sha256": "d71cfc497d59ab28a6ab7cf21e44ec5185f288e4349d1e082a1eeb607bda3973",
+  "analysis_files": {
+    "charts_vi.py": "2ccf516f3581282532716054631962c6084655ab4793f183198417246b737888",
+    "report_vi.py": "29fbf25808bc37be8e52de9a99f3fe2804400ca475d2583840063123afaba41e",
+    "reproduce.py": "fd0b62dc7bdf67f3d02458d1e9722779182089cb7ab35231ad9ac59296a0027f",
+    "study.py": "881586daf776b940860bce98aa9993506edde129311223d8b1ba7223bcdd8a43",
+    "tables.py": "8a60182aac3fde6bc6005792ffeac4914ce3aed70f40e33251942318a1f9e94d",
+    "test_profile.py": "28e2727a4b52167e2a46431c7e9d71c2ce1d9dd6091d55d832d19e14197c4163",
+    "verify_report.py": "b8d3be651be31fd001ce1347f3208b36a19d10ec6d574e871f93af56581a81b1"
+  },
+  "completed": 480,
+  "failed": 0,
+  "pending": 0,
+  "new_short_runs": 480,
+  "reused_long_metrics": 0,
+  "horizon_s": 10000,
+  "max_rounds": 1000,
+  "freeze": {
+    "verified": true,
+    "config": "F:\\bangdzaihjhj\\dancctt\\results\\wsn-handover\\final\\calibration\\detector_na.json",
+    "lock": "F:\\bangdzaihjhj\\dancctt\\results\\wsn-handover\\final\\calibration\\detector_na.lock.json",
+    "config_file_sha256": "dce52cacc293a57932ebe9769dfbf20b73b79718ec9c62fce976442f71ebf2a8",
+    "scope": "stage7-8 final source; 450 sensors, 7 sinks, pilot-selected R=300m, E0=5J; benign ideal TX observer; finite 120.5s horizon; no real overhearing or full-lifetime FPR guarantee"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "mode": "bounded_active_state_streaming",
+  "full_trace": false,
+  "packet_id_rule": "unique_sensor_sequence_ids_single_path_terminal_guard_no_MAC_replay",
+  "detector_history": "pending_and_unclosed_cohorts_only",
+  "historical_evaluator_queries": false,
+  "bulk_unreachable": true,
+  "max_active_packets_sampled": 444,
+  "max_live_observations_sampled": 0,
+  "files": [
+    "final_sensor_states.json",
+    "lifetime.json",
+    "spec.json",
+    "stderr.log",
+    "stdout.log",
+    "summary.json",
+    "timeseries.csv"
+  ],
+  "active_packets_at_end": 48,
+  "live_observations_at_end": 0,
+  "route_cache_hits": 186800,
+  "cache_policy": "unique_primary_paths_selective_monotone_removal_global_gain_invalidation"
+}
