@@ -1,13 +1,13 @@
 [
   {
-    "figure": "01_hieu_nang_trung_tam.png",
-    "vector": "01_hieu_nang_trung_tam.svg",
-    "data_csv": "01_hieu_nang_trung_tam_du_lieu.csv",
+    "figure": "01-performance.png",
+    "vector": "01-performance.svg",
+    "data_csv": "01-performance.csv",
     "data_sha256": "8c9efb2bdb6a9ccaeca812d2df9c60058bb661a7a870128018899e2e4820b319",
     "png_sha256": "fb961151521c726e839fbae8d77b6b5c673d0c4aee8accb5a282f8e23828ab1e",
     "svg_sha256": "fa04f39ee6eaf5b0c782a0d0f24cf37733cbddd4456a98a22660f5cd0f8a220a",
     "script_sha256": "2ccf516f3581282532716054631962c6084655ab4793f183198417246b737888",
-    "source_csv": "../aggregate.csv",
+    "source_csv": "../summary.csv",
     "source_sha256": "a7153e68581ce214775958e78fb57068cc4ae6a7cb02e9148f416bd80005bef1",
     "extra_sources": [],
     "bars": [
@@ -855,14 +855,14 @@
     }
   },
   {
-    "figure": "02_trang_thai_10000s.png",
-    "vector": "02_trang_thai_10000s.svg",
-    "data_csv": "02_trang_thai_10000s_du_lieu.csv",
+    "figure": "02-final-state.png",
+    "vector": "02-final-state.svg",
+    "data_csv": "02-final-state.csv",
     "data_sha256": "a5972b66097f79112c5e009dc811e716ecf7943e8866d696a2172998233878f1",
     "png_sha256": "0c2d116bf77b4bd2a00d72eb3712b3c02900bef36787f5ad2f848fc8e90888b7",
     "svg_sha256": "d250a2adc7a046fd053f9af62161cb2ccb9e101a348b904d5735b7182b39aa43",
     "script_sha256": "2ccf516f3581282532716054631962c6084655ab4793f183198417246b737888",
-    "source_csv": "../aggregate.csv",
+    "source_csv": "../summary.csv",
     "source_sha256": "a7153e68581ce214775958e78fb57068cc4ae6a7cb02e9148f416bd80005bef1",
     "extra_sources": [],
     "bars": [
@@ -1296,14 +1296,14 @@
     }
   },
   {
-    "figure": "03_phat_hien_bao_mat.png",
-    "vector": "03_phat_hien_bao_mat.svg",
-    "data_csv": "03_phat_hien_bao_mat_du_lieu.csv",
+    "figure": "03-detection.png",
+    "vector": "03-detection.svg",
+    "data_csv": "03-detection.csv",
     "data_sha256": "cd9551bf4a85281d9ed1e353a12d487208ea9e377668a7b532c382a6589dadab",
     "png_sha256": "5efc0735213dd6a628e61d2fc9b7753fc31d575520ae8810f2a4d4b0a24e82b6",
     "svg_sha256": "3d7a6bd18d31e213b960b0a44f798a5875e49ebf352185b72793a31ef424d1f7",
     "script_sha256": "2ccf516f3581282532716054631962c6084655ab4793f183198417246b737888",
-    "source_csv": "../aggregate.csv",
+    "source_csv": "../summary.csv",
     "source_sha256": "a7153e68581ce214775958e78fb57068cc4ae6a7cb02e9148f416bd80005bef1",
     "extra_sources": [],
     "bars": [
@@ -1599,14 +1599,14 @@
     }
   },
   {
-    "figure": "04_ty_le_attacker.png",
-    "vector": "04_ty_le_attacker.svg",
-    "data_csv": "04_ty_le_attacker_du_lieu.csv",
+    "figure": "04-attacker-ratio.png",
+    "vector": "04-attacker-ratio.svg",
+    "data_csv": "04-attacker-ratio.csv",
     "data_sha256": "2d62e9145cc0a21482c31beb9c231ada7a0ba5298be80ae6ec6cc939d7141fd7",
     "png_sha256": "0a6f86babb3546adacc2df3fcf92f0ff9d480fbb88fc64eef13398c3e73c3bcd",
     "svg_sha256": "724af38ddb07a9036f523115720f147aebc0d51276bfd732d0146297c316d27e",
     "script_sha256": "2ccf516f3581282532716054631962c6084655ab4793f183198417246b737888",
-    "source_csv": "../aggregate.csv",
+    "source_csv": "../summary.csv",
     "source_sha256": "a7153e68581ce214775958e78fb57068cc4ae6a7cb02e9148f416bd80005bef1",
     "extra_sources": [],
     "bars": [
@@ -2454,14 +2454,14 @@
     }
   },
   {
-    "figure": "05_xac_suat_bo_goi.png",
-    "vector": "05_xac_suat_bo_goi.svg",
-    "data_csv": "05_xac_suat_bo_goi_du_lieu.csv",
+    "figure": "05-drop-probability.png",
+    "vector": "05-drop-probability.svg",
+    "data_csv": "05-drop-probability.csv",
     "data_sha256": "2a3fffdb7f742ca3b4b171f4f2bc5eecb3c635b5cfc3dbc3f7317fc6595045f9",
     "png_sha256": "49e170aed629e10076f4df8c456df1d00c6da6a08b4d166f43fbb1dd1c220381",
     "svg_sha256": "8413f42711b29e5343a58e0e0c1fb9ea0df32f8cc75188098c2c8a9e9ca6b2fe",
     "script_sha256": "2ccf516f3581282532716054631962c6084655ab4793f183198417246b737888",
-    "source_csv": "../aggregate.csv",
+    "source_csv": "../summary.csv",
     "source_sha256": "a7153e68581ce214775958e78fb57068cc4ae6a7cb02e9148f416bd80005bef1",
     "extra_sources": [],
     "bars": [
@@ -3309,14 +3309,14 @@
     }
   },
   {
-    "figure": "06_vi_tri_attacker.png",
-    "vector": "06_vi_tri_attacker.svg",
-    "data_csv": "06_vi_tri_attacker_du_lieu.csv",
+    "figure": "06-attacker-placement.png",
+    "vector": "06-attacker-placement.svg",
+    "data_csv": "06-attacker-placement.csv",
     "data_sha256": "6302084221ed56bf3d7d77a7c16e4fc6931206bca9e568b4d78c0d93298a71a1",
     "png_sha256": "adf1124fec2226f104380e315c73ad7ed8a5107dbc85ed20aece72da2f96c636",
     "svg_sha256": "988cad8526aa38fe1781261550cf9df9fa8648b5dee206dc811fa7a39f61a7a6",
     "script_sha256": "2ccf516f3581282532716054631962c6084655ab4793f183198417246b737888",
-    "source_csv": "../aggregate.csv",
+    "source_csv": "../summary.csv",
     "source_sha256": "a7153e68581ce214775958e78fb57068cc4ae6a7cb02e9148f416bd80005bef1",
     "extra_sources": [],
     "bars": [
@@ -3888,14 +3888,14 @@
     }
   },
   {
-    "figure": "07_dien_bien_mang.png",
-    "vector": "07_dien_bien_mang.svg",
-    "data_csv": "07_dien_bien_mang_du_lieu.csv",
+    "figure": "07-network-state.png",
+    "vector": "07-network-state.svg",
+    "data_csv": "07-network-state.csv",
     "data_sha256": "ac6183f46aab98428e8562af2b345149e50a71def91fb1db5e2a17208c0c2557",
     "png_sha256": "72ed03f59679db4be528ef58aa6f2122d05553fb9af79dc9888a92d47f708dff",
     "svg_sha256": "76e88ddbf9c95e9095834323abc3201ece1c4e1edfb2c8173639aec7b612a697",
     "script_sha256": "2ccf516f3581282532716054631962c6084655ab4793f183198417246b737888",
-    "source_csv": "../aggregate.csv",
+    "source_csv": "../summary.csv",
     "source_sha256": "a7153e68581ce214775958e78fb57068cc4ae6a7cb02e9148f416bd80005bef1",
     "extra_sources": [
       {
@@ -6136,14 +6136,14 @@
     }
   },
   {
-    "figure": "08_FND_gioi_han.png",
-    "vector": "08_FND_gioi_han.svg",
-    "data_csv": "08_FND_gioi_han_du_lieu.csv",
+    "figure": "08-first-node-death.png",
+    "vector": "08-first-node-death.svg",
+    "data_csv": "08-first-node-death.csv",
     "data_sha256": "9bb043d506a929f37c2c52d50a5ba8e729026b65c70fb54aac8413a42cc610e0",
     "png_sha256": "ed5af31afd0acf63bc7da98c8abbab4a84f538cab9a1a48cf10d21f469002f42",
     "svg_sha256": "0d680eed487b04a6dd93a0ac6173fcb34b97a2e64da08ffc834264a2b792d6b9",
     "script_sha256": "2ccf516f3581282532716054631962c6084655ab4793f183198417246b737888",
-    "source_csv": "../aggregate.csv",
+    "source_csv": "../summary.csv",
     "source_sha256": "a7153e68581ce214775958e78fb57068cc4ae6a7cb02e9148f416bd80005bef1",
     "extra_sources": [],
     "bars": [
@@ -6439,14 +6439,14 @@
     }
   },
   {
-    "figure": "09_trang_thai_goi.png",
-    "vector": "09_trang_thai_goi.svg",
-    "data_csv": "09_trang_thai_goi_du_lieu.csv",
+    "figure": "09-packet-status.png",
+    "vector": "09-packet-status.svg",
+    "data_csv": "09-packet-status.csv",
     "data_sha256": "f19d42fd4a37260f96b0f76b619b82f2e02f3371d2832c9c9983458af88bc12c",
     "png_sha256": "3c66df6610004d50becee0210425f72fdb03647eac3198f8e3e9e70eb875986d",
     "svg_sha256": "5a6ca6c604d6353fc7ae5f971b8b0aa063fd2d4a02d3755f6257be07829255bd",
     "script_sha256": "2ccf516f3581282532716054631962c6084655ab4793f183198417246b737888",
-    "source_csv": "../aggregate.csv",
+    "source_csv": "../summary.csv",
     "source_sha256": "a7153e68581ce214775958e78fb57068cc4ae6a7cb02e9148f416bd80005bef1",
     "extra_sources": [],
     "bars": [
@@ -7222,14 +7222,14 @@
     }
   },
   {
-    "figure": "10_doi_tuyen_va_cach_ly.png",
-    "vector": "10_doi_tuyen_va_cach_ly.svg",
-    "data_csv": "10_doi_tuyen_va_cach_ly_du_lieu.csv",
+    "figure": "10-reroutes-isolations.png",
+    "vector": "10-reroutes-isolations.svg",
+    "data_csv": "10-reroutes-isolations.csv",
     "data_sha256": "d662c4f1d852c415559b565be916e6a68e3628212fe8a983af5548f78f87c49d",
     "png_sha256": "759441bca0275d68e63309823d05822e96d36828c53fb3020b4efad50bf1e970",
     "svg_sha256": "b50d79d73348e2f88a133daf7e1724517171aac8d30c638477849f6bcb0d39cb",
     "script_sha256": "2ccf516f3581282532716054631962c6084655ab4793f183198417246b737888",
-    "source_csv": "../aggregate.csv",
+    "source_csv": "../summary.csv",
     "source_sha256": "a7153e68581ce214775958e78fb57068cc4ae6a7cb02e9148f416bd80005bef1",
     "extra_sources": [],
     "bars": [

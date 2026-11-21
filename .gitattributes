@@ -22,5 +22,5 @@
 /results/kiem-chung/** -text
 /results/runs/** -text
 /results/security_audit/archive/** -text
-/results/published-10000s-na/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
-/results/published-10000s-na/security/figures/*.svg -whitespace
+/results/10000s/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/results/10000s/security/figures/*.svg -whitespace

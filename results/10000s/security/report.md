@@ -2,7 +2,7 @@
 
 **480/480 lượt; 16 cấu hình × 30 seed; lỗi=0; còn thiếu=0.**
 
-[Dữ liệu từng seed](runs.csv) · [CSV bảo mật](security_runs.csv) · [Trạng thái từng relay](relay_security_per_seed.csv) · [Kiểm tra cột](bar_visibility_audit.csv) · [Mean/std/CI95](aggregate.csv) · [So sánh cặp](paired_comparisons.csv) · [Kiểm chứng](verification.json) · [Chỉ mục dữ liệu từng lượt](portable_run_index.json)
+[Dữ liệu từng seed](runs.csv) · [CSV bảo mật](detection.csv) · [Trạng thái từng relay](relay-stats.csv) · [Kiểm tra cột](bar-audit.csv) · [Mean/std/CI95](summary.csv) · [So sánh cặp](paired.csv) · [Kiểm chứng](verification.json) · [Chỉ mục dữ liệu từng lượt](run-index.json)
 
 ## Phương pháp và quy tắc chốt dữ liệu
 
@@ -1058,46 +1058,46 @@ Detector dùng quan sát lý tưởng từ SimPy, chưa mô phỏng overhearing/
 
 ## Bộ biểu đồ
 
-![01_hieu_nang_trung_tam.png](figures/01_hieu_nang_trung_tam.png)
+![01-performance.png](figures/01-performance.png)
 
-[SVG](figures/01_hieu_nang_trung_tam.svg) · [CSV nguồn](figures/01_hieu_nang_trung_tam_du_lieu.csv)
+[SVG](figures/01-performance.svg) · [CSV nguồn](figures/01-performance.csv)
 
-![02_trang_thai_10000s.png](figures/02_trang_thai_10000s.png)
+![02-final-state.png](figures/02-final-state.png)
 
-[SVG](figures/02_trang_thai_10000s.svg) · [CSV nguồn](figures/02_trang_thai_10000s_du_lieu.csv)
+[SVG](figures/02-final-state.svg) · [CSV nguồn](figures/02-final-state.csv)
 
-![03_phat_hien_bao_mat.png](figures/03_phat_hien_bao_mat.png)
+![03-detection.png](figures/03-detection.png)
 
-[SVG](figures/03_phat_hien_bao_mat.svg) · [CSV nguồn](figures/03_phat_hien_bao_mat_du_lieu.csv)
+[SVG](figures/03-detection.svg) · [CSV nguồn](figures/03-detection.csv)
 
-![04_ty_le_attacker.png](figures/04_ty_le_attacker.png)
+![04-attacker-ratio.png](figures/04-attacker-ratio.png)
 
-[SVG](figures/04_ty_le_attacker.svg) · [CSV nguồn](figures/04_ty_le_attacker_du_lieu.csv)
+[SVG](figures/04-attacker-ratio.svg) · [CSV nguồn](figures/04-attacker-ratio.csv)
 
-![05_xac_suat_bo_goi.png](figures/05_xac_suat_bo_goi.png)
+![05-drop-probability.png](figures/05-drop-probability.png)
 
-[SVG](figures/05_xac_suat_bo_goi.svg) · [CSV nguồn](figures/05_xac_suat_bo_goi_du_lieu.csv)
+[SVG](figures/05-drop-probability.svg) · [CSV nguồn](figures/05-drop-probability.csv)
 
-![06_vi_tri_attacker.png](figures/06_vi_tri_attacker.png)
+![06-attacker-placement.png](figures/06-attacker-placement.png)
 
-[SVG](figures/06_vi_tri_attacker.svg) · [CSV nguồn](figures/06_vi_tri_attacker_du_lieu.csv)
+[SVG](figures/06-attacker-placement.svg) · [CSV nguồn](figures/06-attacker-placement.csv)
 
-![07_dien_bien_mang.png](figures/07_dien_bien_mang.png)
+![07-network-state.png](figures/07-network-state.png)
 
-[SVG](figures/07_dien_bien_mang.svg) · [CSV nguồn](figures/07_dien_bien_mang_du_lieu.csv)
+[SVG](figures/07-network-state.svg) · [CSV nguồn](figures/07-network-state.csv)
 
-![08_FND_gioi_han.png](figures/08_FND_gioi_han.png)
+![08-first-node-death.png](figures/08-first-node-death.png)
 
-[SVG](figures/08_FND_gioi_han.svg) · [CSV nguồn](figures/08_FND_gioi_han_du_lieu.csv)
+[SVG](figures/08-first-node-death.svg) · [CSV nguồn](figures/08-first-node-death.csv)
 
-![09_trang_thai_goi.png](figures/09_trang_thai_goi.png)
+![09-packet-status.png](figures/09-packet-status.png)
 
-[SVG](figures/09_trang_thai_goi.svg) · [CSV nguồn](figures/09_trang_thai_goi_du_lieu.csv)
+[SVG](figures/09-packet-status.svg) · [CSV nguồn](figures/09-packet-status.csv)
 
-![10_doi_tuyen_va_cach_ly.png](figures/10_doi_tuyen_va_cach_ly.png)
+![10-reroutes-isolations.png](figures/10-reroutes-isolations.png)
 
-[SVG](figures/10_doi_tuyen_va_cach_ly.svg) · [CSV nguồn](figures/10_doi_tuyen_va_cach_ly_du_lieu.csv)
+[SVG](figures/10-reroutes-isolations.svg) · [CSV nguồn](figures/10-reroutes-isolations.csv)
 
 ## Nguồn và tái tạo
 
-Model SHA256: `d71cfc497d59ab28a6ab7cf21e44ec5185f288e4349d1e082a1eeb607bda3973`. Plan hash: `0d2d7bdf4c9294bfdd4cb2fb9056dbceda2507a7b596a4f956617abf826bdc1e`. Batch gốc trong [thư mục dữ liệu](batch/). [Cấu hình](experiment_10000s.json), [plan](plan.json), [protocol hiệu lực](protocol_effective.json) · [protocol gốc](protocol.json), [provenance](analysis_provenance.json), [manifest nguồn](input_manifest.json), [hướng dẫn tái tạo](../../../README.md).
+Model SHA256: `d71cfc497d59ab28a6ab7cf21e44ec5185f288e4349d1e082a1eeb607bda3973`. Plan hash: `0d2d7bdf4c9294bfdd4cb2fb9056dbceda2507a7b596a4f956617abf826bdc1e`. Batch gốc trong [thư mục dữ liệu](batch/). [Cấu hình](config.json), [plan](plan.json), [protocol hiệu lực](effective-protocol.json) · [protocol gốc](protocol.json), [provenance](provenance.json), [manifest nguồn](run-checksums.json), [hướng dẫn tái tạo](../../../README.md).

@@ -255,7 +255,7 @@
   },
   "simulation_config_sha256": "09b9eabc6d58d7bd34511e271e5b35c86fb2b2536a6dec174421c0dcde6ac880",
   "selected_candidate_id": "candidate_01_1",
-  "selection_report": "results/published-10000s-na/calibration/selection_before_validation.json",
+  "selection_report": "results/10000s/calibration/selection.json",
   "benign_validation_passed": true,
   "validation_channels": [
     {
@@ -323,6 +323,6 @@
   "attack_validation_runs": 0,
   "false_positive_reduction": "NOT_DEMONSTRATED",
   "human_review": "PENDING_USER_SELF_REVIEW_NO_NAMES_REQUIRED",
-  "calibration_report": "results/published-10000s-na/calibration/calibration_report.json",
+  "calibration_report": "results/10000s/calibration/report.json",
   "config_file_sha256": "dce52cacc293a57932ebe9769dfbf20b73b79718ec9c62fce976442f71ebf2a8"
 }

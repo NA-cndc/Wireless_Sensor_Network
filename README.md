@@ -67,11 +67,11 @@ Bộ kiểm toán detector gồm 223 lượt chạy và bản khóa nguồn gố
 
 ## Chạy lại ma trận 10.000 giây
 
-Kết quả chạy với topology NA gồm [hình nền](results/published-10000s-na/foundation/figures/), [so sánh nền trên 30 seed](results/published-10000s-na/foundation/study/na-so-sanh-30-seed.png) và [10 biểu đồ bảo mật](results/published-10000s-na/security/figures/). Bảng tổng hợp, CSV của từng biểu đồ và kết quả xác minh 480 lượt nằm trong [thư mục bảo mật](results/published-10000s-na/security/).
+Kết quả chạy với topology NA gồm [hình nền](results/10000s/foundation/figures/), [so sánh nền trên 30 seed](results/10000s/foundation/paired/comparison.png) và [10 biểu đồ bảo mật](results/10000s/security/figures/). Bảng tổng hợp, CSV của từng biểu đồ và kết quả xác minh 480 lượt nằm trong [thư mục bảo mật](results/10000s/security/).
 
-- [Dữ liệu nền](results/published-10000s-na/foundation/) gồm chuỗi thời gian, thống kê nút chuyển tiếp và log gói tin của 7 kịch bản vẽ hình và 240 lượt ghép cặp.
-- [Báo cáo bảo mật dạng Markdown](results/published-10000s-na/security/BAO_CAO_10000S.md) dẫn tới biểu đồ, bảng và [chỉ mục đường dẫn tương đối](results/published-10000s-na/security/portable_run_index.json) của 480 lượt.
-- [Kết quả hiệu chỉnh](results/published-10000s-na/calibration/) gồm dữ liệu và kết quả kiểm định cho 24 lượt dùng để tạo khóa detector.
+- [Dữ liệu nền](results/10000s/foundation/) gồm chuỗi thời gian, thống kê nút chuyển tiếp và log gói tin của 7 kịch bản vẽ hình và 240 lượt ghép cặp.
+- [Báo cáo bảo mật dạng Markdown](results/10000s/security/report.md) dẫn tới biểu đồ, bảng và [chỉ mục đường dẫn tương đối](results/10000s/security/run-index.json) của 480 lượt.
+- [Kết quả hiệu chỉnh](results/10000s/calibration/) gồm dữ liệu và kết quả kiểm định cho 24 lượt dùng để tạo khóa detector.
 
 Dùng khóa `configs/detector_na.json` cho mã và profile NA ở bản này. Nếu thay đổi phiên bản nguồn hoặc cấu hình hiệu chỉnh, chạy lại protocol stage78 và lưu khóa ở đường dẫn mới.
 
