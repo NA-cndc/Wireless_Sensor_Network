@@ -3,7 +3,7 @@
 Nghiên cứu được thực hiện trên nhánh `fix/wsn-foundation-10000s`, bắt đầu từ
 commit `a217fc06a0040c0b564b88e95c18c9f46517c318`. Bộ mô phỏng nền trên `main`
 nằm tại `analysis/foundation/`. Dữ liệu thô nằm tại
-`.wsn-foundation-10000s/results/study_10000s/`.
+`results/backup/.wsn-foundation-10000s/results/study_10000s/`.
 
 ## Đối chiếu yêu cầu và bằng chứng
 
@@ -55,7 +55,7 @@ python analysis/run_foundation_study.py --workers 10
 
 `python analysis/run_analysis.py` chạy bảy kịch bản và dựng lại hình. Chuỗi thời gian
 giữ tên `results/csv/simulation_log_<algo>_range_<R>m.csv`. Hồ sơ nghiên cứu lưu
-file thô theo cặp trong `.wsn-foundation-10000s/results/study_10000s/runs/` và bảng
+file thô theo cặp trong `results/backup/.wsn-foundation-10000s/results/study_10000s/runs/` và bảng
 tổng hợp trong `results/study_10000s/`. Chế độ `--report-only` đọc dữ liệu lưu trữ.
 Để chạy lại đúng mã nguồn của ma trận, dùng commit
 `4f8a73b23638942f993e069f7fe5b358d8c02264` ghi trong manifest.

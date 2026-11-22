@@ -29,7 +29,7 @@ from analysis.foundation.storage import (
 )
 
 OUTPUT = ROOT / "results" / "study_10000s"
-ARCHIVE = ROOT / ".wsn-foundation-10000s" / "results" / "study_10000s"
+ARCHIVE = ROOT / "results" / "backup" / ".wsn-foundation-10000s" / "results" / "study_10000s"
 ARCHIVED_REVISION = "4f8a73b23638942f993e069f7fe5b358d8c02264"
 MINIMUM_ROUTABLE_FRACTION = 0.95
 
