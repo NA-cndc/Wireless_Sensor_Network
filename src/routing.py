@@ -8,7 +8,7 @@ from math import hypot
 
 import networkx as nx
 
-from wsn_sim.network import Network
+from network import Network
 
 
 class RoutingEngine:

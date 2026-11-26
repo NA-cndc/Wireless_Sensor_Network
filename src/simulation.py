@@ -4,11 +4,11 @@ from __future__ import annotations
 import simpy
 import os
 import csv
-from wsn_sim.config import SimulationConfig
-from wsn_sim.network import Network
-from wsn_sim.routing import RoutingEngine
-from wsn_sim.traffic import TrafficGenerator
-from wsn_sim.energy import RadioModel
+from config import SimulationConfig
+from network import Network
+from routing import RoutingEngine
+from traffic import TrafficGenerator
+from energy import RadioModel
 
 class Simulation:
     def __init__(self, config: SimulationConfig, current_range_m: float, routing_algo: str = "EMHR", env: simpy.Environment | None = None) -> None:
@@ -38,7 +38,7 @@ class Simulation:
         import networkx as nx
 
         # Neo đường dẫn tuyệt đối về Wireless_Sensor_Network/results/csv
-        project_root = Path(__file__).resolve().parents[2]
+        project_root = Path(__file__).resolve().parents[1]
         csv_dir = project_root / "results" / "csv"
         csv_dir.mkdir(parents=True, exist_ok=True)
 

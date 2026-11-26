@@ -18,8 +18,8 @@ for path_dir in (str(PROJECT_ROOT), str(SRC_DIR)):
     if path_dir not in sys.path:
         sys.path.insert(0, path_dir)
 
-from wsn_sim.config import SimulationConfig
-from wsn_sim.simulation import Simulation
+from config import SimulationConfig
+from simulation import Simulation
 
 
 def run_single_scenario(range_m: float, routing_algo: str, config_data: dict) -> tuple:
@@ -65,4 +65,9 @@ def run_project():
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()
-    run_project()
+    from run_analysis import run_post_simulation
+
+    if "--plot-only" not in sys.argv:
+        run_project()
+
+    run_post_simulation()

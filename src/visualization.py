@@ -11,7 +11,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import networkx as nx  # noqa: E402
 
-from wsn_sim.network import Network  # noqa: E402
+from network import Network  # noqa: E402
 
 
 def save_topology_plot(network: Network, path: str | Path) -> Path:

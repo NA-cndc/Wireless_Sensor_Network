@@ -7,8 +7,8 @@ from math import hypot
 import networkx as nx
 import numpy as np
 
-from wsn_sim.config import SimulationConfig
-from wsn_sim.models import Sensor, Sink
+from config import SimulationConfig
+from models import Sensor, Sink
 
 
 class Network:

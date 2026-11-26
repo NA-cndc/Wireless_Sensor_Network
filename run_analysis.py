@@ -2,7 +2,6 @@ import sys
 import os
 import json
 import shutil
-import multiprocessing
 from math import ceil
 from pathlib import Path
 
@@ -22,10 +21,9 @@ for path_dir in (str(PROJECT_ROOT), str(SRC_DIR)):
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from wsn_sim.config import SimulationConfig
-from wsn_sim.network import Network
-from wsn_sim.visualization import save_topology_plot
-import main as wsn_main
+from config import SimulationConfig
+from network import Network
+from visualization import save_topology_plot
 
 
 def generate_topologies(ranges, config_data, fig_dir):
@@ -38,16 +36,12 @@ def generate_topologies(ranges, config_data, fig_dir):
         print(f" -> Đã lưu: {out_path}")
 
 
-def run_simulations_and_move_csv(csv_dir, results_dir=None):
-    print("\n[2] BẮT ĐẦU CHẠY MÔ PHỎNG ĐA TIẾN TRÌNH...")
-    wsn_main.run_project()
-
-    print("\n[3] ĐANG LƯU DỮ LIỆU VÀO THƯ MỤC results/CSV...")
-    search_dir = results_dir if results_dir is not None else csv_dir.parent
-    if search_dir.exists():
-        for file in os.listdir(search_dir):
+def organize_csv_files(results_dir, csv_dir):
+    print("\n[3] ĐANG LƯU DỮ LIỆU VÀO THƯ MỤC results/csv...")
+    if results_dir.exists():
+        for file in os.listdir(results_dir):
             if file.endswith(".csv") and file.startswith("simulation_log"):
-                old_path = search_dir / file
+                old_path = results_dir / file
                 new_path = csv_dir / file
                 shutil.move(str(old_path), str(new_path))
 
@@ -89,7 +83,6 @@ def plot_range_selection(ranges, csv_dir, fig_dir, algo="EMHR", initial_energy_j
         if df_raw.empty:
             continue
 
-        # Lấy đúng số sensor thực tế được sinh ngẫu nhiên để tránh lệch mốc 0
         actual_sensors = int(df_raw["Alive_Nodes"].max())
         df = df_raw[df_raw["Time_s"] > 0]
 
@@ -105,7 +98,6 @@ def plot_range_selection(ranges, csv_dir, fig_dir, algo="EMHR", initial_energy_j
         ax_energy.plot(df["Time_s"], df["Total_Energy_J"], label=label_name, color=c, linestyle="-", linewidth=2.2)
         ax_lat.plot(df["Time_s"], df["Avg_Latency_s"], label=label_name, color=c, linestyle="-", linewidth=2.2)
 
-    # Đường ngưỡng và cố định trục tung từ mốc 0
     ax_life.axhline(y=50, color="red", linestyle=":", linewidth=1.5, label="Ngưỡng Lifetime (50%)")
     ax_dead.axhline(y=actual_sensors / 2, color="purple", linestyle=":", linewidth=1.5, label="Ngưỡng HND (50% chết)")
 
@@ -157,11 +149,11 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
     fig_energy, ax_energy = plt.subplots(figsize=(9, 6))
     fig_lat, ax_lat = plt.subplots(figsize=(9, 6))
 
-    # Bảng màu tách biệt cho nhóm thuật toán năng lượng
     energy_palette = ["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:purple"]
     color_idx = 0
     actual_sensors = 450
     valid_dfs = []
+    algo_styles = {}
 
     for algo in algos:
         csv_file = csv_dir / f"simulation_log_{algo}_range_{int(fixed_range)}m.csv"
@@ -177,7 +169,6 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
         df = df_raw[df_raw["Time_s"] > 0]
         valid_dfs.append((algo, df))
 
-        # MHR dùng nét đứt làm mốc chuẩn đối chứng; các thuật toán năng lượng dùng nét liền
         if algo == "MHR":
             c = "dimgray"
             ls = "--"
@@ -188,6 +179,8 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
             ls = "-"
             label_name = algo
 
+        algo_styles[algo] = (c, ls)
+
         r_t = (df["Routable_Nodes"] / df["Alive_Nodes"].replace(0, 1)) * 100
         r_t[df["Alive_Nodes"] == 0] = 0
         ax_life.plot(df["Time_s"], r_t, label=label_name, color=c, linestyle=ls, linewidth=2.2)
@@ -197,7 +190,6 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
         ax_energy.plot(df["Time_s"], df["Total_Energy_J"], label=label_name, color=c, linestyle=ls, linewidth=2.2)
         ax_lat.plot(df["Time_s"], df["Avg_Latency_s"], label=label_name, color=c, linestyle=ls, linewidth=2.2)
 
-    # Đường ngưỡng và cố định trục tung từ mốc 0
     ax_life.axhline(y=50, color="red", linestyle=":", linewidth=1.5, label="Ngưỡng Lifetime (50%)")
     ax_dead.axhline(y=actual_sensors / 2, color="purple", linestyle=":", linewidth=1.5, label="Ngưỡng HND (50% chết)")
 
@@ -232,7 +224,6 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
         fig_dir / "stage2_algo_4_dead_nodes.pdf"
     )
 
-    # Vẽ biểu đồ phân rã gói tin tự động co giãn theo số lượng thuật toán
     if valid_dfs:
         n_algos = len(valid_dfs)
         ncols = n_algos if n_algos <= 3 else ceil(n_algos / 2)
@@ -241,18 +232,39 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
         fig_pkt, axes = plt.subplots(
             nrows, ncols,
             figsize=(6.5 * ncols, 5.5 * nrows),
-            sharey=True,
+            sharey=False,
             squeeze=False
         )
         axes_flat = axes.flatten()
 
+        end_time = int(valid_dfs[0][1]["Time_s"].iloc[-1])
+        print(f"\n   [SỐ LIỆU CHÍNH XÁC GÓI TIN TẠI {r_label} (t = {end_time}s)]")
+        print(f"   {'Thuật toán':<20} | {'Đến đích':>10} | {'Mất đường':>10} | {'Chết giữa chừng':>15} | {'Nhiễu sóng':>10}")
+        print("   " + "-" * 77)
+
+        max_main_y = 0
+        for _, df in valid_dfs:
+            max_main_y = max(
+                max_main_y,
+                df[["Delivered_Packets", "Drop_NoRoute", "Drop_Dead", "Drop_Interf"]].max().max()
+            )
+
         for idx, (algo, df) in enumerate(valid_dfs):
+            last_row = df.iloc[-1]
+            delivered = int(last_row["Delivered_Packets"])
+            drop_noroute = int(last_row["Drop_NoRoute"])
+            drop_dead = int(last_row["Drop_Dead"])
+            drop_interf = int(last_row["Drop_Interf"])
+
+            print(f"   {algo:<20} | {delivered:>10,} | {drop_noroute:>10,} | {drop_dead:>15,} | {drop_interf:>10,}")
+
             ax_target = axes_flat[idx]
             ax_target.plot(df["Time_s"], df["Delivered_Packets"], label="Đến đích thành công", color="tab:green", linewidth=2.5)
             ax_target.plot(df["Time_s"], df["Drop_NoRoute"], label="Rớt do Mất đường đi", color="tab:red", linewidth=2)
             ax_target.plot(df["Time_s"], df["Drop_Dead"], label="Rớt do Trạm chuyển chết", color="tab:orange", linewidth=2)
             ax_target.plot(df["Time_s"], df["Drop_Interf"], label="Rớt do Nhiễu sóng", color="tab:purple", linewidth=2)
 
+            ax_target.set_ylim(0, max_main_y * 1.05)
             ax_target.set_title(f"Phân rã gói tin - {algo} ({r_label})", fontsize=13, fontweight="bold")
             ax_target.set_xlabel("Thời gian (s)", fontsize=11)
             ax_target.grid(True, linestyle=":", alpha=0.6)
@@ -262,10 +274,27 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
             if idx == 0:
                 ax_target.legend(loc="upper left", fontsize="9.5")
 
-        # Đặt mốc 0 sau cùng để không khóa trục tung theo biểu đồ đầu tiên
-        axes_flat[0].set_ylim(bottom=0)
+            if n_algos < len(axes_flat):
+                c, ls = algo_styles[algo]
+                axes_flat[n_algos].plot(
+                    df["Time_s"],
+                    df["Drop_Dead"],
+                    label=f"{algo} ({drop_dead:,} gói)",
+                    color=c,
+                    linestyle=ls,
+                    linewidth=2.2
+                )
 
-        for idx in range(n_algos, len(axes_flat)):
+        if n_algos < len(axes_flat):
+            ax_zoom = axes_flat[n_algos]
+            ax_zoom.set_ylim(bottom=0)
+            ax_zoom.set_title(f"Phóng đại: Rớt do Trạm chuyển chết ({r_label})", fontsize=13, fontweight="bold")
+            ax_zoom.set_xlabel("Thời gian (s)", fontsize=11)
+            ax_zoom.set_ylabel("Số gói rớt cộng dồn", fontsize=11)
+            ax_zoom.legend(title="Thuật toán (Cuối kỳ)", loc="upper left", fontsize="9.5")
+            ax_zoom.grid(True, linestyle=":", alpha=0.6)
+
+        for idx in range(n_algos + 1, len(axes_flat)):
             axes_flat[idx].set_visible(False)
 
         fig_pkt.tight_layout()
@@ -273,16 +302,15 @@ def plot_algorithm_comparison(fixed_range, algos, csv_dir, fig_dir, initial_ener
         plt.close(fig_pkt)
 
 
-if __name__ == "__main__":
-    multiprocessing.freeze_support()
-
-    results_dir = PROJECT_ROOT / "results"
+def run_post_simulation(project_root=PROJECT_ROOT):
+    """Hàm hậu xử lý: gom CSV, vẽ toàn bộ biểu đồ và in bảng thống kê."""
+    results_dir = Path(project_root) / "results"
     csv_dir = results_dir / "csv"
     fig_dir = results_dir / "figures"
     csv_dir.mkdir(parents=True, exist_ok=True)
     fig_dir.mkdir(parents=True, exist_ok=True)
 
-    config_path = PROJECT_ROOT / "configs" / "default.json"
+    config_path = Path(project_root) / "configs" / "default.json"
     if not config_path.exists():
         print(f"\n[LỖI] Không tìm thấy file cấu hình tại {config_path.absolute()}")
         sys.exit(1)
@@ -294,9 +322,8 @@ if __name__ == "__main__":
     initial_energy = float(config_data.get("initial_energy_j", 5.0))
 
     generate_topologies(ranges, config_data, fig_dir)
-    run_simulations_and_move_csv(csv_dir, results_dir)
+    organize_csv_files(results_dir, csv_dir)
 
-    # Giai đoạn 1: Khảo sát 3 bán kính trên thuật toán EMHR
     plot_range_selection(
         ranges=ranges,
         csv_dir=csv_dir,
@@ -305,7 +332,6 @@ if __name__ == "__main__":
         initial_energy_j=initial_energy
     )
 
-    # Giai đoạn 2: Cố định R=300m, đối chứng MHR với 4 thuật toán tối ưu năng lượng
     algorithms_to_compare = [
         "MHR",
         "EMHR",
@@ -324,3 +350,8 @@ if __name__ == "__main__":
     print("\n" + "=" * 70)
     print(" HOÀN TẤT! DỮ LIỆU 2 GIAI ĐOẠN ĐÃ ĐƯỢC XUẤT CHO BÁO CÁO ĐỒ ÁN.")
     print("=" * 70)
+
+
+if __name__ == "__main__":
+    # Vẫn có thể chạy độc lập để vẽ lại biểu đồ từ CSV cũ mà không cần mô phỏng lại
+    run_post_simulation()

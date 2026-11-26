@@ -3,11 +3,11 @@
 import simpy
 import math
 import random
-from wsn_sim.config import SimulationConfig
-from wsn_sim.network import Network
-from wsn_sim.routing import RoutingEngine
-from wsn_sim.energy import RadioModel
-from wsn_sim.models.packet import Packet
+from config import SimulationConfig
+from network import Network
+from routing import RoutingEngine
+from energy import RadioModel
+from models.packet import Packet
 
 class TrafficGenerator:
     def __init__(self, env: simpy.Environment, network: Network, router: RoutingEngine, radio: RadioModel, config: SimulationConfig, routing_algo: str = "EMHR") -> None:

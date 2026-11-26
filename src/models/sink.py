@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from wsn_sim.models.packet import Packet
+from models.packet import Packet
 
 
 @dataclass(slots=True)
